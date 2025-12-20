@@ -13,12 +13,11 @@ export default function RequirementsTable({ requirements }: RequirementsTablePro
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-gray-700 text-white dark:bg-gray-800/80">
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider w-24 text-center">ID</th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider w-1/3">Title</th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider">Type</th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider">Author</th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-center">Visualize</th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-center">Action</th>
+              <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider w-24 text-center">ID</th>
+              <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider w-1/3">Title</th>
+              <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider">Type</th>
+              <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider">Author</th>
+              <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider text-center">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -38,14 +37,14 @@ export default function RequirementsTable({ requirements }: RequirementsTablePro
                   {req.author}
                 </td>
                 <td className="px-4 py-3 text-center align-middle">
-                  <button className="p-1.5 text-gray-400 hover:text-primary transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full">
-                    <Eye className="w-4 h-4" />
-                  </button>
-                </td>
-                <td className="px-4 py-3 text-center align-middle">
-                  <button className="p-1.5 text-gray-400 hover:text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center justify-center gap-1">
+                    <button className="p-1.5 text-gray-400 hover:text-primary transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full">
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    <button className="p-1.5 text-gray-400 hover:text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
