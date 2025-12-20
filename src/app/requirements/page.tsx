@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Search, ChevronDown, Plus, X } from 'lucide-react';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
@@ -9,19 +9,8 @@ import { MOCK_REQUIREMENTS } from '@/constants';
 import { RequirementType } from '@/types';
 
 export default function RequirementsPage() {
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [filterType, setFilterType] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
-
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDarkMode]);
-
-  const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
   const filteredRequirements = MOCK_REQUIREMENTS.filter(req => {
     const matchesType = filterType ? req.type === filterType : true;
@@ -35,7 +24,7 @@ export default function RequirementsPage() {
       <Sidebar />
       
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
-        <Header isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
+        <Header />
         
         <div className="flex-1 overflow-y-auto px-6 sm:px-8 pt-6 pb-8 bg-background-light dark:bg-background-dark">
           <div className="w-5xl min-w-5xl max-w-5xl mx-auto">

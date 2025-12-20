@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Search, Plus } from 'lucide-react';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
@@ -8,18 +8,7 @@ import ProjectsTable from '@/components/projects/ProjectsTable';
 import { MOCK_PROJECTS_LIST } from '@/constants';
 
 export default function ProjectsPage() {
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDarkMode]);
-
-  const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
   const filteredProjects = MOCK_PROJECTS_LIST.filter(project => {
     return project.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -31,7 +20,7 @@ export default function ProjectsPage() {
       <Sidebar />
       
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
-        <Header isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
+        <Header />
         
         <div className="flex-1 overflow-y-auto px-6 sm:px-8 pt-6 pb-8 bg-background-light dark:bg-background-dark">
           <div className="w-5xl min-w-5xl max-w-5xl mx-auto">

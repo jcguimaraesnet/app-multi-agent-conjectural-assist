@@ -3,13 +3,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { Folder, ChevronDown, Moon, Sun, LogOut } from 'lucide-react';
 import { MOCK_PROJECTS } from '@/constants';
+import { useTheme } from '@/contexts/ThemeContext';
 
-interface HeaderProps {
-  isDarkMode: boolean;
-  toggleTheme: () => void;
-}
-
-export default function Header({ isDarkMode, toggleTheme }: HeaderProps) {
+export default function Header() {
+  const { isDarkMode, toggleTheme, mounted } = useTheme();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
@@ -52,7 +49,8 @@ export default function Header({ isDarkMode, toggleTheme }: HeaderProps) {
           onClick={toggleTheme}
           className="p-2 text-gray-500 hover:text-primary rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         >
-          {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          <Sun className="w-5 h-5 hidden dark:block" />
+          <Moon className="w-5 h-5 block dark:hidden" />
         </button>
 
         <div className="relative" ref={profileMenuRef}>
