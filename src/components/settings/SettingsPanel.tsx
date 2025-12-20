@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { ChevronUp, ChevronDown } from 'lucide-react';
+import Card from '@/components/ui/Card';
+import Toggle from '@/components/ui/Toggle';
 
 export default function SettingsPanel() {
   const [requireDescription, setRequireDescription] = useState(true);
@@ -17,7 +19,7 @@ export default function SettingsPanel() {
   };
 
   return (
-    <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark transition-colors duration-200">
+    <Card noPadding>
       
       {/* Setting 1: Require Description */}
       <div className="px-6 py-5 border-b border-border-light dark:border-border-dark">
@@ -30,18 +32,10 @@ export default function SettingsPanel() {
               When enabled, a description must be provided before generating requirements
             </p>
           </div>
-          <button
-            onClick={() => setRequireDescription(!requireDescription)}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-              requireDescription ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'
-            }`}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                requireDescription ? 'translate-x-6' : 'translate-x-1'
-              }`}
-            />
-          </button>
+          <Toggle
+            checked={requireDescription}
+            onChange={setRequireDescription}
+          />
         </div>
       </div>
 
@@ -118,6 +112,6 @@ export default function SettingsPanel() {
         </div>
       </div>
 
-    </div>
+    </Card>
   );
 }

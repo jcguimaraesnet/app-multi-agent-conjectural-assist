@@ -1,6 +1,7 @@
 ﻿import { Eye, Trash2 } from 'lucide-react';
 import { Requirement } from '@/types';
 import Badge from '@/components/ui/Badge';
+import Card from '@/components/ui/Card';
 
 interface RequirementsTableProps {
   requirements: Requirement[];
@@ -8,7 +9,7 @@ interface RequirementsTableProps {
 
 export default function RequirementsTable({ requirements }: RequirementsTableProps) {
   return (
-    <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm overflow-hidden border border-border-light dark:border-border-dark transition-colors duration-200">
+    <Card noPadding className="overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
@@ -66,6 +67,6 @@ export default function RequirementsTable({ requirements }: RequirementsTablePro
             </button>
         </div>
       </div>
-    </div>
+    </Card>
   );
 }

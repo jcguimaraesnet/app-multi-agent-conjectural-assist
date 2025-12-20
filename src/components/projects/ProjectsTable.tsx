@@ -1,5 +1,6 @@
 import { Download, FileText, ArrowRight } from 'lucide-react';
 import { Project } from '@/types';
+import Card from '@/components/ui/Card';
 
 interface ProjectsTableProps {
   projects: Project[];
@@ -7,7 +8,7 @@ interface ProjectsTableProps {
 
 export default function ProjectsTable({ projects }: ProjectsTableProps) {
   return (
-    <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm overflow-hidden border border-border-light dark:border-border-dark transition-colors duration-200">
+    <Card noPadding className="overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
@@ -72,6 +73,6 @@ export default function ProjectsTable({ projects }: ProjectsTableProps) {
             </button>
         </div>
       </div>
-    </div>
+    </Card>
   );
 }
