@@ -13,6 +13,7 @@
 | TypeScript | ~5.9 | Tipagem estática |
 | Tailwind CSS | 4.x | Estilização |
 | Lucide React | ^0.562.0 | Ícones |
+| Supabase | ^2.x | Backend as a Service (Auth, Database) |
 | pnpm | - | Gerenciador de pacotes |
 
 ## Estrutura do Projeto
@@ -21,8 +22,16 @@
 src/
  app/
     globals.css            # Estilos globais + config Tailwind v4
-    layout.tsx             # Layout raiz com ThemeProvider
+    layout.tsx             # Layout raiz com ThemeProvider e AuthProvider
     page.tsx               # Página Home
+    auth/
+       actions.ts         # Server actions para autenticação
+       login/page.tsx     # Página de login
+       signup/page.tsx    # Página de cadastro
+       forgot-password/page.tsx # Recuperação de senha
+       confirm/route.ts   # Handler de confirmação de email
+       signout/route.ts   # Handler de logout
+       error/page.tsx     # Página de erro de autenticação
     projects/
        page.tsx           # Página de Projetos
     requirements/
@@ -50,8 +59,14 @@ src/
     index.ts              # Dados mock e constantes
  contexts/
     ThemeContext.tsx      # Contexto global para dark mode
+    AuthContext.tsx       # Contexto global para autenticação
  lib/
     utils.ts              # Funções utilitárias (cn)
+    supabase/
+       client.ts          # Cliente Supabase para browser
+       server.ts          # Cliente Supabase para server components
+       middleware.ts      # Utilitário para middleware de sessão
+ middleware.ts            # Next.js middleware para proteção de rotas
  types/
     index.ts              # Definições de tipos TypeScript
 ```
@@ -159,7 +174,81 @@ pnpm lint     # Executa ESLint
 
 ## Variáveis de Ambiente
 
-- `GEMINI_API_KEY` - Chave de API do Google Gemini (definir em `.env.local`)
+Copie `.env.local.example` para `.env.local` e configure:
+
+```bash
+# Supabase Configuration (obrigatório)
+NEXT_PUBLIC_SUPABASE_URL=your-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+
+# Optional
+GEMINI_API_KEY=your-gemini-api-key
+```
+
+## Autenticação (Supabase Auth)
+
+### Arquitetura
+- **AuthContext** (`src/contexts/AuthContext.tsx`) - Gerencia estado de sessão no cliente
+- **Middleware** (`src/middleware.ts`) - Protege rotas e atualiza tokens
+- **Server Actions** (`src/app/auth/actions.ts`) - Login, signup, logout, reset password
+
+### Fluxo de Autenticação
+1. Usuário não autenticado é redirecionado para `/auth/login`
+2. Login com email/senha via `signInWithPassword`
+3. Signup armazena `first_name` e `last_name` no `user_metadata`
+4. Trigger no Supabase cria perfil automaticamente em `public.profiles`
+5. Sessão é mantida via cookies (gerenciado por `@supabase/ssr`)
+
+### Páginas de Auth
+- `/auth/login` - Login com email e senha
+- `/auth/signup` - Cadastro com nome, sobrenome, email e senha
+- `/auth/forgot-password` - Solicitar reset de senha
+- `/auth/error` - Exibir erros de autenticação
+
+### Proteção de Rotas
+O middleware protege todas as rotas exceto:
+- `/auth/*` - Páginas de autenticação
+- `/` - Página inicial (permitida)
+- Arquivos estáticos
+
+### Uso do AuthContext
+
+```tsx
+import { useAuth } from '@/contexts/AuthContext';
+
+function MyComponent() {
+  const { user, profile, isLoading, signOut } = useAuth();
+  
+  if (isLoading) return <Loading />;
+  
+  return (
+    <div>
+      <p>Welcome, {profile?.first_name}!</p>
+      <button onClick={signOut}>Sign Out</button>
+    </div>
+  );
+}
+```
+
+### Tabela de Perfis (Supabase)
+
+```sql
+CREATE TABLE profiles (
+  id UUID REFERENCES auth.users PRIMARY KEY,
+  first_name TEXT,
+  last_name TEXT,
+  email TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### Conta Padrão para Desenvolvimento
+Para criar um usuário de teste, acesse `/auth/signup` e registre:
+- **First Name**: Júlio
+- **Last Name**: Guimarães  
+- **Email**: jcguimaraes@gmail.com
+- **Password**: senha123
 
 ## Funcionalidades
 
@@ -179,9 +268,11 @@ pnpm lint     # Executa ESLint
 - ✅ Página de configurações com toggles e inputs numéricos
 - ✅ Layout compartilhado (AppLayout)
 - ✅ Componentes reutilizáveis (PageTitle, Toolbars)
+- ✅ Autenticação com Supabase (login, signup, forgot password)
+- ✅ Proteção de rotas para usuários autenticados
+- ✅ Tabela de perfis com trigger automático
 
 ### Planejadas
-- ⬜ Autenticação com Supabase
 - ⬜ CRUD de requisitos no Supabase
 - ⬜ CRUD de projetos no Supabase
 - ⬜ Persistência de configurações

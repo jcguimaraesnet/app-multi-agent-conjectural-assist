@@ -4,9 +4,11 @@ import { useState, useRef, useEffect } from 'react';
 import { Folder, ChevronDown, Moon, Sun, LogOut } from 'lucide-react';
 import { MOCK_PROJECTS } from '@/constants';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Header() {
   const { isDarkMode, toggleTheme, mounted } = useTheme();
+  const { user, profile } = useAuth();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
@@ -20,11 +22,53 @@ export default function Header() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    // TODO: Implement logout logic
-    console.log('Logout clicked');
+  const handleLogout = async () => {
     setIsProfileMenuOpen(false);
+    // Use form action for server-side signout
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/auth/signout';
+    document.body.appendChild(form);
+    form.submit();
   };
+
+  // Get first name from user_metadata (immediate) or profile (fallback)
+  const getFirstName = () => {
+    return user?.user_metadata?.first_name || profile?.first_name || null;
+  };
+
+  // Get last name from user_metadata (immediate) or profile (fallback)
+  const getLastName = () => {
+    return user?.user_metadata?.last_name || profile?.last_name || null;
+  };
+
+  // Get user initials
+  const getInitials = () => {
+    const firstName = getFirstName();
+    const lastName = getLastName();
+    
+    if (firstName && lastName) {
+      return `${firstName[0]}${lastName[0]}`.toUpperCase();
+    }
+    if (user?.email) {
+      return user.email[0].toUpperCase();
+    }
+    return '';
+  };
+
+  // Get display name
+  const getDisplayName = () => {
+    const firstName = getFirstName();
+    const lastName = getLastName();
+
+    if (firstName && lastName) {
+      return `${firstName} ${lastName}`;
+    }
+    return '';
+  };
+
+  // Show profile only when we have user data (name or email)
+  const hasUserData = !!(getFirstName() && getLastName()) || !!user?.email;
 
   return (
     <header className="h-16 bg-surface-light dark:bg-surface-dark border-b border-border-light dark:border-border-dark flex items-center justify-between px-8 flex-shrink-0 transition-colors duration-200">
@@ -58,12 +102,14 @@ export default function Header() {
             className="flex items-center gap-3 pl-4 border-l border-border-light dark:border-border-dark cursor-pointer group"
             onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
           >
-            <div className="text-right hidden sm:block">
-              <p className="text-sm font-semibold text-gray-900 dark:text-white leading-none">Júlio Guimarães</p>
+            {/* ${hasUserData ? 'visible' : 'invisible'} */}
+            <div className={`text-right hidden sm:block min-w-[100px]`}>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white leading-none">{getDisplayName()}</p>
             </div>
             <div className="relative">
-              <div className="w-10 h-10 rounded-full border-2 border-white dark:border-gray-700 shadow-sm bg-primary flex items-center justify-center text-white dark:text-black font-semibold text-sm">
-                JG
+              {/* ${hasUserData ? 'visible' : 'invisible'} */}
+              <div className={`w-10 h-10 rounded-full border-2 border-white dark:border-gray-700 shadow-sm bg-primary flex items-center justify-center text-white dark:text-black font-semibold text-sm`}>
+                {getInitials()}
               </div>
             </div>
             <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isProfileMenuOpen ? 'rotate-180' : ''}`} />
