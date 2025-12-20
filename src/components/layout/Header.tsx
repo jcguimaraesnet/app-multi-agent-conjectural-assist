@@ -37,8 +37,7 @@ export default function Header({ isDarkMode, toggleTheme }: HeaderProps) {
 
         <div className="flex items-center gap-3 pl-4 border-l border-border-light dark:border-border-dark cursor-pointer group">
           <div className="text-right hidden sm:block">
-            <p className="text-sm font-semibold text-gray-900 dark:text-white leading-none">Rahul Sharma</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Admin</p>
+            <p className="text-sm font-semibold text-gray-900 dark:text-white leading-none">Júlio Guimarães</p>
           </div>
           <div className="relative">
             <img 
@@ -46,9 +45,7 @@ export default function Header({ isDarkMode, toggleTheme }: HeaderProps) {
               className="w-10 h-10 rounded-full border-2 border-white dark:border-gray-700 shadow-sm object-cover" 
               src="https://picsum.photos/id/64/200/200" 
             />
-            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full"></div>
           </div>
-          <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-200" />
         </div>
       </div>
     </header>

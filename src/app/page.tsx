@@ -93,16 +93,9 @@ export default function HomePage() {
 
             <div className="flex-grow"></div>
 
-            <div className="relative flex-shrink-0">
-              <button className="flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-                <CheckSquare className="w-4 h-4" />
-                Bulk Actions
-                <ChevronDown className="w-3 h-3" />
-              </button>
-            </div>
 
             <button className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors flex-shrink-0">
-                Download Report
+                Export Requirements
             </button>
 
             <button className="px-4 py-2 bg-primary text-white dark:text-black dark:bg-primary text-sm font-bold rounded-lg hover:brightness-110 transition-colors flex items-center gap-2 shadow-lg shadow-primary/20 flex-shrink-0">
