@@ -88,8 +88,61 @@ export default function SettingsPanel() {
   if (isLoading) {
     return (
       <Card noPadding>
-        <div className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
-          Loading settings...
+        {/* Skeleton: Setting 1 */}
+        <div className="px-6 py-5 border-b border-border-light dark:border-border-dark">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+                Require brief description to generate requirement
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                When enabled, a description must be provided before generating requirements
+              </p>
+            </div>
+            {/* Toggle Skeleton */}
+            <div className="h-6 w-11 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse" />
+          </div>
+        </div>
+
+        {/* Skeleton: Setting 2 */}
+        <div className="px-6 py-5 border-b border-border-light dark:border-border-dark">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+                Generation mode
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Choose between batch or interactive requirement generation
+              </p>
+            </div>
+            {/* Button Group Skeleton */}
+            <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1 gap-1">
+              <div className="w-14 h-[34px] bg-gray-200 dark:bg-gray-700 rounded-md animate-pulse" />
+              <div className="w-[72px] h-[34px] bg-gray-200 dark:bg-gray-700 rounded-md animate-pulse" />
+            </div>
+          </div>
+        </div>
+
+        {/* Skeleton: Setting 3 */}
+        <div className="px-6 py-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+                Quantity of requirements for batch generation
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Number of requirements to generate in batch mode
+              </p>
+            </div>
+            {/* Number Stepper Skeleton */}
+            <div className="flex items-center border border-border-light dark:border-gray-600 rounded-lg overflow-hidden">
+              <div className="px-4 py-2 min-w-[50px] h-9 bg-gray-200 dark:bg-gray-700 animate-pulse" />
+              <div className="flex flex-col border-l border-border-light dark:border-gray-600">
+                <div className="px-2 py-1 h-[18px] bg-gray-200 dark:bg-gray-700 animate-pulse" />
+                <div className="px-2 py-1 h-[18px] bg-gray-200 dark:bg-gray-700 animate-pulse border-t border-border-light dark:border-gray-600" />
+              </div>
+            </div>
+          </div>
         </div>
       </Card>
     );
