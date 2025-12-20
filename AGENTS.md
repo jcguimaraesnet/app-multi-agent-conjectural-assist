@@ -201,6 +201,7 @@ pnpm lint     # Executa ESLint
 - Usar `AppLayout` como wrapper para novas páginas
 - Usar `PageTitle` para títulos de página
 - Componentizar toolbars específicas de domínio
+- **Escrever todos os labels, textos e mensagens da UI em inglês americano (en-US)**
 
 ### ❌ NÃO FAZER
 - Não usar `class components`
@@ -210,6 +211,7 @@ pnpm lint     # Executa ESLint
 - Não usar estilos inline com `style={{}}`
 - Não usar `React.FC<Props>` (preferir função nomeada)
 - Não usar condicionais JS para ícones de tema (usar classes CSS)
+- **Não usar português ou outros idiomas nos textos da interface**
 
 ### 📁 Ao Criar Novos Componentes
 1. Criar arquivo na pasta apropriada (`ui/`, `layout/`, `[domínio]/`)
