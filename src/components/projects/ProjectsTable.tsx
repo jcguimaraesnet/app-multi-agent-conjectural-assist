@@ -1,4 +1,4 @@
-import { Download, FileText, ArrowRight } from 'lucide-react';
+import { Eye, ArrowRight } from 'lucide-react';
 import { Project } from '@/types';
 import Card from '@/components/ui/Card';
 
@@ -36,15 +36,9 @@ export default function ProjectsTable({ projects }: ProjectsTableProps) {
                   <div className="flex items-center justify-center gap-1">
                     <button 
                       className="p-1.5 text-gray-400 hover:text-primary transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
-                      title="Download Project Document"
+                      title="View Project"
                     >
-                      <Download className="w-4 h-4" />
-                    </button>
-                    <button 
-                      className="p-1.5 text-gray-400 hover:text-primary transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
-                      title="Requirements Document"
-                    >
-                      <FileText className="w-4 h-4" />
+                      <Eye className="w-4 h-4" />
                     </button>
                     <button 
                       className="p-1.5 text-gray-400 hover:text-primary transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
