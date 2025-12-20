@@ -2,6 +2,7 @@
 
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
+import PageTitle from '@/components/ui/PageTitle';
 import SettingsPanel from '@/components/settings/SettingsPanel';
 
 export default function SettingsPage() {
@@ -14,9 +15,7 @@ export default function SettingsPage() {
         
         <div className="flex-1 overflow-y-auto px-6 sm:px-8 pt-6 pb-8 bg-background-light dark:bg-background-dark">
           <div className="w-3xl min-w-3xl max-w-3xl mx-auto">
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
-            </div>
+            <PageTitle title="Settings" />
 
             <SettingsPanel />
           </div>
