@@ -1,9 +1,17 @@
 ﻿"use client";
 
 import { LayoutDashboard, FileText, Settings, Bot, ChevronDown, FolderKanban } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 import { AI_MODELS } from '@/constants';
 
 export default function Sidebar() {
+  const pathname = usePathname();
+
+  const isActive = (path: string) => pathname === path;
+
+  const activeClass = "flex items-center gap-3 px-4 py-3 bg-orange-50 dark:bg-orange-900/10 text-gray-900 dark:text-orange-100 rounded-lg border-l-4 border-primary transition-colors";
+  const inactiveClass = "flex items-center gap-3 px-4 py-3 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors group";
+
   return (
     <aside className="w-64 bg-surface-light dark:bg-surface-dark flex flex-col border-r border-border-light dark:border-border-dark flex-shrink-0 transition-colors duration-200">
       <div className="h-16 flex items-center px-6 border-b border-border-light dark:border-border-dark">
@@ -14,19 +22,19 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto no-scrollbar">
-        <a className="flex items-center gap-3 px-4 py-3 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors group" href="#">
-          <LayoutDashboard className="w-5 h-5 group-hover:text-primary transition-colors" />
+        <a className={isActive('/') ? activeClass : inactiveClass} href="/">
+          <LayoutDashboard className={isActive('/') ? "w-5 h-5 text-primary dark:text-orange-400" : "w-5 h-5 group-hover:text-primary transition-colors"} />
           <span className="font-medium">Home</span>
         </a>
-        <a className="flex items-center gap-3 px-4 py-3 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors group" href="#">
-          <FolderKanban className="w-5 h-5 group-hover:text-primary transition-colors" />
+        <a className={isActive('/projects') ? activeClass : inactiveClass} href="/projects">
+          <FolderKanban className={isActive('/projects') ? "w-5 h-5 text-primary dark:text-orange-400" : "w-5 h-5 group-hover:text-primary transition-colors"} />
           <span className="font-medium">Projects</span>
         </a>
-        <a className="flex items-center gap-3 px-4 py-3 bg-orange-50 dark:bg-orange-900/10 text-gray-900 dark:text-orange-100 rounded-lg border-l-4 border-primary transition-colors" href="#">
-          <FileText className="w-5 h-5 text-primary dark:text-orange-400" />
+        <a className={isActive('/requirements') ? activeClass : inactiveClass} href="/requirements">
+          <FileText className={isActive('/requirements') ? "w-5 h-5 text-primary dark:text-orange-400" : "w-5 h-5 group-hover:text-primary transition-colors"} />
           <span className="font-medium">Requirements</span>
         </a>
-        <a className="flex items-center gap-3 px-4 py-3 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors group" href="#">
+        <a className={inactiveClass} href="#">
           <Settings className="w-5 h-5 group-hover:text-primary transition-colors" />
           <span className="font-medium">Settings</span>
         </a>

@@ -1,4 +1,4 @@
-﻿import { Requirement, RequirementType } from '@/types';
+﻿import { Requirement, RequirementType, Project } from '@/types';
 
 export const MOCK_REQUIREMENTS: Requirement[] = [
   {
@@ -64,6 +64,39 @@ export const MOCK_PROJECTS = [
   "Project A",
   "Project B",
   "Project C"
+];
+
+export const MOCK_PROJECTS_LIST: Project[] = [
+  {
+    id: "PRJ-001",
+    title: "E-Commerce Platform",
+    description: "Online shopping platform with payment integration",
+    author: "Sarah Jenkins"
+  },
+  {
+    id: "PRJ-002",
+    title: "Healthcare Management System",
+    description: "Patient records and appointment scheduling",
+    author: "Mike Chen"
+  },
+  {
+    id: "PRJ-003",
+    title: "Banking Mobile App",
+    description: "Digital banking solution for retail customers",
+    author: "Rahul Sharma"
+  },
+  {
+    id: "PRJ-004",
+    title: "Inventory Control System",
+    description: "Warehouse and stock management solution",
+    author: "Alice Johnson"
+  },
+  {
+    id: "PRJ-005",
+    title: "Learning Management Platform",
+    description: "Educational content delivery and tracking",
+    author: "David Ross"
+  }
 ];
 
 export const AI_MODELS = [

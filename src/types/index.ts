@@ -12,6 +12,13 @@ export interface Requirement {
   author: string;
 }
 
+export interface Project {
+  id: string;
+  title: string;
+  description: string;
+  author: string;
+}
+
 export interface User {
   name: string;
   role: string;
