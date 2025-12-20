@@ -34,8 +34,8 @@ export default function Sidebar() {
           <FileText className={isActive('/requirements') ? "w-5 h-5 text-primary dark:text-orange-400" : "w-5 h-5 group-hover:text-primary transition-colors"} />
           <span className="font-medium">Requirements</span>
         </a>
-        <a className={inactiveClass} href="#">
-          <Settings className="w-5 h-5 group-hover:text-primary transition-colors" />
+        <a className={isActive('/settings') ? activeClass : inactiveClass} href="/settings">
+          <Settings className={isActive('/settings') ? "w-5 h-5 text-primary dark:text-orange-400" : "w-5 h-5 group-hover:text-primary transition-colors"} />
           <span className="font-medium">Settings</span>
         </a>
       </nav>
