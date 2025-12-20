@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export default function Header() {
   const { isDarkMode, toggleTheme, mounted } = useTheme();
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
@@ -32,21 +32,14 @@ export default function Header() {
     form.submit();
   };
 
-  // Get first name from user_metadata (immediate) or profile (fallback)
-  const getFirstName = () => {
-    return user?.user_metadata?.first_name || profile?.first_name || null;
-  };
-
-  // Get last name from user_metadata (immediate) or profile (fallback)
-  const getLastName = () => {
-    return user?.user_metadata?.last_name || profile?.last_name || null;
-  };
+  // Get first name from user_metadata
+  const firstName = user?.user_metadata?.first_name || null;
+  
+  // Get last name from user_metadata
+  const lastName = user?.user_metadata?.last_name || null;
 
   // Get user initials
   const getInitials = () => {
-    const firstName = getFirstName();
-    const lastName = getLastName();
-    
     if (firstName && lastName) {
       return `${firstName[0]}${lastName[0]}`.toUpperCase();
     }
@@ -58,17 +51,11 @@ export default function Header() {
 
   // Get display name
   const getDisplayName = () => {
-    const firstName = getFirstName();
-    const lastName = getLastName();
-
     if (firstName && lastName) {
       return `${firstName} ${lastName}`;
     }
     return '';
   };
-
-  // Show profile only when we have user data (name or email)
-  const hasUserData = !!(getFirstName() && getLastName()) || !!user?.email;
 
   return (
     <header className="h-16 bg-surface-light dark:bg-surface-dark border-b border-border-light dark:border-border-dark flex items-center justify-between px-8 flex-shrink-0 transition-colors duration-200">
@@ -102,13 +89,19 @@ export default function Header() {
             className="flex items-center gap-3 pl-4 border-l border-border-light dark:border-border-dark cursor-pointer group"
             onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
           >
-            {/* ${hasUserData ? 'visible' : 'invisible'} */}
-            <div className={`text-right hidden sm:block min-w-[100px]`}>
-              <p className="text-sm font-semibold text-gray-900 dark:text-white leading-none">{getDisplayName()}</p>
+            <div className="text-right hidden sm:block min-w-[100px]">
+              <p 
+                className="text-sm font-semibold text-gray-900 dark:text-white leading-none"
+                suppressHydrationWarning
+              >
+                {getDisplayName()}
+              </p>
             </div>
             <div className="relative">
-              {/* ${hasUserData ? 'visible' : 'invisible'} */}
-              <div className={`w-10 h-10 rounded-full border-2 border-white dark:border-gray-700 shadow-sm bg-primary flex items-center justify-center text-white dark:text-black font-semibold text-sm`}>
+              <div 
+                className="w-10 h-10 rounded-full border-2 border-white dark:border-gray-700 shadow-sm bg-primary flex items-center justify-center text-white dark:text-black font-semibold text-sm"
+                suppressHydrationWarning
+              >
                 {getInitials()}
               </div>
             </div>
