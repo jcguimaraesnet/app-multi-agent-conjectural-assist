@@ -40,11 +40,9 @@ export default function Header({ isDarkMode, toggleTheme }: HeaderProps) {
             <p className="text-sm font-semibold text-gray-900 dark:text-white leading-none">Júlio Guimarães</p>
           </div>
           <div className="relative">
-            <img 
-              alt="User Avatar" 
-              className="w-10 h-10 rounded-full border-2 border-white dark:border-gray-700 shadow-sm object-cover" 
-              src="https://picsum.photos/id/64/200/200" 
-            />
+            <div className="w-10 h-10 rounded-full border-2 border-white dark:border-gray-700 shadow-sm bg-primary flex items-center justify-center text-white dark:text-black font-semibold text-sm">
+              JG
+            </div>
           </div>
         </div>
       </div>

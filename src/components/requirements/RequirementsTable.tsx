@@ -53,20 +53,18 @@ export default function RequirementsTable({ requirements }: RequirementsTablePro
       </div>
       
       {/* Pagination Footer */}
-      <div className="flex items-center justify-between p-3 border-t border-border-light dark:border-border-dark bg-white dark:bg-surface-dark">
-        <button className="flex items-center px-3 py-1.5 border border-border-light dark:border-gray-600 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-            Previous
-        </button>
+      <div className="flex items-center justify-center p-3 border-t border-border-light dark:border-border-dark bg-white dark:bg-surface-dark">
         <div className="flex items-center gap-1.5">
-            <button className="w-7 h-7 flex items-center justify-center rounded-lg bg-black dark:bg-white text-white dark:text-black text-xs font-medium">1</button>
-            <button className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-medium">2</button>
-            <button className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-medium">3</button>
-            <span className="text-gray-400 px-1.5">...</span>
-            <button className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-medium">8</button>
+            <button className="flex items-center px-3 py-2.5 mr-[10px] border border-border-light dark:border-gray-600 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                Previous
+            </button>
+            <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-black dark:bg-white text-white dark:text-black text-xs font-medium">1</button>
+            <button className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-medium">2</button>
+            <button className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-medium">3</button>
+            <button className="flex items-center px-3 py-2.5 ml-[10px] border border-border-light dark:border-gray-600 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                Next
+            </button>
         </div>
-        <button className="flex items-center px-3 py-1.5 border border-border-light dark:border-gray-600 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-            Next
-        </button>
       </div>
     </div>
   );

@@ -38,12 +38,13 @@ export default function HomePage() {
         <Header isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
         
         <div className="flex-1 overflow-y-auto px-6 sm:px-8 pt-6 pb-8 bg-background-light dark:bg-background-dark">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Requirements</h1>
-          </div>
+          <div className="w-5xl min-w-5xl max-w-5xl mx-auto">
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Requirements</h1>
+            </div>
 
-          {/* Toolbar */}
-          <div className="bg-surface-light dark:bg-surface-dark rounded-xl px-4 py-3 shadow-sm mb-4 transition-colors duration-200 flex flex-wrap items-center gap-3 overflow-x-auto">
+            {/* Toolbar */}
+            <div className="bg-surface-light dark:bg-surface-dark rounded-xl px-4 py-3 shadow-sm mb-4 transition-colors duration-200 flex items-center gap-3 overflow-x-auto">
             
             <div className="flex-shrink-0 w-40">
               <label className="sr-only" htmlFor="requirement-type">Requirement Type</label>
@@ -86,13 +87,11 @@ export default function HomePage() {
             
             <button 
               className="text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-[#FDBA74] text-sm font-semibold px-2 py-2 uppercase tracking-wide transition-colors flex-shrink-0"
-              onClick={() => { setFilterType(""); setSearchQuery(""); }}
-            >
+              onClick={() => { setFilterType(""); setSearchQuery(""); }}>
                 Clear
             </button>
 
             <div className="flex-grow"></div>
-
 
             <button className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors flex-shrink-0">
                 Export Requirements
@@ -122,7 +121,7 @@ export default function HomePage() {
           )}
 
           <RequirementsTable requirements={filteredRequirements} />
-          
+          </div>
         </div>
       </main>
     </div>

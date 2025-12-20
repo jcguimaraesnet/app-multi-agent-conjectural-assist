@@ -56,20 +56,6 @@ export const MOCK_REQUIREMENTS: Requirement[] = [
     description: "Detect unusual user behavior",
     type: RequirementType.Conjectural,
     author: "Rahul Sharma"
-  },
-  {
-    id: "REQ-009",
-    title: "Automated Test Suite",
-    description: "Expand coverage to 90%",
-    type: RequirementType.Functional,
-    author: "Sarah Jenkins"
-  },
-  {
-    id: "REQ-010",
-    title: "Cross-platform Mobile App",
-    description: "React Native implementation",
-    type: RequirementType.Conjectural,
-    author: "David Ross"
   }
 ];
 

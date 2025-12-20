@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { LayoutDashboard, FileText, Settings, Bot, ChevronDown } from 'lucide-react';
+import { LayoutDashboard, FileText, Settings, Bot, ChevronDown, FolderKanban } from 'lucide-react';
 import { AI_MODELS } from '@/constants';
 
 export default function Sidebar() {
@@ -18,6 +18,10 @@ export default function Sidebar() {
           <LayoutDashboard className="w-5 h-5 group-hover:text-primary transition-colors" />
           <span className="font-medium">Home</span>
         </a>
+        <a className="flex items-center gap-3 px-4 py-3 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors group" href="#">
+          <FolderKanban className="w-5 h-5 group-hover:text-primary transition-colors" />
+          <span className="font-medium">Projects</span>
+        </a>
         <a className="flex items-center gap-3 px-4 py-3 bg-orange-50 dark:bg-orange-900/10 text-gray-900 dark:text-orange-100 rounded-lg border-l-4 border-primary transition-colors" href="#">
           <FileText className="w-5 h-5 text-primary dark:text-orange-400" />
           <span className="font-medium">Requirements</span>
@@ -26,10 +30,10 @@ export default function Sidebar() {
           <Settings className="w-5 h-5 group-hover:text-primary transition-colors" />
           <span className="font-medium">Settings</span>
         </a>
+      </nav>
 
-        <div className="border-t border-border-light dark:border-border-dark my-4"></div>
-
-        <div className="px-4 pt-2 pb-4">
+      <div className="border-t border-border-light dark:border-border-dark">
+        <div className="px-4 pt-4 pb-4">
           <label className="block text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Model Configuration</label>
           <div className="relative">
             <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
@@ -45,7 +49,7 @@ export default function Sidebar() {
             </span>
           </div>
         </div>
-      </nav>
+      </div>
     </aside>
   );
 }
