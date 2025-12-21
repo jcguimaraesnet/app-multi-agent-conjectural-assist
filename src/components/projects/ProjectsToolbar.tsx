@@ -6,15 +6,15 @@ import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 
 interface ProjectsToolbarProps {
-  searchQuery: string;
-  setSearchQuery: (value: string) => void;
+  searchValue: string;
+  onSearchChange: (value: string) => void;
   onClear: () => void;
   onAdd?: () => void;
 }
 
 export default function ProjectsToolbar({
-  searchQuery,
-  setSearchQuery,
+  searchValue,
+  onSearchChange,
   onClear,
   onAdd,
 }: ProjectsToolbarProps) {
@@ -26,14 +26,10 @@ export default function ProjectsToolbar({
           label="Project Search"
           placeholder="Search by project title..."
           showSearchIcon
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          value={searchValue}
+          onChange={(e) => onSearchChange(e.target.value)}
         />
       </div>
-
-      <Button variant="secondary">
-        Search
-      </Button>
       
       <Button variant="ghost" onClick={onClear}>
         Clear

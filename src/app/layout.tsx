@@ -2,6 +2,7 @@
 import "./globals.css";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ProjectProvider } from "@/contexts/ProjectContext";
 
 export const metadata: Metadata = {
   title: "Conjectural Assist",
@@ -30,7 +31,9 @@ export default function RootLayout({
       <body className="antialiased">
         <ThemeProvider>
           <AuthProvider>
-            {children}
+            <ProjectProvider>
+              {children}
+            </ProjectProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

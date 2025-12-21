@@ -55,10 +55,6 @@ export default function RequirementsToolbar({
           onChange={(e) => setSearchQuery(e.target.value)}
         />
       </div>
-
-      <Button variant="secondary">
-        Search
-      </Button>
       
       <Button variant="ghost" onClick={onClear}>
         Clear

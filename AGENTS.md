@@ -2,9 +2,11 @@
 
 ## Sobre o Projeto
 
-**Conjectural Assist** é uma aplicação web para gerenciamento de requisitos de software, desenvolvida como parte de um projeto acadêmico da UFRJ sobre sistemas multiagentes conjecturais. Migrado para Next.js com App Router.
+**Conjectural Assist** é uma aplicação web para gerenciamento de requisitos de software, desenvolvida como parte de um projeto acadêmico da UFRJ sobre sistemas multiagentes conjecturais. Arquitetura **monorepo** com frontend Next.js e backend Python FastAPI.
 
 ## Stack Tecnológica
+
+### Frontend (Next.js)
 
 | Tecnologia | Versão | Propósito |
 |------------|--------|-----------|
@@ -16,59 +18,90 @@
 | Supabase | ^2.x | Backend as a Service (Auth, Database) |
 | pnpm | - | Gerenciador de pacotes |
 
+### Backend (Python FastAPI)
+
+| Tecnologia | Versão | Propósito |
+|------------|--------|-----------|
+| Python | 3.11+ | Linguagem principal |
+| FastAPI | ≥0.109 | Framework web async |
+| PyPDF2 | ≥3.0 | Extração de texto de PDFs |
+| pdfplumber | ≥0.10 | Extração de tabelas de PDFs |
+| google-genai | ≥1.0 | Google GenAI SDK (Gemini) |
+| supabase-py | ≥2.0 | Cliente Supabase |
+| Pydantic | ≥2.5 | Validação de dados |
+
 ## Estrutura do Projeto
 
 ```
-src/
- app/
-    globals.css            # Estilos globais + config Tailwind v4
-    layout.tsx             # Layout raiz com ThemeProvider e AuthProvider
-    page.tsx               # Página Home
-    auth/
-       actions.ts         # Server actions para autenticação
-       login/page.tsx     # Página de login
-       signup/page.tsx    # Página de cadastro
-       forgot-password/page.tsx # Recuperação de senha
-       confirm/route.ts   # Handler de confirmação de email
-       signout/route.ts   # Handler de logout
-       error/page.tsx     # Página de erro de autenticação
-    projects/
-       page.tsx           # Página de Projetos
-    requirements/
-       page.tsx           # Página de Requisitos
-    settings/
-       page.tsx           # Página de Configurações
- components/
-    layout/
-       AppLayout.tsx      # Layout compartilhado (Sidebar + Header + container)
-       Header.tsx         # Cabeçalho com seletor de projeto, tema e perfil
-       Sidebar.tsx        # Menu lateral de navegação com rotas ativas
-    projects/
-       ProjectsTable.tsx  # Tabela de projetos
-       ProjectsToolbar.tsx # Toolbar de busca e ações de projetos
-    requirements/
-       RequirementsTable.tsx   # Tabela de requisitos
-       RequirementsToolbar.tsx # Toolbar com filtros e busca
-       ActiveFilters.tsx       # Chips de filtros ativos
-    settings/
-       SettingsPanel.tsx  # Painel de configurações
-    ui/
-       Badge.tsx          # Badge para tipos de requisitos
-       PageTitle.tsx      # Título de página reutilizável
- constants/
-    index.ts              # Dados mock e constantes
- contexts/
-    ThemeContext.tsx      # Contexto global para dark mode
-    AuthContext.tsx       # Contexto global para autenticação
- lib/
-    utils.ts              # Funções utilitárias (cn)
-    supabase/
-       client.ts          # Cliente Supabase para browser
-       server.ts          # Cliente Supabase para server components
-       middleware.ts      # Utilitário para middleware de sessão
- middleware.ts            # Next.js middleware para proteção de rotas
- types/
-    index.ts              # Definições de tipos TypeScript
+├── backend/                   # Backend Python FastAPI
+│   ├── main.py               # Entrada da aplicação FastAPI
+│   ├── requirements.txt      # Dependências Python
+│   ├── .env.example          # Exemplo de variáveis de ambiente
+│   └── app/
+│       ├── config.py         # Configurações (env vars)
+│       ├── routers/
+│       │   ├── projects.py   # Endpoints de projetos
+│       │   └── requirements.py # Endpoints de requisitos
+│       ├── services/
+│       │   ├── document_parser.py      # Extração de texto (PyPDF2)
+│       │   ├── requirement_extractor.py # Extração de requisitos (Gemini)
+│       │   └── supabase_client.py      # Cliente Supabase
+│       └── models/
+│           └── schemas.py    # Schemas Pydantic
+├── src/                       # Frontend Next.js
+│   ├── app/
+│       ├── globals.css       # Estilos globais + config Tailwind v4
+│       ├── layout.tsx        # Layout raiz com ThemeProvider e AuthProvider
+│       ├── page.tsx          # Página Home
+│       ├── auth/
+│       │   ├── actions.ts    # Server actions para autenticação
+│       │   ├── login/page.tsx     # Página de login
+│       │   ├── signup/page.tsx    # Página de cadastro
+│       │   ├── forgot-password/page.tsx # Recuperação de senha
+│       │   ├── confirm/route.ts   # Handler de confirmação de email
+│       │   ├── signout/route.ts   # Handler de logout
+│       │   └── error/page.tsx     # Página de erro de autenticação
+│       ├── projects/
+│       │   └── page.tsx      # Página de Projetos
+│       ├── requirements/
+│       │   └── page.tsx      # Página de Requisitos
+│       └── settings/
+│           └── page.tsx      # Página de Configurações
+│   ├── components/
+│       ├── layout/
+│       │   ├── AppLayout.tsx # Layout compartilhado (Sidebar + Header + container)
+│       │   ├── Header.tsx    # Cabeçalho com seletor de projeto, tema e perfil
+│       │   └── Sidebar.tsx   # Menu lateral de navegação com rotas ativas
+│       ├── projects/
+│       │   ├── ProjectsTable.tsx   # Tabela de projetos
+│       │   └── ProjectsToolbar.tsx # Toolbar de busca e ações de projetos
+│       ├── requirements/
+│       │   ├── RequirementsTable.tsx   # Tabela de requisitos
+│       │   ├── RequirementsToolbar.tsx # Toolbar com filtros e busca
+│       │   └── ActiveFilters.tsx       # Chips de filtros ativos
+│       ├── settings/
+│       │   └── SettingsPanel.tsx  # Painel de configurações
+│       └── ui/
+│           ├── Badge.tsx     # Badge para tipos de requisitos
+│           └── PageTitle.tsx # Título de página reutilizável
+│   ├── constants/
+│       └── index.ts          # Dados mock e constantes
+│   ├── contexts/
+│       ├── ThemeContext.tsx  # Contexto global para dark mode
+│       └── AuthContext.tsx   # Contexto global para autenticação
+│   ├── lib/
+│       ├── utils.ts          # Funções utilitárias (cn)
+│       └── supabase/
+│           ├── client.ts     # Cliente Supabase para browser
+│           ├── server.ts     # Cliente Supabase para server components
+│           └── middleware.ts # Utilitário para middleware de sessão
+│   ├── middleware.ts         # Next.js middleware para proteção de rotas
+│   └── types/
+│       └── index.ts          # Definições de tipos TypeScript
+├── public/                    # Arquivos estáticos
+├── package.json               # Dependências e scripts do frontend
+├── pnpm-workspace.yaml        # Configuração do workspace pnpm
+└── AGENTS.md                  # Este arquivo
 ```
 
 ## Padrões de Arquitetura
@@ -165,6 +198,8 @@ interface Project {
 
 ## Scripts Disponíveis
 
+### Frontend (Next.js)
+
 ```bash
 pnpm dev      # Inicia servidor de desenvolvimento (porta 3000)
 pnpm build    # Build para produção
@@ -172,7 +207,27 @@ pnpm start    # Inicia servidor de produção
 pnpm lint     # Executa ESLint
 ```
 
+### Backend (Python FastAPI)
+
+```bash
+cd backend
+
+# Criar e ativar ambiente virtual
+python -m venv venv
+venv\Scripts\activate       # Windows
+source venv/bin/activate    # Linux/Mac
+
+# Instalar dependências
+pip install -r requirements.txt
+
+# Executar servidor
+uvicorn main:app --reload --port 8000    # Desenvolvimento
+python main.py                            # Produção
+```
+
 ## Variáveis de Ambiente
+
+### Frontend (Next.js)
 
 Copie `.env.local.example` para `.env.local` e configure:
 
@@ -180,9 +235,25 @@ Copie `.env.local.example` para `.env.local` e configure:
 # Supabase Configuration (obrigatório)
 NEXT_PUBLIC_SUPABASE_URL=your-project-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
 
-# Optional
+### Backend (Python)
+
+Copie `backend/.env.example` para `backend/.env` e configure:
+
+```bash
+# Supabase Configuration
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_KEY=your-service-role-key
+
+# Gemini API
 GEMINI_API_KEY=your-gemini-api-key
+
+# Server Configuration (optional)
+HOST=0.0.0.0
+PORT=8000
+DEBUG=true
+CORS_ORIGINS=http://localhost:3000
 ```
 
 ## Autenticação (Supabase Auth)
@@ -277,7 +348,8 @@ Para criar um usuário de teste, acesse `/auth/signup` e registre:
 - ⬜ CRUD de projetos no Supabase
 - ⬜ Persistência de configurações
 - ⬜ Upload de documentos (PDF, DOCX, TXT)
-- ⬜ Backend Python com LangGraph para requisitos conjecturais
+- ⬜ Integração frontend ↔ backend para extração de requisitos
+- ⬜ Agentes de IA com LangGraph para requisitos conjecturais
 
 ## Diretrizes para Agentes de IA
 

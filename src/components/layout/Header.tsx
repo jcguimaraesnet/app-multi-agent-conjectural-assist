@@ -1,16 +1,25 @@
 ﻿"use client";
 
 import { useState, useRef, useEffect } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { Folder, ChevronDown, Moon, Sun, LogOut } from 'lucide-react';
-import { MOCK_PROJECTS } from '@/constants';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProject } from '@/contexts/ProjectContext';
 
 export default function Header() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const projectIdFromQuery = searchParams.get('projectId');
+  const isRequirementsPage = pathname === '/requirements';
   const { isDarkMode, toggleTheme, mounted } = useTheme();
   const { user } = useAuth();
+  const { selectedProject, isLoading: isLoadingProjects } = useProject();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
+
+  // Only show project label if we have a projectId in URL and the project is loaded
+  const hasValidProject = isRequirementsPage && projectIdFromQuery && selectedProject;
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -60,19 +69,21 @@ export default function Header() {
   return (
     <header className="h-16 bg-surface-light dark:bg-surface-dark border-b border-border-light dark:border-border-dark flex items-center justify-between px-8 flex-shrink-0 transition-colors duration-200">
       <div className="w-64 sm:w-96">
-        <div className="relative">
-          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-            <Folder className="w-5 h-5" />
-          </span>
-          <select className="w-full py-2 pl-10 pr-4 bg-gray-50 dark:bg-gray-800 border-none rounded-lg text-sm text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary/50 transition-all appearance-none cursor-pointer outline-none">
-            {MOCK_PROJECTS.map((project, idx) => (
-              <option key={project} value={idx === 0 ? "" : project}>{project}</option>
-            ))}
-          </select>
-          <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-500">
-            <ChevronDown className="w-4 h-4" />
-          </span>
-        </div>
+        {hasValidProject ? (
+          <div className="flex items-center gap-3 py-2">
+            <Folder className="w-5 h-5 text-gray-400" />
+            <span className="text-sm font-medium text-gray-900 dark:text-white">
+              {selectedProject.project_id ? `${selectedProject.project_id} - ${selectedProject.title}` : selectedProject.title}
+            </span>
+          </div>
+        ) : isRequirementsPage && projectIdFromQuery && isLoadingProjects ? (
+          <div className="flex items-center gap-3 py-2">
+            <Folder className="w-5 h-5 text-gray-400" />
+            <span className="text-sm text-gray-500 dark:text-gray-400">Loading project...</span>
+          </div>
+        ) : (
+          <div />
+        )}
       </div>
 
       <div className="flex items-center gap-4">
