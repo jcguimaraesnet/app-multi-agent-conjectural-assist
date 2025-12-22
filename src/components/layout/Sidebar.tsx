@@ -2,6 +2,7 @@
 
 import { LayoutDashboard, Settings, Bot, ChevronDown, FolderKanban } from 'lucide-react';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { AI_MODELS } from '@/constants';
 
 export default function Sidebar() {
@@ -22,18 +23,18 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto no-scrollbar">
-        <a className={isActive('/') ? activeClass : inactiveClass} href="/">
+        <Link className={isActive('/') ? activeClass : inactiveClass} href="/">
           <LayoutDashboard className={isActive('/') ? "w-5 h-5 text-primary dark:text-orange-400" : "w-5 h-5 group-hover:text-primary transition-colors"} />
           <span className="font-medium">Home</span>
-        </a>
-        <a className={isActive('/projects') ? activeClass : inactiveClass} href="/projects">
+        </Link>
+        <Link className={isActive('/projects') ? activeClass : inactiveClass} href="/projects">
           <FolderKanban className={isActive('/projects') ? "w-5 h-5 text-primary dark:text-orange-400" : "w-5 h-5 group-hover:text-primary transition-colors"} />
           <span className="font-medium">Projects</span>
-        </a>
-        <a className={isActive('/settings') ? activeClass : inactiveClass} href="/settings">
+        </Link>
+        <Link className={isActive('/settings') ? activeClass : inactiveClass} href="/settings">
           <Settings className={isActive('/settings') ? "w-5 h-5 text-primary dark:text-orange-400" : "w-5 h-5 group-hover:text-primary transition-colors"} />
           <span className="font-medium">Settings</span>
-        </a>
+        </Link>
       </nav>
 
       {pathname === '/requirements' && (

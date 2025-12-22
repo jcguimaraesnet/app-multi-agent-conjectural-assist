@@ -23,7 +23,6 @@ const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 let cachedProjects: Project[] | null = null;
 let cachedUserId: string | null = null;
 let hasFetched = false;
-const STORAGE_KEY_PREFIX = 'projects_cache_v1';
 
 export function ProjectProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -32,23 +31,6 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     // First try in-memory cache for same user
     if (user?.id && user.id === cachedUserId && cachedProjects) {
       return cachedProjects;
-    }
-    // Then try sessionStorage (survives HMR/refresh)
-    if (typeof window !== 'undefined' && user?.id) {
-      const storageKey = `${STORAGE_KEY_PREFIX}:${user.id}`;
-      try {
-        const raw = window.sessionStorage.getItem(storageKey);
-        if (raw) {
-          const parsed = JSON.parse(raw) as Project[];
-          // hydrate in-memory cache for later reads
-          cachedProjects = parsed;
-          cachedUserId = user.id;
-          hasFetched = true;
-          return parsed;
-        }
-      } catch (storageErr) {
-        console.warn('Failed to read projects from sessionStorage during init', storageErr);
-      }
     }
     return [];
   };
@@ -98,14 +80,6 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       cachedUserId = user.id;
       hasFetched = true;
       fetchedForUser.current = user.id;
-
-      // Persist in sessionStorage to survive Fast Refresh and remounts
-      try {
-        const storageKey = `${STORAGE_KEY_PREFIX}:${user.id}`;
-        sessionStorage.setItem(storageKey, JSON.stringify(data));
-      } catch (storageErr) {
-        console.warn('Failed to cache projects in sessionStorage', storageErr);
-      }
       
       setProjects(data);
 
@@ -131,21 +105,8 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Try sessionStorage cache first (survives Fast Refresh)
-    const storageKey = `${STORAGE_KEY_PREFIX}:${user.id}`;
-    let stored: Project[] | null = null;
-    try {
-      const raw = sessionStorage.getItem(storageKey);
-      if (raw) {
-        stored = JSON.parse(raw) as Project[];
-      }
-    } catch (storageErr) {
-      console.warn('Failed to read projects from sessionStorage', storageErr);
-    }
-
     // If we have cached data for this user, use it immediately
-    const inMemoryCache = user.id === cachedUserId ? cachedProjects : null;
-    const cacheToUse = inMemoryCache || stored;
+    const cacheToUse = user.id === cachedUserId ? cachedProjects : null;
 
     if (cacheToUse) {
       cachedProjects = cacheToUse; // hydrate in-memory cache
