@@ -143,7 +143,7 @@ export default function RequirementsPage() {
 
   return (
     <AppLayout>
-      <PageTitle title="Requirements" />
+      <PageTitle title="Requirements" backHref="/projects" backLabel="Back Projects" />
 
       {successMessage && (
         <div className="fixed top-24 right-6 z-50 w-80 rounded-xl bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 p-4 text-sm text-gray-800 dark:text-gray-100">
