@@ -10,6 +10,7 @@ import AddProjectPopup from '@/components/projects/AddProjectPopup';
 import ProjectDetailsModal from '@/components/projects/ProjectDetailsModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProject } from '@/contexts/ProjectContext';
+import { useRequirements } from '@/contexts/RequirementsContext';
 import { Project, ProjectDetails } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -25,6 +26,7 @@ const DEFAULT_REQUIREMENT_COUNTS = {
 export default function ProjectsPage() {
   const { user } = useAuth();
   const { projects, isLoading, error: contextError, refreshProjects } = useProject();
+  const { prefetchRequirements } = useRequirements();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddPopup, setShowAddPopup] = useState(false);
@@ -140,10 +142,21 @@ export default function ProjectsPage() {
     setSuccessMessage(null);
   };
 
-  const handleNavigateToRequirements = useCallback((projectId: string) => {
+  const handleNavigateToRequirements = useCallback(async (projectId: string) => {
+    // Find the project to get author info
+    const project = projects.find(p => p.id === projectId);
+    if (project) {
+      const projectAuthor = [project.author_first_name, project.author_last_name]
+        .filter(Boolean)
+        .join(' ') || project.author || 'Unknown';
+      
+      // Prefetch requirements before navigating
+      await prefetchRequirements(projectId, projectAuthor);
+    }
+    
     router.push(`/requirements?projectId=${projectId}`);
     setIsDetailsOpen(false);
-  }, [router]);
+  }, [router, projects, prefetchRequirements]);
 
   const handleViewProject = useCallback(async (project: Project) => {
     if (!user?.id) return;
