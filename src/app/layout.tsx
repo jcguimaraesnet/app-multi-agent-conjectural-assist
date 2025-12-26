@@ -4,6 +4,8 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProjectProvider } from "@/contexts/ProjectContext";
 import { RequirementsProvider } from "@/contexts/RequirementsContext";
+import { CopilotKit } from "@copilotkit/react-core";
+import "@copilotkit/react-ui/styles.css";
 
 export const metadata: Metadata = {
   title: "Conjectural Assist",
@@ -30,15 +32,17 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="antialiased">
-        <ThemeProvider>
-          <AuthProvider>
-            <ProjectProvider>
-              <RequirementsProvider>
-                {children}
-              </RequirementsProvider>
-            </ProjectProvider>
-          </AuthProvider>
-        </ThemeProvider>
+        <CopilotKit runtimeUrl="/api/copilotkit" agent="sample_agent">
+          <ThemeProvider>
+            <AuthProvider>
+              <ProjectProvider>
+                <RequirementsProvider>
+                  {children}
+                </RequirementsProvider>
+              </ProjectProvider>
+            </AuthProvider>
+          </ThemeProvider>
+        </CopilotKit>
       </body>
     </html>
   );

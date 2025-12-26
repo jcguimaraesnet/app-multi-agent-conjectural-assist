@@ -8,6 +8,7 @@ import RequirementsTable from '@/components/requirements/RequirementsTable';
 import RequirementsToolbar from '@/components/requirements/RequirementsToolbar';
 import { useProject } from '@/contexts/ProjectContext';
 import { useRequirements } from '@/contexts/RequirementsContext';
+import { CopilotSidebar } from "@copilotkit/react-ui";
 
 const PAGE_SIZE = 10;
 const TOAST_DURATION_MS = 5000;
@@ -142,58 +143,73 @@ export default function RequirementsPage() {
   }, [deleteRequirement]);
 
   return (
-    <AppLayout>
-      <PageTitle title="Requirements" backHref="/projects" backLabel="Back Projects" />
+    <CopilotSidebar
+      clickOutsideToClose={false}
+      defaultOpen={true}
+      labels={{
+        title: "Agent AI",
+        initial: "👋 Hi, there! You're chatting with an agent.",
+      }}
+      suggestions={[
+        {
+          title: "Generative UI",
+          message: "Get the weather in San Francisco.",
+        },
+      ]}
+    >
+      <AppLayout>
+        <PageTitle title="Requirements" backHref="/projects" backLabel="Back Projects" />
 
-      {successMessage && (
-        <div className="fixed top-24 right-6 z-50 w-80 rounded-xl bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 p-4 text-sm text-gray-800 dark:text-gray-100">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <div className="font-semibold text-green-600 dark:text-green-400">Success</div>
-              <p className="mt-1 text-gray-600 dark:text-gray-300">{successMessage}</p>
+        {successMessage && (
+          <div className="fixed top-24 right-6 z-50 w-80 rounded-xl bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 p-4 text-sm text-gray-800 dark:text-gray-100">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="font-semibold text-green-600 dark:text-green-400">Success</div>
+                <p className="mt-1 text-gray-600 dark:text-gray-300">{successMessage}</p>
+              </div>
+              <button
+                onClick={handleDismissSuccess}
+                className="text-xs font-medium text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors"
+              >
+                Close
+              </button>
             </div>
-            <button
-              onClick={handleDismissSuccess}
-              className="text-xs font-medium text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors"
-            >
-              Close
-            </button>
+            <div className="mt-3 h-1 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+              <div
+                className="h-full bg-green-500 dark:bg-green-400 transition-[width] duration-100 ease-linear"
+                style={{ width: `${toastProgress}%` }}
+                aria-hidden="true"
+              />
+            </div>
           </div>
-          <div className="mt-3 h-1 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
-            <div
-              className="h-full bg-green-500 dark:bg-green-400 transition-[width] duration-100 ease-linear"
-              style={{ width: `${toastProgress}%` }}
-              aria-hidden="true"
-            />
+        )}
+
+        {!hasValidProjectId && (
+          <div className="mb-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+            <p className="text-sm text-yellow-800 dark:text-yellow-200">
+              No project selected. Please access this page with a valid projectId parameter.
+            </p>
           </div>
-        </div>
-      )}
+        )}
 
-      {!hasValidProjectId && (
-        <div className="mb-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-          <p className="text-sm text-yellow-800 dark:text-yellow-200">
-            No project selected. Please access this page with a valid projectId parameter.
-          </p>
-        </div>
-      )}
+        <RequirementsToolbar
+          filterType={filterType}
+          setFilterType={setFilterType}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          onClear={handleClear}
+        />
 
-      <RequirementsToolbar
-        filterType={filterType}
-        setFilterType={setFilterType}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        onClear={handleClear}
-      />
-
-      <RequirementsTable 
-        requirements={paginatedRequirements}
-        isLoading={isLoading}
-        error={error}
-        onDelete={handleDelete}
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
-      />
-    </AppLayout>
+        <RequirementsTable 
+          requirements={paginatedRequirements}
+          isLoading={isLoading}
+          error={error}
+          onDelete={handleDelete}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
+      </AppLayout>
+    </CopilotSidebar>
   );
 }

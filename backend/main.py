@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.routers import projects, requirements
+from app.routers import projects, requirements, agent
 
 
 # Initialize settings
@@ -36,6 +36,7 @@ app.add_middleware(
 # Include routers
 app.include_router(projects.router, prefix="/api")
 app.include_router(requirements.router, prefix="/api")
+app.include_router(agent.router, prefix="/api")
 
 
 @app.get("/")
