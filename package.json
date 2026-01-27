@@ -14,9 +14,9 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@copilotkit/react-core": "^1.50.1",
-    "@copilotkit/react-ui": "^1.50.1",
-    "@copilotkit/runtime": "^1.50.1",
+    "@copilotkit/react-core": "^1.51.2",
+    "@copilotkit/react-ui": "^1.51.2",
+    "@copilotkit/runtime": "^1.51.2",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.89.0",
     "clsx": "^2.1.1",
