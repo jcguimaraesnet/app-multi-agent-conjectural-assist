@@ -1,187 +1,154 @@
 """
-LangGraph Agent Definition
+LangGraph Agent Definition - Sequential Workflow
 
-A basic ReAct-style agent using LangGraph for the Conjectural Assist application.
-This agent can be extended with custom tools for requirement analysis.
+Workflow for requirement elicitation and validation in Conjectural Assist.
+Nodes run in sequence, each simulating a 1-second task.
+Each node provides feedback messages about its progress.
+
+Flow: elicitation → analysis → specification → validation → END
 """
 
-import os
-from typing import Any, List, Literal
+import asyncio
+from typing import Annotated, Any
 
-from langchain_core.messages import BaseMessage, SystemMessage
-from langchain_core.runnables import RunnableConfig
-from langchain_core.tools import tool
-from langchain_openai import ChatOpenAI
-from langgraph.graph import END, MessagesState, StateGraph
-from langgraph.prebuilt import ToolNode
-from langgraph.checkpoint.memory import MemorySaver
+from langchain_core.messages import AIMessage, BaseMessage
+from langgraph.graph import END, StateGraph
+from langgraph.graph.message import add_messages
+from pydantic import BaseModel, Field
 
 
 # ============================================================================
-# Agent State Definition
+# State Definition
 # ============================================================================
 
-class AgentState(MessagesState):
+class WorkflowState(BaseModel):
     """
-    Extended state for the agent, inheriting from MessagesState.
-    Add custom fields here as needed for your application.
+    Agent state for requirement workflow with chat support.
     """
-    # Example: track extracted requirements
-    requirements: List[str]
-
-
-# ============================================================================
-# Backend Tools
-# ============================================================================
-
-@tool
-def analyze_requirement(text: str) -> str:
-    """
-    Analyze a requirement text and provide feedback on its quality.
-    Returns suggestions for improving the requirement clarity and completeness.
-    """
-    # Simple analysis logic - can be enhanced with more sophisticated NLP
-    issues = []
-    suggestions = []
-    
-    if len(text) < 20:
-        issues.append("Requirement is too short")
-        suggestions.append("Add more detail about the expected behavior")
-    
-    if "should" not in text.lower() and "must" not in text.lower() and "shall" not in text.lower():
-        issues.append("Missing modal verb (should/must/shall)")
-        suggestions.append("Use 'shall' for mandatory requirements, 'should' for recommended ones")
-    
-    if not any(word in text.lower() for word in ["user", "system", "application", "admin"]):
-        issues.append("Missing actor/subject")
-        suggestions.append("Specify who or what performs or receives the action")
-    
-    if issues:
-        return f"Analysis Results:\n- Issues: {', '.join(issues)}\n- Suggestions: {', '.join(suggestions)}"
-    
-    return "The requirement appears to be well-formed. Consider adding acceptance criteria for testability."
-
-
-@tool
-def classify_requirement(text: str) -> str:
-    """
-    Classify a requirement as Functional, Non-Functional, or Conjectural.
-    Returns the classification with a brief explanation.
-    """
-    text_lower = text.lower()
-    
-    # Conjectural indicators (hypothetical, speculative)
-    conjectural_keywords = ["might", "could", "possibly", "potentially", "future", "maybe", "hypothetically"]
-    if any(keyword in text_lower for keyword in conjectural_keywords):
-        return "Classification: CONJECTURAL\nReason: Contains speculative or hypothetical language suggesting this is a potential future requirement."
-    
-    # Non-functional indicators
-    nfr_keywords = ["performance", "security", "scalability", "reliability", "availability", 
-                   "usability", "maintainability", "response time", "throughput", "capacity",
-                   "backup", "recovery", "compliance", "audit", "encryption"]
-    if any(keyword in text_lower for keyword in nfr_keywords):
-        return "Classification: NON-FUNCTIONAL\nReason: Describes quality attributes or constraints rather than specific behaviors."
-    
-    # Default to functional
-    return "Classification: FUNCTIONAL\nReason: Describes specific system behavior or capability that the system should provide."
-
-
-@tool
-def suggest_acceptance_criteria(requirement: str) -> str:
-    """
-    Generate acceptance criteria suggestions for a given requirement.
-    Returns a list of testable criteria that can be used to verify the requirement.
-    """
-    return f"""Suggested Acceptance Criteria for: "{requirement[:50]}..."
-
-1. GIVEN the system is in its initial state
-   WHEN the described action is performed
-   THEN the expected outcome should occur
-
-2. GIVEN invalid input is provided
-   WHEN the action is attempted
-   THEN appropriate error handling should occur
-
-3. GIVEN the action is performed successfully
-   WHEN the result is verified
-   THEN all data should be persisted correctly
-
-Note: Customize these criteria based on the specific requirement context."""
-
-
-# Collect all backend tools
-backend_tools = [analyze_requirement, classify_requirement, suggest_acceptance_criteria]
-backend_tool_names = [t.name for t in backend_tools]
+    messages: Annotated[list[BaseMessage], add_messages] = Field(default_factory=list, description="Chat message history")
+    project_id: str = Field(default="", description="Project identifier")
+    document_content: str = Field(default="", description="Raw document content")
+    elicited_requirements: list[str] = Field(default_factory=list, description="Requirements from elicitation")
+    analyzed_requirements: list[dict[str, Any]] = Field(default_factory=list, description="Analyzed requirement details")
+    specification: dict[str, Any] = Field(default_factory=dict, description="Final specification output")
+    validation_result: dict[str, Any] = Field(default_factory=dict, description="Validation results")
+    workflow_status: str = Field(default="pending", description="Current workflow status")
 
 
 # ============================================================================
-# Agent Nodes
+# Node Implementations
 # ============================================================================
 
-def route_to_tool_node(response: BaseMessage) -> bool:
+async def elicitation_node(state: WorkflowState) -> dict[str, Any]:
     """
-    Determine if the response should be routed to the tool node.
+    Extract requirements from input document.
     """
-    tool_calls = getattr(response, "tool_calls", None)
-    if not tool_calls:
-        return False
-    return any(tc.get("name") in backend_tool_names for tc in tool_calls)
+    print("Elicitation node started.")
+    
+    await asyncio.sleep(1)
+    
+    # Simulate requirement extraction
+    requirements = [
+        "System shall authenticate users with email and password",
+        "System shall support dark mode theme",
+        "System shall export requirements as PDF"
+    ]
+    
+    feedback = AIMessage(content=f"🔍 **Elicitation Complete**\n\nExtracted {len(requirements)} requirements from the document:\n" + 
+                         "\n".join(f"- {req}" for req in requirements))
+    
+    return {
+        "messages": [feedback],
+        "elicited_requirements": requirements,
+        "workflow_status": "elicited"
+    }
 
 
-async def chat_node(state: AgentState, config: RunnableConfig):
+async def analysis_node(state: WorkflowState) -> dict[str, Any]:
     """
-    Main chat node that processes messages and decides whether to use tools.
-    Uses the ReAct pattern for tool orchestration.
+    Analyze and classify requirements.
     """
-    # Initialize the model - uses OPENAI_API_KEY from environment
-    model = ChatOpenAI(
-        model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
-        temperature=0.7,
+    await asyncio.sleep(1)
+    
+    # Simulate requirement analysis
+    analyzed = [
+        {"id": 1, "text": state.elicited_requirements[0] if state.elicited_requirements else "", "type": "Functional", "quality_score": 0.85},
+        {"id": 2, "text": state.elicited_requirements[1] if len(state.elicited_requirements) > 1 else "", "type": "Non-Functional", "quality_score": 0.75},
+        {"id": 3, "text": state.elicited_requirements[2] if len(state.elicited_requirements) > 2 else "", "type": "Functional", "quality_score": 0.90}
+    ]
+    
+    analysis_summary = "\n".join(
+        f"- **REQ-{r['id']}**: {r['type']} (Quality: {r['quality_score']:.0%})" 
+        for r in analyzed
     )
+    feedback = AIMessage(content=f"📊 **Analysis Complete**\n\nClassified {len(analyzed)} requirements:\n{analysis_summary}")
     
-    # Bind tools to the model
-    model_with_tools = model.bind_tools(
-        backend_tools,
-        parallel_tool_calls=False,
-    )
-    
-    # System message defining agent behavior
-    system_message = SystemMessage(
-        content="""You are an AI assistant specialized in software requirements engineering for the Conjectural Assist application.
-
-Your capabilities include:
-1. Analyzing requirements for quality and completeness
-2. Classifying requirements as Functional, Non-Functional, or Conjectural
-3. Suggesting acceptance criteria for requirements
-4. Helping users improve their requirement specifications
-
-When a user asks about requirements, use your tools to provide detailed analysis.
-Be helpful, precise, and provide actionable feedback.
-
-Context: This is part of a research project on multi-agent conjectural systems for requirement elicitation at UFRJ."""
-    )
-    
-    # Invoke the model
-    response = await model_with_tools.ainvoke(
-        [system_message, *state["messages"]],
-        config,
-    )
-    
-    # Route based on whether tools were called
-    if route_to_tool_node(response):
-        return {"messages": [response], "next": "tool_node"}
-    
-    return {"messages": [response]}
+    return {
+        "messages": [feedback],
+        "analyzed_requirements": analyzed,
+        "workflow_status": "analyzed"
+    }
 
 
-def should_continue(state: AgentState) -> Literal["tool_node", "end"]:
+async def specification_node(state: WorkflowState) -> dict[str, Any]:
     """
-    Determine the next node based on the last message.
+    Generate formal specification from analyzed requirements.
     """
-    last_message = state["messages"][-1]
-    if route_to_tool_node(last_message):
-        return "tool_node"
-    return "end"
+    await asyncio.sleep(1)
+    
+    analyzed = state.analyzed_requirements
+    specification = {
+        "project_id": state.project_id or "default_project",
+        "total_requirements": len(analyzed),
+        "functional_count": sum(1 for r in analyzed if r["type"] == "Functional"),
+        "non_functional_count": sum(1 for r in analyzed if r["type"] == "Non-Functional"),
+        "average_quality_score": sum(r["quality_score"] for r in analyzed) / len(analyzed) if analyzed else 0,
+        "status": "draft"
+    }
+    
+    feedback = AIMessage(content=f"📝 **Specification Generated**\n\n"
+                         f"- Total Requirements: {specification['total_requirements']}\n"
+                         f"- Functional: {specification['functional_count']}\n"
+                         f"- Non-Functional: {specification['non_functional_count']}\n"
+                         f"- Average Quality Score: {specification['average_quality_score']:.0%}\n"
+                         f"- Status: {specification['status']}")
+    
+    return {
+        "messages": [feedback],
+        "specification": specification,
+        "workflow_status": "specified"
+    }
+
+
+async def validation_node(state: WorkflowState) -> dict[str, Any]:
+    """
+    Validate final specification against quality criteria.
+    """
+    await asyncio.sleep(1)
+    
+    validation_result = {
+        "is_valid": True,
+        "quality_checks": {
+            "completeness": True,
+            "clarity": True,
+            "testability": True
+        },
+        "status": "completed"
+    }
+    
+    checks = validation_result["quality_checks"]
+    feedback = AIMessage(content=f"✅ **Validation Complete**\n\n"
+                         f"Quality Checks:\n"
+                         f"- Completeness: {'✓' if checks['completeness'] else '✗'}\n"
+                         f"- Clarity: {'✓' if checks['clarity'] else '✗'}\n"
+                         f"- Testability: {'✓' if checks['testability'] else '✗'}\n\n"
+                         f"**Result: {'PASSED' if validation_result['is_valid'] else 'FAILED'}**")
+    
+    return {
+        "messages": [feedback],
+        "validation_result": validation_result,
+        "workflow_status": "validated"
+    }
 
 
 # ============================================================================
@@ -190,33 +157,25 @@ def should_continue(state: AgentState) -> Literal["tool_node", "end"]:
 
 def create_graph():
     """
-    Create and compile the LangGraph agent.
+    Create and compile the sequential workflow graph.
     """
-    # Initialize checkpointer for conversation memory
-    checkpointer = MemorySaver()
-    
-    # Build the workflow graph
-    workflow = StateGraph(AgentState)
+    workflow = StateGraph(WorkflowState)
     
     # Add nodes
-    workflow.add_node("chat_node", chat_node)
-    workflow.add_node("tool_node", ToolNode(tools=backend_tools))
+    workflow.add_node("elicitation_node", elicitation_node)
+    workflow.add_node("analysis_node", analysis_node)
+    workflow.add_node("specification_node", specification_node)
+    workflow.add_node("validation_node", validation_node)
     
     # Set entry point
-    workflow.set_entry_point("chat_node")
+    workflow.set_entry_point("elicitation_node")
     
-    # Add edges
-    workflow.add_conditional_edges(
-        "chat_node",
-        should_continue,
-        {
-            "tool_node": "tool_node",
-            "end": END,
-        }
-    )
-    workflow.add_edge("tool_node", "chat_node")
+    # Connect nodes in sequence
+    workflow.add_edge("elicitation_node", "analysis_node")
+    workflow.add_edge("analysis_node", "specification_node")
+    workflow.add_edge("specification_node", "validation_node")
+    workflow.add_edge("validation_node", END)
     
-    # Compile the graph
     return workflow.compile()
 
 
