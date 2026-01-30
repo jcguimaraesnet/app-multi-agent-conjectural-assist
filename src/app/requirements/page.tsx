@@ -152,8 +152,8 @@ export default function RequirementsPage() {
       }}
       suggestions={[
         {
-          title: "Generative UI",
-          message: "Get the weather in San Francisco.",
+          title: "Generate conjectural requirements",
+          message: "Generate conjectural requirements for the current project.",
         },
       ]}
     >
