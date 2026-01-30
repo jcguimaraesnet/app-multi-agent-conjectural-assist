@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\" \"npm run dev:agent\" --names front,back,agent --prefix-colors blue,green,yellow --kill-others",
-    "dev:backend": "cd backend && uv run uvicorn main:app --reload --port 8000",
+    "dev:backend": "cd backend && uv run python -m uvicorn main:app --reload --port 8000",
     "dev:frontend": "next dev --webpack",
     "dev:original": "next dev --webpack",
     "dev:turbo": "next dev --turbopack",
