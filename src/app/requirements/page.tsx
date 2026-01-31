@@ -9,11 +9,32 @@ import RequirementsToolbar from '@/components/requirements/RequirementsToolbar';
 import { useProject } from '@/contexts/ProjectContext';
 import { useRequirements } from '@/contexts/RequirementsContext';
 import { CopilotSidebar } from "@copilotkit/react-ui";
+import { useAgent } from "@copilotkit/react-core/v2";
+import { useCoAgent, useCoAgentStateRender, useLangGraphInterrupt } from "@copilotkit/react-core";
+import StepProgress from '@/components/requirements/StepProgress';
+import Spinner from "@/components/ui/Spinner";
 
 const PAGE_SIZE = 10;
 const TOAST_DURATION_MS = 5000;
 
+interface AgentState {
+  step1_elicitation: boolean;
+  step2_analysis: boolean;
+  step3_specification: boolean;
+  step4_validation: boolean;
+}
+
 export default function RequirementsPage() {
+
+  const { agent } = useAgent({agentId: "sample_agent"});
+
+  const { state, nodeName, running } = useCoAgent<AgentState>({
+    name: "sample_agent",
+    config: {
+      streamSubgraphs: true,
+    }
+  });
+
   const { selectedProject, selectProjectById, projects, isLoading: isLoadingProjects } = useProject();
   const { 
     requirements, 
@@ -142,6 +163,20 @@ export default function RequirementsPage() {
     }
   }, [deleteRequirement]);
 
+  useCoAgentStateRender<AgentState>({
+    name: "sample_agent",
+    render: ({ state }) => (
+      <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+        <ul className="list-disc list-inside">
+          <li>Elicitation Step: {state.step1_elicitation ? "✅ Completed" : <Spinner size="sm" />}</li>
+          <li>Analysis Step: {state.step2_analysis ? "✅ Completed" : <Spinner size="sm" />}</li>
+          <li>Specification Step: {state.step3_specification ? "✅ Completed" : <Spinner size="sm" />}</li>
+          <li>Validation Step: {state.step4_validation ? "✅ Completed" : <Spinner size="sm" />}</li>
+        </ul>
+      </div>
+    ),
+  });
+
   return (
     <CopilotSidebar
       clickOutsideToClose={false}
@@ -158,6 +193,7 @@ export default function RequirementsPage() {
       ]}
     >
       <AppLayout>
+        <span>Running: {running}</span>
         <PageTitle title="Requirements" backHref="/projects" backLabel="Back Projects" />
 
         {successMessage && (
