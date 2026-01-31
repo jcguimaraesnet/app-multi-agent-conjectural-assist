@@ -12,6 +12,7 @@ import { CopilotSidebar } from "@copilotkit/react-ui";
 import { useAgent } from "@copilotkit/react-core/v2";
 import { useCoAgent, useCoAgentStateRender, useLangGraphInterrupt } from "@copilotkit/react-core";
 import StepProgress from '@/components/requirements/StepProgress';
+import InterruptForm from '@/components/requirements/InterruptForm';
 import Spinner from "@/components/ui/Spinner";
 
 const PAGE_SIZE = 10;
@@ -162,6 +163,18 @@ export default function RequirementsPage() {
       alert('Failed to delete requirement');
     }
   }, [deleteRequirement]);
+
+  const quantityBriefRequirementGenerateBatch: number = 5;
+  useLangGraphInterrupt({
+      render: ({ event, resolve }) => (
+          <InterruptForm
+            question={event.value as string}
+            inputCount={quantityBriefRequirementGenerateBatch}
+            onSubmit={resolve}
+          />
+      )
+  });
+
 
   useCoAgentStateRender<AgentState>({
     name: "sample_agent",

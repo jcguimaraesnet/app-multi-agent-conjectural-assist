@@ -26,6 +26,7 @@ from copilotkit.langgraph import copilotkit_emit_state
 from langchain_core.callbacks.manager import adispatch_custom_event
 from langchain_openai import ChatOpenAI
 from langchain_core.tools import tool
+from langgraph.types import interrupt
 
 
 class Step(BaseModel):
@@ -94,10 +95,10 @@ async def start_node(state: WorkflowState, config: RunnableConfig): # pylint: di
     if "steps" not in state:
         state["steps"] = []
 
-    # if not state.get("agent_name"):
-    #     # Interrupt and wait for the user to respond with a name
-    #     state["agent_name"] = interrupt("Before we start, what would you like to call me?")
-    #     print(f"Agent name set to: {state['agent_name']}")
+    if not state.get("agent_name"):
+        # Interrupt and wait for the user to respond with a name
+        state["brief_description"] = interrupt("Before we start, provide a brief description of requirements?")
+        print(f"brief description : {state['brief_description']}")
 
     return Command(
         goto="elicitation_node",
