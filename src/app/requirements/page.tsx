@@ -166,14 +166,7 @@ export default function RequirementsPage() {
   useCoAgentStateRender<AgentState>({
     name: "sample_agent",
     render: ({ state }) => (
-      <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-        <ul className="list-disc list-inside">
-          <li>Elicitation Step: {state.step1_elicitation ? "✅ Completed" : <Spinner size="sm" />}</li>
-          <li>Analysis Step: {state.step2_analysis ? "✅ Completed" : <Spinner size="sm" />}</li>
-          <li>Specification Step: {state.step3_specification ? "✅ Completed" : <Spinner size="sm" />}</li>
-          <li>Validation Step: {state.step4_validation ? "✅ Completed" : <Spinner size="sm" />}</li>
-        </ul>
-      </div>
+      <StepProgress state={state} />
     ),
   });
 
