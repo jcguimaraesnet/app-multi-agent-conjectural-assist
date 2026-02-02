@@ -75,7 +75,12 @@ class WorkflowState(CopilotKitState):
     """
     # messages: Annotated[list[BaseMessage], add_messages] = Field(default_factory=list, description="Chat message history")
     tools: List[Any]
-    project_id: str = Field(default="", description="Project identifier")
+    project_id: str = Field(default="", description="Project identifier")    
+    json_input: str = Field(default="", description="JSON input from user")
+    require_brief_description: str = Field(default="", description="Brief description of requirements")
+    batch_mode: bool = Field(default=False, description="Whether to generate requirements in batch mode")
+    quantity_req_batch: int = Field(default=5, description="Number of requirements to generate in batch mode")
+    
     # document_content: str = Field(default="", description="Raw document content")
     # elicited_requirements: list[str] = Field(default_factory=list, description="Requirements from elicitation")
     # analyzed_requirements: list[dict[str, Any]] = Field(default_factory=list, description="Analyzed requirement details")
@@ -92,10 +97,10 @@ async def start_node(state: WorkflowState, config: RunnableConfig): # pylint: di
     This is the entry point for the flow.
     """
 
-    # print(f"Starting workflow for project: {state['project_id']}")
-
-    if "steps" not in state:
-        state["steps"] = []
+    print(f"Project ID: {state.get('project_id', None)}")
+    print(f"Require Brief Description: {state.get('require_brief_description', None)}")
+    print(f"Batch Mode: {state.get('batch_mode', None)}")
+    print(f"Quantity Req Batch: {state.get('quantity_req_batch', None)}")
 
     if not state.get("agent_name"):
         # Interrupt and wait for the user to respond with a name
@@ -106,7 +111,6 @@ async def start_node(state: WorkflowState, config: RunnableConfig): # pylint: di
         goto="elicitation_node",
         update={
             "messages": state["messages"],
-            "steps": state["steps"],
             "step1_elicitation": False,
             "step2_analysis": False,
             "step3_specification": False,

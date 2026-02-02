@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProjectProvider } from "@/contexts/ProjectContext";
 import { RequirementsProvider } from "@/contexts/RequirementsContext";
+import { SettingsProvider } from "@/contexts/SettingsContext";
 import { CopilotKit } from "@copilotkit/react-core";
 import "@copilotkit/react-ui/styles.css";
 
@@ -37,7 +38,9 @@ export default function RootLayout({
             <AuthProvider>
               <ProjectProvider>
                 <RequirementsProvider>
-                  {children}
+                  <SettingsProvider>
+                    {children}
+                  </SettingsProvider>
                 </RequirementsProvider>
               </ProjectProvider>
             </AuthProvider>

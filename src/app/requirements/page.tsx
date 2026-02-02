@@ -8,6 +8,7 @@ import RequirementsTable from '@/components/requirements/RequirementsTable';
 import RequirementsToolbar from '@/components/requirements/RequirementsToolbar';
 import { useProject } from '@/contexts/ProjectContext';
 import { useRequirements } from '@/contexts/RequirementsContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { CopilotSidebar } from "@copilotkit/react-ui";
 import { useAgent } from "@copilotkit/react-core/v2";
 import { useCoAgent, useCoAgentStateRender, useLangGraphInterrupt } from "@copilotkit/react-core";
@@ -36,6 +37,8 @@ export default function RequirementsPage() {
     fetchRequirements, 
     deleteRequirement 
   } = useRequirements();
+  const { settings } = useSettings();
+  
   const selectedProjectIdRef = useRef<string | undefined>(selectedProject?.id);
   useEffect(() => {
     selectedProjectIdRef.current = selectedProject?.id;
@@ -190,14 +193,27 @@ export default function RequirementsPage() {
   //   }
   // });
   
-  const quantityBriefRequirementGenerateBatch: number = 5;
+  const { agent } = useAgent({agentId: "sample_agent"});
+
+  // useEffect(() => {
+  //   console.log("Updating agent state with project_id and settings:", selectedProjectIdRef.current, settings);
+    
+  //   agent.setState({
+  //     ...agent.state,
+  //     project_id: selectedProject?.id || "",
+  //     require_brief_description: settings.require_brief_description,
+  //     batch_mode: settings.batch_mode,
+  //     quantity_req_batch: settings.quantity_req_batch,
+  //   });
+  // }, [agent, settings, selectedProject?.id, settings.require_brief_description, settings.batch_mode, settings.quantity_req_batch]);
+
   useLangGraphInterrupt({
       render: ({ event, resolve }) => (
           console.log("Interrupt event received:", selectedProjectIdRef.current),
           <InterruptForm
             projectId={selectedProjectIdRef.current as string}
             question={event.value as string}
-            inputCount={quantityBriefRequirementGenerateBatch}
+            inputCount={settings.quantity_req_batch}
             onSubmit={resolve}
           />
       )
