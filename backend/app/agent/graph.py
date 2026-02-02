@@ -75,11 +75,13 @@ class WorkflowState(CopilotKitState):
     """
     # messages: Annotated[list[BaseMessage], add_messages] = Field(default_factory=list, description="Chat message history")
     tools: List[Any]
+
+    user_id: str = Field(default="", description="User identifier")
     project_id: str = Field(default="", description="Project identifier")    
-    json_input: str = Field(default="", description="JSON input from user")
     require_brief_description: str = Field(default="", description="Brief description of requirements")
     batch_mode: bool = Field(default=False, description="Whether to generate requirements in batch mode")
     quantity_req_batch: int = Field(default=5, description="Number of requirements to generate in batch mode")
+    json_brief_description: str = Field(default="", description="JSON brief description input from user")
     
     # document_content: str = Field(default="", description="Raw document content")
     # elicited_requirements: list[str] = Field(default_factory=list, description="Requirements from elicitation")
@@ -97,15 +99,13 @@ async def start_node(state: WorkflowState, config: RunnableConfig): # pylint: di
     This is the entry point for the flow.
     """
 
+    print("Start node initialized.")
+    print(f"User ID: {state.get('user_id', None)}")
     print(f"Project ID: {state.get('project_id', None)}")
     print(f"Require Brief Description: {state.get('require_brief_description', None)}")
     print(f"Batch Mode: {state.get('batch_mode', None)}")
     print(f"Quantity Req Batch: {state.get('quantity_req_batch', None)}")
 
-    if not state.get("agent_name"):
-        # Interrupt and wait for the user to respond with a name
-        state["json_input"] = interrupt("Before we start, provide a brief description of requirements?")
-        print(f"json input : {state['json_input']}")
 
     return Command(
         goto="elicitation_node",
@@ -135,6 +135,18 @@ async def elicitation_node(state: WorkflowState, config: Optional[RunnableConfig
     Just give a very brief summary (one sentence) of what you did with some emojis. 
     Always say you actually did the steps, not merely generated them.
     """
+
+    print("Elicitation node initialized.")
+    print(f"User ID: {state.get('user_id', None)}")
+    print(f"Project ID: {state.get('project_id', None)}")
+    print(f"Require Brief Description: {state.get('require_brief_description', None)}")
+    print(f"Batch Mode: {state.get('batch_mode', None)}")
+    print(f"Quantity Req Batch: {state.get('quantity_req_batch', None)}")
+
+    if not state.get("require_brief_description"):
+        # Interrupt and wait for the user to respond with a name
+        state["json_brief_description"] = interrupt("Before we start, provide a brief description of requirements?")
+        print(f"json brief description: {state['json_brief_description']}")
 
     # 1. Define the model
     model = ChatOpenAI(model="gpt-4o")

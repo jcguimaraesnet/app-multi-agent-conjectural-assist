@@ -179,10 +179,10 @@ export default function RequirementsPage() {
   const { agent } = useAgent({ agentId: "sample_agent" });
   
   useEffect(() => {
-    console.log("Setting agent userId to:", user?.id || "");
+    console.log("USER ID:", user?.id || "");
     agent.setState({
       ...agent.state,
-      userId: user?.id || "",
+      user_id: user?.id || "",
     });
   }, []);
 
@@ -192,7 +192,7 @@ export default function RequirementsPage() {
   
 
   // Agent state sync
-  // const { agent } = useAgent({ agentId: "sample_agent" });
+  //const { agent } = useAgent({ agentId: "sample_agent" });
 
   // // Track previous values to avoid unnecessary state updates
   // const prevAgentStateRef = useRef<{
@@ -242,6 +242,20 @@ export default function RequirementsPage() {
   //     streamSubgraphs: true,
   //   }
   // });
+
+  useEffect(() => {
+    const { unsubscribe } = agent.subscribe({
+      onRunStartedEvent: () => {
+        console.log("Agent Started ", user?.id || "");
+        agent.setState({
+          ...agent.state,
+          user_id: user?.id || "",
+        });
+      } ,
+      onRunFinalized: () => console.log("Agent Finished"),
+    });
+    return unsubscribe;
+  }, []);
   
   useLangGraphInterrupt({
       render: ({ event, resolve }) => (
@@ -251,7 +265,7 @@ export default function RequirementsPage() {
             userId={user?.id as string}
             projectId={selectedProjectIdRef.current as string}
             question={event.value as string}
-            inputCount={2}
+            inputCount={quantityReqBatchRef.current as number}
             onSubmit={resolve}
           />
       )
@@ -279,6 +293,13 @@ export default function RequirementsPage() {
           message: "Generate conjectural requirements for the current project.",
         },
       ]}
+      onSubmitMessage={(message) => {
+        console.log("User message submitted to agent:", message);
+        agent.setState({
+          ...agent.state,
+          user_id: user?.id || "",
+        });
+      }}
     >
       <AppLayout>
         <PageTitle title="Requirements" backHref="/projects" backLabel="Back Projects" />

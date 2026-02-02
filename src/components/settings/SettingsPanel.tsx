@@ -1,79 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import Toggle from '@/components/ui/Toggle';
-import { createClient } from '@/lib/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-
-interface Settings {
-  require_brief_description: boolean;
-  batch_mode: boolean;
-  quantity_req_batch: number;
-}
-
-const defaultSettings: Settings = {
-  require_brief_description: true,
-  batch_mode: true,
-  quantity_req_batch: 5,
-};
+import { useSettings } from '@/contexts/SettingsContext';
 
 export default function SettingsPanel() {
-  const { user } = useAuth();
-  const [settings, setSettings] = useState<Settings>(defaultSettings);
-  const [isLoading, setIsLoading] = useState(true);
-  const [supabase] = useState(() => createClient());
-
-  // Load settings from Supabase
-  useEffect(() => {
-    async function loadSettings() {
-      if (!user) return;
-      
-      const { data, error } = await supabase
-        .from('settings')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error loading settings:', error);
-      } else if (data) {
-        setSettings({
-          require_brief_description: data.require_brief_description,
-          batch_mode: data.batch_mode,
-          quantity_req_batch: data.quantity_req_batch,
-        });
-      }
-      setIsLoading(false);
-    }
-
-    loadSettings();
-  }, [user, supabase]);
-
-  // Save settings to Supabase
-  const saveSettings = useCallback(async (newSettings: Settings) => {
-    if (!user) return;
-
-    const { error } = await supabase
-      .from('settings')
-      .upsert({
-        user_id: user.id,
-        ...newSettings,
-      }, {
-        onConflict: 'user_id',
-      });
-
-    if (error) {
-      console.error('Error saving settings:', error);
-    }
-  }, [user, supabase]);
-
-  const updateSetting = <K extends keyof Settings>(key: K, value: Settings[K]) => {
-    const newSettings = { ...settings, [key]: value };
-    setSettings(newSettings);
-    saveSettings(newSettings);
-  };
+  const { settings, isLoading, updateSetting } = useSettings();
 
   const incrementQuantity = () => {
     const newValue = Math.min(settings.quantity_req_batch + 1, 50);

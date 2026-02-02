@@ -32,7 +32,7 @@ let cachedSettings: UserSettings | null = null;
 let cachedUserId: string | null = null;
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const [supabase] = useState(() => createClient());
 
   // Check if we have cached settings for this user
@@ -41,8 +41,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<UserSettings>(
     hasCachedSettings ? cachedSettings! : defaultSettings
   );
-  // Only show loading if we don't have cached settings
-  const [isLoading, setIsLoading] = useState(!hasCachedSettings);
+  // Only show loading if we don't have cached settings or auth is still loading
+  const [isLoading, setIsLoading] = useState(isAuthLoading || !hasCachedSettings);
   const [error, setError] = useState<string | null>(null);
 
   // Track if we've already fetched for this user
@@ -51,8 +51,16 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   );
 
   const fetchSettings = useCallback(async (forceRefresh = false) => {
+    if (isAuthLoading) {
+      setIsLoading(true);
+      return;
+    }
+
     if (!user?.id) {
       setSettings(defaultSettings);
+      cachedSettings = null;
+      cachedUserId = null;
+      fetchedForUser.current = null;
       setIsLoading(false);
       return;
     }
@@ -101,7 +109,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id, supabase]);
+  }, [user?.id, isAuthLoading, supabase]);
 
   // Fetch settings when user changes
   useEffect(() => {
@@ -113,21 +121,34 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     if (!user?.id) return;
 
     try {
-      const { error: saveError } = await supabase
+      const { data, error: saveError } = await supabase
         .from('settings')
         .upsert({
           user_id: user.id,
           ...newSettings,
         }, {
           onConflict: 'user_id',
-        });
+        })
+        .select('*')
+        .single();
 
       if (saveError) {
         throw saveError;
       }
 
-      // Update cache
-      cachedSettings = newSettings;
+      const persistedSettings: UserSettings = data
+        ? {
+            require_brief_description: data.require_brief_description,
+            batch_mode: data.batch_mode,
+            quantity_req_batch: data.quantity_req_batch,
+          }
+        : newSettings;
+
+      // Update cache and state from source of truth
+      cachedSettings = persistedSettings;
+      cachedUserId = user.id;
+      fetchedForUser.current = user.id;
+      setSettings(persistedSettings);
     } catch (err) {
       console.error('Error saving settings:', err);
       setError('Failed to save settings');
@@ -137,12 +158,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const updateSetting = useCallback(<K extends keyof UserSettings>(key: K, value: UserSettings[K]) => {
     const newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
+    cachedSettings = newSettings;
     saveSettings(newSettings);
   }, [settings, saveSettings]);
 
   const updateSettings = useCallback((newSettings: Partial<UserSettings>) => {
     const mergedSettings = { ...settings, ...newSettings };
     setSettings(mergedSettings);
+    cachedSettings = mergedSettings;
     saveSettings(mergedSettings);
   }, [settings, saveSettings]);
 
