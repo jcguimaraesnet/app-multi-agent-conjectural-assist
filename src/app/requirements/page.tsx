@@ -15,6 +15,7 @@ import { useCoAgent, useCoAgentStateRender, useLangGraphInterrupt } from "@copil
 import StepProgress from '@/components/requirements/StepProgress';
 import InterruptForm from '@/components/requirements/InterruptForm';
 import Spinner from "@/components/ui/Spinner";
+import { useAuth } from '@/contexts/AuthContext';
 
 const PAGE_SIZE = 10;
 const TOAST_DURATION_MS = 5000;
@@ -25,6 +26,7 @@ interface AgentState {
   step3_specification: boolean;
   step4_validation: boolean;
 }
+
 
 export default function RequirementsPage() {
 
@@ -37,12 +39,21 @@ export default function RequirementsPage() {
     fetchRequirements, 
     deleteRequirement 
   } = useRequirements();
-  const { settings } = useSettings();
-  
   const selectedProjectIdRef = useRef<string | undefined>(selectedProject?.id);
+
+  const { settings } = useSettings();
+  const requiredBriefDescriptionRef = useRef<boolean>(settings.require_brief_description);
+  const batchModeRef = useRef<boolean>(settings.batch_mode);
+  const quantityReqBatchRef = useRef<number>(settings.quantity_req_batch);
+
+
   useEffect(() => {
     selectedProjectIdRef.current = selectedProject?.id;
-  }, [selectedProject?.id]);
+    requiredBriefDescriptionRef.current = settings.require_brief_description;
+    batchModeRef.current = settings.batch_mode;
+    quantityReqBatchRef.current = settings.quantity_req_batch;
+  }, [selectedProject?.id, settings.require_brief_description, settings.batch_mode, settings.quantity_req_batch]);
+
 
   const searchParams = useSearchParams();
   const projectIdFromQuery = searchParams.get('projectId');
@@ -164,27 +175,66 @@ export default function RequirementsPage() {
   }, [deleteRequirement]);
 
 
+  const { user } = useAuth();
+  const { agent } = useAgent({ agentId: "sample_agent" });
+  
+  useEffect(() => {
+    console.log("Setting agent userId to:", user?.id || "");
+    agent.setState({
+      ...agent.state,
+      userId: user?.id || "",
+    });
+  }, []);
+
+
+
+
   
 
+  // Agent state sync
+  // const { agent } = useAgent({ agentId: "sample_agent" });
 
+  // // Track previous values to avoid unnecessary state updates
+  // const prevAgentStateRef = useRef<{
+  //   project_id: string;
+  //   require_brief_description: boolean;
+  //   batch_mode: boolean;
+  //   quantity_req_batch: number;
+  // } | null>(null);
 
-
-
-  
-
-  // // Sync project_id to agent state when selectedProject changes
+  // // Sync agent state when page loads or dependencies change
   // useEffect(() => {
-  //   console.log("Syncing project_id to agent state:", selectedProject?.id);
-  //   const newProjectId = selectedProject?.id || "";
-  //   if (agent.state?.project_id !== newProjectId) {
+  //   const newState = {
+  //     project_id: selectedProject?.id || "",
+  //     require_brief_description: settings.require_brief_description,
+  //     batch_mode: settings.batch_mode,
+  //     quantity_req_batch: settings.quantity_req_batch,
+  //   };
+
+  //   // Check if state actually changed
+  //   const prev = prevAgentStateRef.current;
+  //   const hasChanged = !prev ||
+  //     prev.project_id !== newState.project_id ||
+  //     prev.require_brief_description !== newState.require_brief_description ||
+  //     prev.batch_mode !== newState.batch_mode ||
+  //     prev.quantity_req_batch !== newState.quantity_req_batch;
+
+  //   console.log("agent state:", newState);
+  //   if (hasChanged) {
   //     agent.setState({
   //       ...agent.state,
-  //       project_id: newProjectId,
+  //       ...newState,
   //     });
+  //     prevAgentStateRef.current = newState;
   //   }
-  // }, [selectedProject?.id, agent]);
+  // }, [selectedProject?.id, settings.require_brief_description, settings.batch_mode, settings.quantity_req_batch, agent]);
 
-  // const { agent } = useAgent({agentId: "sample_agent"});
+  // const { state, nodeName, running } = useCoAgent<AgentState>({
+  //   name: "sample_agent",
+  //   config: {
+  //     streamSubgraphs: true,
+  //   }
+  // });
 
   // const { state, nodeName, running } = useCoAgent<AgentState>({
   //   name: "sample_agent",
@@ -193,27 +243,15 @@ export default function RequirementsPage() {
   //   }
   // });
   
-  const { agent } = useAgent({agentId: "sample_agent"});
-
-  // useEffect(() => {
-  //   console.log("Updating agent state with project_id and settings:", selectedProjectIdRef.current, settings);
-    
-  //   agent.setState({
-  //     ...agent.state,
-  //     project_id: selectedProject?.id || "",
-  //     require_brief_description: settings.require_brief_description,
-  //     batch_mode: settings.batch_mode,
-  //     quantity_req_batch: settings.quantity_req_batch,
-  //   });
-  // }, [agent, settings, selectedProject?.id, settings.require_brief_description, settings.batch_mode, settings.quantity_req_batch]);
-
   useLangGraphInterrupt({
       render: ({ event, resolve }) => (
           console.log("Interrupt event received:", selectedProjectIdRef.current),
+          //console.log("quantityReqBatchRef.current:", quantityReqBatchRef.current),
           <InterruptForm
+            userId={user?.id as string}
             projectId={selectedProjectIdRef.current as string}
             question={event.value as string}
-            inputCount={settings.quantity_req_batch}
+            inputCount={2}
             onSubmit={resolve}
           />
       )

@@ -9,6 +9,7 @@ let cachedSession: Session | null = null
 
 interface AuthContextType {
   session: Session | null
+  isLoading: boolean
   signOut: () => Promise<void>
 }
 
@@ -16,6 +17,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(cachedSession)
+  const [isLoading, setIsLoading] = useState(!cachedSession)
   const [supabase] = useState(() => createClient())
 
   useEffect(() => {
@@ -24,7 +26,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       supabase.auth.getSession().then(({ data: { session } }) => {
         cachedSession = session
         setSession(session)
+        setIsLoading(false)
       })
+    } else {
+      setIsLoading(false)
     }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -44,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ session, signOut }}>
+    <AuthContext.Provider value={{ session, isLoading, signOut }}>
       {children}
     </AuthContext.Provider>
   )
@@ -61,6 +66,7 @@ export function useAuth() {
   return {
     session: context.session,
     user,
+    isLoading: context.isLoading,
     signOut: context.signOut,
   }
 }

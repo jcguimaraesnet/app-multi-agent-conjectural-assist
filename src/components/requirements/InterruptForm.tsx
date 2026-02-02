@@ -1,19 +1,21 @@
 "use client";
 
 interface InterruptFormProps {
+  userId: string;
   projectId: string;
   question: string;
   inputCount: number;
   onSubmit: (responses: string) => void;
 }
 
-export default function InterruptForm({ projectId, question, inputCount, onSubmit }: InterruptFormProps) {
+export default function InterruptForm({ userId, projectId, question, inputCount, onSubmit }: InterruptFormProps) {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
     const responses = Array.from({ length: inputCount }).map((_, index) => formData.get(`brief_description${index}`) as string);
     const responsesJson = JSON.stringify({
+      user_id: userId,
       project_id: projectId,
       brief_descriptions: responses,
     });
@@ -37,10 +39,7 @@ export default function InterruptForm({ projectId, question, inputCount, onSubmi
             />
           </div>
         ))}
-        <button
-          type="submit"
-          className="mt-4 px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors"
-        >
+        <button type="submit" className="mt-4 px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors">
           Submit
         </button>
       </form>
