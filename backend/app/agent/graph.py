@@ -75,7 +75,7 @@ class WorkflowState(CopilotKitState):
     """
     # messages: Annotated[list[BaseMessage], add_messages] = Field(default_factory=list, description="Chat message history")
     tools: List[Any]
-    # project_id: str = Field(default="", description="Project identifier")
+    project_id: str = Field(default="", description="Project identifier")
     # document_content: str = Field(default="", description="Raw document content")
     # elicited_requirements: list[str] = Field(default_factory=list, description="Requirements from elicitation")
     # analyzed_requirements: list[dict[str, Any]] = Field(default_factory=list, description="Analyzed requirement details")
@@ -92,13 +92,15 @@ async def start_node(state: WorkflowState, config: RunnableConfig): # pylint: di
     This is the entry point for the flow.
     """
 
+    # print(f"Starting workflow for project: {state['project_id']}")
+
     if "steps" not in state:
         state["steps"] = []
 
     if not state.get("agent_name"):
         # Interrupt and wait for the user to respond with a name
-        state["brief_description"] = interrupt("Before we start, provide a brief description of requirements?")
-        print(f"brief description : {state['brief_description']}")
+        state["json_input"] = interrupt("Before we start, provide a brief description of requirements?")
+        print(f"json input : {state['json_input']}")
 
     return Command(
         goto="elicitation_node",

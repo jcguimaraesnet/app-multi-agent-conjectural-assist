@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, use } from 'react';
 import { useSearchParams } from 'next/navigation';
 import AppLayout from '@/components/layout/AppLayout';
 import PageTitle from '@/components/ui/PageTitle';
@@ -27,15 +27,6 @@ interface AgentState {
 
 export default function RequirementsPage() {
 
-  const { agent } = useAgent({agentId: "sample_agent"});
-
-  const { state, nodeName, running } = useCoAgent<AgentState>({
-    name: "sample_agent",
-    config: {
-      streamSubgraphs: true,
-    }
-  });
-
   const { selectedProject, selectProjectById, projects, isLoading: isLoadingProjects } = useProject();
   const { 
     requirements, 
@@ -45,6 +36,11 @@ export default function RequirementsPage() {
     fetchRequirements, 
     deleteRequirement 
   } = useRequirements();
+  const selectedProjectIdRef = useRef<string | undefined>(selectedProject?.id);
+  useEffect(() => {
+    selectedProjectIdRef.current = selectedProject?.id;
+  }, [selectedProject?.id]);
+
   const searchParams = useSearchParams();
   const projectIdFromQuery = searchParams.get('projectId');
   
@@ -164,10 +160,42 @@ export default function RequirementsPage() {
     }
   }, [deleteRequirement]);
 
+
+  
+
+
+
+
+
+  
+
+  // // Sync project_id to agent state when selectedProject changes
+  // useEffect(() => {
+  //   console.log("Syncing project_id to agent state:", selectedProject?.id);
+  //   const newProjectId = selectedProject?.id || "";
+  //   if (agent.state?.project_id !== newProjectId) {
+  //     agent.setState({
+  //       ...agent.state,
+  //       project_id: newProjectId,
+  //     });
+  //   }
+  // }, [selectedProject?.id, agent]);
+
+  // const { agent } = useAgent({agentId: "sample_agent"});
+
+  // const { state, nodeName, running } = useCoAgent<AgentState>({
+  //   name: "sample_agent",
+  //   config: {
+  //     streamSubgraphs: true,
+  //   }
+  // });
+  
   const quantityBriefRequirementGenerateBatch: number = 5;
   useLangGraphInterrupt({
       render: ({ event, resolve }) => (
+          console.log("Interrupt event received:", selectedProjectIdRef.current),
           <InterruptForm
+            projectId={selectedProjectIdRef.current as string}
             question={event.value as string}
             inputCount={quantityBriefRequirementGenerateBatch}
             onSubmit={resolve}
@@ -199,7 +227,6 @@ export default function RequirementsPage() {
       ]}
     >
       <AppLayout>
-        <span>Running: {running}</span>
         <PageTitle title="Requirements" backHref="/projects" backLabel="Back Projects" />
 
         {successMessage && (
