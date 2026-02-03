@@ -1,22 +1,17 @@
 "use client";
 
 interface InterruptFormProps {
-  userId: string;
-  projectId: string;
-  question: string;
   inputCount: number;
   onSubmit: (responses: string) => void;
 }
 
-export default function InterruptForm({ userId, projectId, question, inputCount, onSubmit }: InterruptFormProps) {
+export default function InterruptForm({ inputCount, onSubmit }: InterruptFormProps) {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
     const responses = Array.from({ length: inputCount }).map((_, index) => formData.get(`brief_description${index}`) as string);
     const responsesJson = JSON.stringify({
-      user_id: userId,
-      project_id: projectId,
       brief_descriptions: responses,
     });
     console.log("Submitting responses:", responsesJson);
@@ -26,7 +21,7 @@ export default function InterruptForm({ userId, projectId, question, inputCount,
   return (
     <div className="p-4 rounded-lg bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark">
       <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
-        {question}
+        Before we start, provide a brief description of requirements?
       </p>
       <form onSubmit={handleSubmit} className="space-y-3">
         {Array.from({ length: inputCount }).map((_, index) => (

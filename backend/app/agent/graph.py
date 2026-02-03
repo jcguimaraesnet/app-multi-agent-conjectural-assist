@@ -136,6 +136,12 @@ async def elicitation_node(state: WorkflowState, config: Optional[RunnableConfig
     Always say you actually did the steps, not merely generated them.
     """
 
+    # if no brief description or brief description is true, ask for it
+    if not state.get("json_brief_description", None) or state.get("require_brief_description", None) == True:
+        # Interrupt and wait for the user to respond with a name
+        state["json_brief_description"] = interrupt("Before we start, provide a brief description of requirements?")
+        print(f"json brief description: {state['json_brief_description']}")
+
     print("Elicitation node initialized.")
     print(f"User ID: {state.get('user_id', None)}")
     print(f"Project ID: {state.get('project_id', None)}")
@@ -143,10 +149,6 @@ async def elicitation_node(state: WorkflowState, config: Optional[RunnableConfig
     print(f"Batch Mode: {state.get('batch_mode', None)}")
     print(f"Quantity Req Batch: {state.get('quantity_req_batch', None)}")
 
-    if not state.get("require_brief_description"):
-        # Interrupt and wait for the user to respond with a name
-        state["json_brief_description"] = interrupt("Before we start, provide a brief description of requirements?")
-        print(f"json brief description: {state['json_brief_description']}")
 
     # 1. Define the model
     model = ChatOpenAI(model="gpt-4o")

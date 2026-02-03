@@ -39,21 +39,6 @@ export default function RequirementsPage() {
     fetchRequirements, 
     deleteRequirement 
   } = useRequirements();
-  const selectedProjectIdRef = useRef<string | undefined>(selectedProject?.id);
-
-  const { settings } = useSettings();
-  const requiredBriefDescriptionRef = useRef<boolean>(settings.require_brief_description);
-  const batchModeRef = useRef<boolean>(settings.batch_mode);
-  const quantityReqBatchRef = useRef<number>(settings.quantity_req_batch);
-
-
-  useEffect(() => {
-    selectedProjectIdRef.current = selectedProject?.id;
-    requiredBriefDescriptionRef.current = settings.require_brief_description;
-    batchModeRef.current = settings.batch_mode;
-    quantityReqBatchRef.current = settings.quantity_req_batch;
-  }, [selectedProject?.id, settings.require_brief_description, settings.batch_mode, settings.quantity_req_batch]);
-
 
   const searchParams = useSearchParams();
   const projectIdFromQuery = searchParams.get('projectId');
@@ -176,96 +161,66 @@ export default function RequirementsPage() {
 
 
   const { user } = useAuth();
+  const { settings } = useSettings();
   const { agent } = useAgent({ agentId: "sample_agent" });
-  
+    
+
+  //só funciona a partir da segunda renderização - problema pode estar no agent hook
   useEffect(() => {
-    console.log("USER ID:", user?.id || "");
+    console.log("useEffect [] - USER ID:", user?.id || "");
+    console.log("useEffect [] - PROJECT ID:", selectedProject?.id || "");
     agent.setState({
       ...agent.state,
       user_id: user?.id || "",
+      project_id: selectedProject?.id || "",
+      require_brief_description: settings.require_brief_description,
+      batch_mode: settings.batch_mode,
+      quantity_req_batch: settings.quantity_req_batch,
     });
-  }, []);
+  }, [agent, user?.id, selectedProject?.id, settings.require_brief_description, settings.batch_mode, settings.quantity_req_batch]);
 
 
+  // const requiredBriefDescriptionRef = useRef<boolean>(settings.require_brief_description);
+  // const batchModeRef = useRef<boolean>(settings.batch_mode);
+  // const quantityReqBatchRef = useRef<number>(settings.quantity_req_batch);
 
-
-  
+  // useEffect(() => {
+  //   requiredBriefDescriptionRef.current = settings.require_brief_description;
+  //   batchModeRef.current = settings.batch_mode;
+  //   quantityReqBatchRef.current = settings.quantity_req_batch;
+  // }, [settings.require_brief_description, settings.batch_mode, settings.quantity_req_batch]);
 
   // Agent state sync
   //const { agent } = useAgent({ agentId: "sample_agent" });
 
-  // // Track previous values to avoid unnecessary state updates
-  // const prevAgentStateRef = useRef<{
-  //   project_id: string;
-  //   require_brief_description: boolean;
-  //   batch_mode: boolean;
-  //   quantity_req_batch: number;
-  // } | null>(null);
 
-  // // Sync agent state when page loads or dependencies change
+
+  // const { state, nodeName, running } = useCoAgent<AgentState>({
+  //   name: "sample_agent",
+  //   config: {
+  //     streamSubgraphs: true,
+  //   }
+  // });
+
   // useEffect(() => {
-  //   const newState = {
-  //     project_id: selectedProject?.id || "",
-  //     require_brief_description: settings.require_brief_description,
-  //     batch_mode: settings.batch_mode,
-  //     quantity_req_batch: settings.quantity_req_batch,
-  //   };
-
-  //   // Check if state actually changed
-  //   const prev = prevAgentStateRef.current;
-  //   const hasChanged = !prev ||
-  //     prev.project_id !== newState.project_id ||
-  //     prev.require_brief_description !== newState.require_brief_description ||
-  //     prev.batch_mode !== newState.batch_mode ||
-  //     prev.quantity_req_batch !== newState.quantity_req_batch;
-
-  //   console.log("agent state:", newState);
-  //   if (hasChanged) {
-  //     agent.setState({
-  //       ...agent.state,
-  //       ...newState,
-  //     });
-  //     prevAgentStateRef.current = newState;
-  //   }
-  // }, [selectedProject?.id, settings.require_brief_description, settings.batch_mode, settings.quantity_req_batch, agent]);
-
-  // const { state, nodeName, running } = useCoAgent<AgentState>({
-  //   name: "sample_agent",
-  //   config: {
-  //     streamSubgraphs: true,
-  //   }
-  // });
-
-  // const { state, nodeName, running } = useCoAgent<AgentState>({
-  //   name: "sample_agent",
-  //   config: {
-  //     streamSubgraphs: true,
-  //   }
-  // });
-
-  useEffect(() => {
-    const { unsubscribe } = agent.subscribe({
-      onRunStartedEvent: () => {
-        console.log("Agent Started ", user?.id || "");
-        agent.setState({
-          ...agent.state,
-          user_id: user?.id || "",
-        });
-      } ,
-      onRunFinalized: () => console.log("Agent Finished"),
-    });
-    return unsubscribe;
-  }, []);
+  //   const { unsubscribe } = agent.subscribe({
+  //     onRunStartedEvent: () => {
+  //       console.log("Agent Started ", user?.id || "");
+  //       agent.setState({
+  //         ...agent.state,
+  //         user_id: user?.id || "",
+  //       });
+  //     } ,
+  //     onRunFinalized: () => console.log("Agent Finished"),
+  //   });
+  //   return unsubscribe;
+  // }, []);
   
   useLangGraphInterrupt({
       render: ({ event, resolve }) => (
-          console.log("Interrupt event received:", selectedProjectIdRef.current),
           //console.log("quantityReqBatchRef.current:", quantityReqBatchRef.current),
           <InterruptForm
-            userId={user?.id as string}
-            projectId={selectedProjectIdRef.current as string}
-            question={event.value as string}
-            inputCount={quantityReqBatchRef.current as number}
+            inputCount={settings.quantity_req_batch}
             onSubmit={resolve}
           />
       )
@@ -293,13 +248,14 @@ export default function RequirementsPage() {
           message: "Generate conjectural requirements for the current project.",
         },
       ]}
-      onSubmitMessage={(message) => {
-        console.log("User message submitted to agent:", message);
-        agent.setState({
-          ...agent.state,
-          user_id: user?.id || "",
-        });
-      }}
+      // onSubmitMessage={(message) => {
+      //   console.log("User message submitted to agent:", message);
+      //   console.log("USER ID onSubmitMessage:", user?.id || "");
+      //   agent.setState({
+      //     ...agent.state,
+      //     user_id: user?.id || "",
+      //   });
+      // }}
     >
       <AppLayout>
         <PageTitle title="Requirements" backHref="/projects" backLabel="Back Projects" />
