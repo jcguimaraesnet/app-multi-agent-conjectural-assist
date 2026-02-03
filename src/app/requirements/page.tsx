@@ -10,17 +10,22 @@ import { useProject } from '@/contexts/ProjectContext';
 import { useRequirements } from '@/contexts/RequirementsContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { CopilotSidebar } from "@copilotkit/react-ui";
-import { useAgent } from "@copilotkit/react-core/v2";
 import { useCoAgent, useCoAgentStateRender, useLangGraphInterrupt } from "@copilotkit/react-core";
 import StepProgress from '@/components/requirements/StepProgress';
 import InterruptForm from '@/components/requirements/InterruptForm';
 import Spinner from "@/components/ui/Spinner";
 import { useAuth } from '@/contexts/AuthContext';
+import Button from '@/components/ui/Button';
 
 const PAGE_SIZE = 10;
 const TOAST_DURATION_MS = 5000;
 
 interface AgentState {
+  user_id: string;
+  project_id: string;
+  require_brief_description: boolean;
+  batch_mode: boolean;
+  quantity_req_batch: number;
   step1_elicitation: boolean;
   step2_analysis: boolean;
   step3_specification: boolean;
@@ -162,70 +167,38 @@ export default function RequirementsPage() {
 
   const { user } = useAuth();
   const { settings } = useSettings();
-  const { agent } = useAgent({ agentId: "sample_agent" });
-    
+  
+  // Usar useCoAgent ao invés de useAgent
+  const { state: agentState, setState: setAgentState } = useCoAgent<AgentState>({
+    name: "sample_agent",
+    initialState: {
+      user_id: user?.id || "",
+      project_id: selectedProject?.id || "",
+      require_brief_description: settings.require_brief_description,
+      batch_mode: settings.batch_mode,
+      quantity_req_batch: settings.quantity_req_batch,
+    },
+  });
 
-  //só funciona a partir da segunda renderização - problema pode estar no agent hook
   useEffect(() => {
-    console.log("useEffect [] - USER ID:", user?.id || "");
-    console.log("useEffect [] - PROJECT ID:", selectedProject?.id || "");
-    agent.setState({
-      ...agent.state,
+    setAgentState({
+      ...agentState,
       user_id: user?.id || "",
       project_id: selectedProject?.id || "",
       require_brief_description: settings.require_brief_description,
       batch_mode: settings.batch_mode,
       quantity_req_batch: settings.quantity_req_batch,
     });
-  }, [agent, user?.id, selectedProject?.id, settings.require_brief_description, settings.batch_mode, settings.quantity_req_batch]);
+  }, [user?.id, selectedProject?.id, settings.require_brief_description, settings.batch_mode, settings.quantity_req_batch]);
 
-
-  // const requiredBriefDescriptionRef = useRef<boolean>(settings.require_brief_description);
-  // const batchModeRef = useRef<boolean>(settings.batch_mode);
-  // const quantityReqBatchRef = useRef<number>(settings.quantity_req_batch);
-
-  // useEffect(() => {
-  //   requiredBriefDescriptionRef.current = settings.require_brief_description;
-  //   batchModeRef.current = settings.batch_mode;
-  //   quantityReqBatchRef.current = settings.quantity_req_batch;
-  // }, [settings.require_brief_description, settings.batch_mode, settings.quantity_req_batch]);
-
-  // Agent state sync
-  //const { agent } = useAgent({ agentId: "sample_agent" });
-
-
-
-  // const { state, nodeName, running } = useCoAgent<AgentState>({
-  //   name: "sample_agent",
-  //   config: {
-  //     streamSubgraphs: true,
-  //   }
-  // });
-
-  // useEffect(() => {
-  //   const { unsubscribe } = agent.subscribe({
-  //     onRunStartedEvent: () => {
-  //       console.log("Agent Started ", user?.id || "");
-  //       agent.setState({
-  //         ...agent.state,
-  //         user_id: user?.id || "",
-  //       });
-  //     } ,
-  //     onRunFinalized: () => console.log("Agent Finished"),
-  //   });
-  //   return unsubscribe;
-  // }, []);
-  
   useLangGraphInterrupt({
       render: ({ event, resolve }) => (
-          //console.log("quantityReqBatchRef.current:", quantityReqBatchRef.current),
           <InterruptForm
             inputCount={settings.quantity_req_batch}
             onSubmit={resolve}
           />
       )
   });
-
 
   useCoAgentStateRender<AgentState>({
     name: "sample_agent",
@@ -247,16 +220,7 @@ export default function RequirementsPage() {
           title: "Generate conjectural requirements",
           message: "Generate conjectural requirements for the current project.",
         },
-      ]}
-      // onSubmitMessage={(message) => {
-      //   console.log("User message submitted to agent:", message);
-      //   console.log("USER ID onSubmitMessage:", user?.id || "");
-      //   agent.setState({
-      //     ...agent.state,
-      //     user_id: user?.id || "",
-      //   });
-      // }}
-    >
+      ]}>
       <AppLayout>
         <PageTitle title="Requirements" backHref="/projects" backLabel="Back Projects" />
 

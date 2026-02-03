@@ -78,8 +78,8 @@ class WorkflowState(CopilotKitState):
 
     user_id: str = Field(default="", description="User identifier")
     project_id: str = Field(default="", description="Project identifier")    
-    require_brief_description: str = Field(default="", description="Brief description of requirements")
-    batch_mode: bool = Field(default=False, description="Whether to generate requirements in batch mode")
+    require_brief_description: bool = Field(default=True, description="Brief description of requirements")
+    batch_mode: bool = Field(default=True, description="Whether to generate requirements in batch mode")
     quantity_req_batch: int = Field(default=5, description="Number of requirements to generate in batch mode")
     json_brief_description: str = Field(default="", description="JSON brief description input from user")
     
