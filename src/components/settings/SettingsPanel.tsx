@@ -9,12 +9,12 @@ export default function SettingsPanel() {
   const { settings, isLoading, updateSetting } = useSettings();
 
   const incrementQuantity = () => {
-    const newValue = Math.min(settings.quantity_req_batch + 1, 50);
+    const newValue = Math.min(settings.quantity_req_batch + 1, 10);
     updateSetting('quantity_req_batch', newValue);
   };
 
   const decrementQuantity = () => {
-    const newValue = Math.max(settings.quantity_req_batch - 1, 1);
+    const newValue = Math.max(settings.quantity_req_batch - 1, 2);
     updateSetting('quantity_req_batch', newValue);
   };
 
@@ -64,7 +64,7 @@ export default function SettingsPanel() {
                 Quantity of requirements for batch generation
               </h3>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Number of requirements to generate in batch mode
+                Number of requirements to generate in batch mode (between 2 and 10)
               </p>
             </div>
             {/* Number Stepper Skeleton */}
@@ -146,12 +146,20 @@ export default function SettingsPanel() {
               Quantity of requirements for batch generation
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Number of requirements to generate in batch mode
+              Number of requirements to generate in batch mode (between 2 and 10)
             </p>
           </div>
           <div className="flex items-center">
-            <div className="flex items-center border border-border-light dark:border-gray-600 rounded-lg overflow-hidden">
-              <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800 text-sm font-medium text-gray-900 dark:text-white min-w-[50px] text-center">
+            <div className={`flex items-center border rounded-lg overflow-hidden transition-opacity ${
+              settings.batch_mode 
+                ? 'border-border-light dark:border-gray-600' 
+                : 'border-gray-200 dark:border-gray-700 opacity-40 cursor-not-allowed'
+            }`}>
+              <div className={`px-4 py-2 text-sm font-medium min-w-[50px] text-center ${
+                settings.batch_mode
+                  ? 'bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500'
+              }`}>
                 {settings.quantity_req_batch}
               </div>
               <div className="flex flex-col border-l border-border-light dark:border-gray-600">
