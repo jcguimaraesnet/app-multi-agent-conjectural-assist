@@ -45,7 +45,7 @@ export default function SettingsPanel() {
                 Generation mode
               </h3>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Choose between batch or interactive requirement generation
+                Choose between batch or single requirement generation
               </p>
             </div>
             {/* Button Group Skeleton */}
@@ -110,7 +110,7 @@ export default function SettingsPanel() {
               Generation mode
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Choose between batch or interactive requirement generation
+              Choose between batch or single requirement generation
             </p>
           </div>
           <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
@@ -132,7 +132,7 @@ export default function SettingsPanel() {
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
-              Interactive
+              Single
             </button>
           </div>
         </div>
