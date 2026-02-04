@@ -105,7 +105,8 @@ async def start_node(state: WorkflowState, config: RunnableConfig): # pylint: di
     print(f"Require Brief Description: {state.get('require_brief_description', None)}")
     print(f"Batch Mode: {state.get('batch_mode', None)}")
     print(f"Quantity Req Batch: {state.get('quantity_req_batch', None)}")
-
+    messages = state.get('messages', [])
+    print(f"Last message send from chat: {messages[-1].content if messages else None}")
 
     # if no brief description or brief description is true, ask for it
     if state.get("require_brief_description", True) == True:
