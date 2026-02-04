@@ -1,10 +1,30 @@
 """
-LangGraph Agent Module
+Agent module for Conjectural Assist.
 
-This module provides a basic LangGraph agent for requirement analysis
-and AI-powered assistance in the Conjectural Assist application.
+This module contains the LangGraph workflow for requirement
+elicitation and validation.
 """
 
 from app.agent.graph import graph
+from app.agent.state import WorkflowState, Step
+from app.agent.tools import generate_task_steps_generative_ui
+from app.agent.nodes import (
+    start_node,
+    elicitation_node,
+    analysis_node,
+    specification_node,
+    validation_node,
+)
 
-__all__ = ["graph"]
+
+__all__ = [
+    "graph",
+    "WorkflowState",
+    "Step",
+    "generate_task_steps_generative_ui",
+    "start_node",
+    "elicitation_node",
+    "analysis_node",
+    "specification_node",
+    "validation_node",
+]
