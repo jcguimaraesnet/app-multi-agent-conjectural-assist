@@ -203,6 +203,7 @@ export default function RequirementsPage() {
   useCoAgentStateRender<AgentState>({
     name: "sample_agent",
     render: ({ state }) => (
+      console.log("Rendering StepProgress with state:", state),
       <StepProgress state={state} />
     ),
   });

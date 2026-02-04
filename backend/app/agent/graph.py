@@ -107,6 +107,13 @@ async def start_node(state: WorkflowState, config: RunnableConfig): # pylint: di
     print(f"Quantity Req Batch: {state.get('quantity_req_batch', None)}")
 
 
+    # if no brief description or brief description is true, ask for it
+    if state.get("require_brief_description", True) == True:
+        # Interrupt and wait for the user to respond with a name
+        state["json_brief_description"] = interrupt("Before we start, provide a brief description of requirements?")
+        print(f"json brief description: {state['json_brief_description']}")
+
+
     return Command(
         goto="elicitation_node",
         update={
@@ -136,11 +143,6 @@ async def elicitation_node(state: WorkflowState, config: Optional[RunnableConfig
     Always say you actually did the steps, not merely generated them.
     """
 
-    # if no brief description or brief description is true, ask for it
-    if state.get("require_brief_description", True) == True:
-        # Interrupt and wait for the user to respond with a name
-        state["json_brief_description"] = interrupt("Before we start, provide a brief description of requirements?")
-        print(f"json brief description: {state['json_brief_description']}")
 
     print("Elicitation node initialized.")
     print(f"User ID: {state.get('user_id', None)}")
