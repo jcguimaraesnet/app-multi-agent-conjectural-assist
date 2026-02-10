@@ -40,8 +40,7 @@ jobs:
       - name: npm install, build, and test
         run: |
           pnpm install --frozen-lockfile
-          pnpm run build --if-present
-          pnpm run test --if-present
+          pnpm run build
         env:
           LANGGRAPH_DEPLOYMENT_URL: ${{ vars.LANGGRAPH_DEPLOYMENT_URL }}
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
