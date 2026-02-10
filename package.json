@@ -2,14 +2,6 @@
   "name": "conjectural-assist-nextjs",
   "version": "0.1.0",
   "private": true,
-  "overrides": {
-    "@ag-ui/client": "0.0.42"
-  },
-  "pnpm": {
-    "overrides": {
-      "@ag-ui/client": "0.0.42"
-    }
-  },
   "scripts": {
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\" \"npm run dev:agent\" --names front,back,agent --prefix-colors blue,green,yellow --kill-others",
     "dev:backend": "cd backend && uv run python -m uvicorn main:app --reload --port 8000",
