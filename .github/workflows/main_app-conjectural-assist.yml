@@ -11,7 +11,7 @@ on:
 
 env:
   NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
-  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+  NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
   NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
 
@@ -35,7 +35,7 @@ jobs:
           npm run build --if-present
           npm run test --if-present
         env:
-          LANGGRAPH_DEPLOYMENT_URL: ${{ secrets.LANGGRAPH_DEPLOYMENT_URL }}
+          LANGGRAPH_DEPLOYMENT_URL: ${{ vars.LANGGRAPH_DEPLOYMENT_URL }}
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
 
 
