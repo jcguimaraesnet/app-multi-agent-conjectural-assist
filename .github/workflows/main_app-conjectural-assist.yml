@@ -28,6 +28,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
+          version: 10 # Specify the pnpm version you want to use
           run_install: false # Prevents auto install so you can control when it runs
 
       - name: Set up Node.js version
