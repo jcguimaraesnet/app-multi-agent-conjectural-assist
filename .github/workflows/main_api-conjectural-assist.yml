@@ -9,6 +9,7 @@ on:
       - main
     paths:
       - 'backend/**'
+      - '.github/workflows/main_api-conjectural-assist.yml'
   workflow_dispatch:
 
 env:
