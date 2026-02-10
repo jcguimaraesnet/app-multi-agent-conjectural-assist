@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, use } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import AppLayout from '@/components/layout/AppLayout';
 import PageTitle from '@/components/ui/PageTitle';
@@ -32,8 +32,7 @@ interface AgentState {
   step4_validation: boolean;
 }
 
-
-export default function RequirementsPage() {
+function RequirementsContent() {
 
   const { selectedProject, selectProjectById, projects, isLoading: isLoadingProjects } = useProject();
   const { 
@@ -276,5 +275,19 @@ export default function RequirementsPage() {
         />
       </AppLayout>
     </CopilotSidebar>
+  );
+}
+
+export default function RequirementsPage() {
+  return (
+    <Suspense fallback={
+      <AppLayout>
+        <div className="flex items-center justify-center h-64">
+          <Spinner />
+        </div>
+      </AppLayout>
+    }>
+      <RequirementsContent />
+    </Suspense>
   );
 }

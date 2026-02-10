@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from 'react';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 
@@ -27,7 +28,11 @@ export default function AppLayout({ children, maxWidth = '5xl' }: AppLayoutProps
       <Sidebar />
       
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
-        <Header />
+        <Suspense fallback={
+          <div className="h-16 bg-surface-light dark:bg-surface-dark border-b border-border-light dark:border-border-dark flex-shrink-0" />
+        }>
+          <Header />
+        </Suspense>
         
         <div className="flex-1 overflow-y-auto px-6 sm:px-8 pt-6 pb-8 bg-background-light dark:bg-background-dark">
           <div className={`${maxWidthClasses[maxWidth]} mx-auto`}>
