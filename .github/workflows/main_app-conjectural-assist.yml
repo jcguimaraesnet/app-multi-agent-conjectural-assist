@@ -51,6 +51,7 @@ jobs:
         run: |
           cp -r .next/static .next/standalone/.next/static
           cp -r public .next/standalone/public
+          mv .next/standalone/node_modules .next/standalone/_modules
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -84,37 +85,23 @@ jobs:
           RG=$(az webapp list --query "[?name=='app-conjectural-assist'].resourceGroup | [0]" -o tsv)
           echo "name=$RG" >> $GITHUB_OUTPUT
 
-      - name: Stop app
-        run: az webapp stop -n app-conjectural-assist -g "${{ steps.rg.outputs.name }}"
-
-      - name: Deploy via Kudu ZIP API
+      - name: Deploy to Azure Web App
         run: |
-          TOKEN=$(az account get-access-token --query accessToken -o tsv)
-          KUDU="https://app-conjectural-assist.scm.azurewebsites.net"
-
           zip -rq deploy.zip .
+          az webapp deploy \
+            -n app-conjectural-assist \
+            -g "${{ steps.rg.outputs.name }}" \
+            --src-path deploy.zip \
+            --type zip \
+            --clean true \
+            --async false
 
-          curl -sS --fail --max-time 300 -X PUT "$KUDU/api/zip/site/wwwroot/" \
-            -H "Authorization: Bearer $TOKEN" \
-            --data-binary @deploy.zip
-
-      - name: Remove Oryx artifacts
-        run: |
-          TOKEN=$(az account get-access-token --query accessToken -o tsv)
-          KUDU="https://app-conjectural-assist.scm.azurewebsites.net"
-
-          RESULT=$(curl -sS --max-time 60 -X POST "$KUDU/api/command" \
-            -H "Authorization: Bearer $TOKEN" \
-            -H "Content-Type: application/json" \
-            -d '{"command":"rm -f oryx-manifest.toml node_modules.tar.gz && rm -rf _del_node_modules && ls -la","dir":"/home/site/wwwroot"}')
-          echo "Cleanup result: $RESULT"
-
-      - name: Start app
+      - name: Configure startup and restart
         run: |
           az webapp config set \
             -n app-conjectural-assist \
             -g "${{ steps.rg.outputs.name }}" \
-            --startup-file "node server.js"
-          az webapp start \
+            --startup-file "rm -rf node_modules 2>/dev/null; ln -sfn _modules node_modules; node server.js"
+          az webapp restart \
             -n app-conjectural-assist \
             -g "${{ steps.rg.outputs.name }}"
