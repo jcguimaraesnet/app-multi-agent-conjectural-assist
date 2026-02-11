@@ -112,3 +112,5 @@ jobs:
           az webapp restart \
             -n app-conjectural-assist \
             -g "${{ steps.rg.outputs.name }}"
+
+            
