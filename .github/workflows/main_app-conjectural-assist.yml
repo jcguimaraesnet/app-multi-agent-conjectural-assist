@@ -84,6 +84,9 @@ jobs:
           RG=$(az webapp list --query "[?name=='app-conjectural-assist'].resourceGroup | [0]" -o tsv)
           echo "name=$RG" >> $GITHUB_OUTPUT
 
+      - name: Stop app
+        run: az webapp stop -n app-conjectural-assist -g "${{ steps.rg.outputs.name }}"
+
       - name: Deploy via Kudu ZIP API
         run: |
           TOKEN=$(az account get-access-token --query accessToken -o tsv)
@@ -91,26 +94,27 @@ jobs:
 
           zip -rq deploy.zip .
 
-          curl -sS --fail --max-time 60 -X POST "$KUDU/api/command" \
-            -H "Authorization: Bearer $TOKEN" \
-            -H "Content-Type: application/json" \
-            -d '{"command":"rm -rf /home/site/wwwroot/* /home/site/wwwroot/.[!.]*","dir":"/"}'
-
           curl -sS --fail --max-time 300 -X PUT "$KUDU/api/zip/site/wwwroot/" \
             -H "Authorization: Bearer $TOKEN" \
             --data-binary @deploy.zip
 
-      - name: Configure startup command
+      - name: Remove Oryx artifacts
+        run: |
+          TOKEN=$(az account get-access-token --query accessToken -o tsv)
+          KUDU="https://app-conjectural-assist.scm.azurewebsites.net"
+
+          RESULT=$(curl -sS --max-time 60 -X POST "$KUDU/api/command" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"command":"rm -f oryx-manifest.toml node_modules.tar.gz && rm -rf _del_node_modules && ls -la","dir":"/home/site/wwwroot"}')
+          echo "Cleanup result: $RESULT"
+
+      - name: Start app
         run: |
           az webapp config set \
             -n app-conjectural-assist \
             -g "${{ steps.rg.outputs.name }}" \
             --startup-file "node server.js"
-
-      - name: Restart app
-        run: |
-          az webapp restart \
+          az webapp start \
             -n app-conjectural-assist \
             -g "${{ steps.rg.outputs.name }}"
-
-            
