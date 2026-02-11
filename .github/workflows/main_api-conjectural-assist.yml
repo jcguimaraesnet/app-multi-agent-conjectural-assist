@@ -76,11 +76,11 @@ jobs:
         with:
           app-name: 'api-conjectural-assist'
           app-settings-json: |
-              { "name": "NEXT_PUBLIC_SUPABASE_URL", "value": "${{ vars.NEXT_PUBLIC_SUPABASE_URL }}",
+              [{ "name": "NEXT_PUBLIC_SUPABASE_URL", "value": "${{ vars.NEXT_PUBLIC_SUPABASE_URL }}",
               "name": "NEXT_PUBLIC_SUPABASE_ANON_KEY", "value": "${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}",
               "name": "SUPABASE_SERVICE_ROLE_KEY", "value": "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}",
               "name": "GEMINI_API_KEY", "value": "${{ secrets.GEMINI_API_KEY }}",
-              "name": "OPENAI_API_KEY", "value": "${{ secrets.OPENAI_API_KEY }}" }
+              "name": "OPENAI_API_KEY", "value": "${{ secrets.OPENAI_API_KEY }}" }]
 
 
       - name: 'Deploy to Azure Web App'
