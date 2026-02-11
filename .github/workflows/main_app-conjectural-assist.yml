@@ -40,20 +40,25 @@ jobs:
           node-version: '24.x'
           cache: pnpm # This enables pnpm specific caching
 
-      - name: npm install, build, and test
-        run: |
-          pnpm install --frozen-lockfile
-          pnpm run build
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm run build
         env:
           LANGGRAPH_DEPLOYMENT_URL: ${{ vars.LANGGRAPH_DEPLOYMENT_URL }}
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
 
+      - name: Prepare standalone package
+        run: |
+          cp -r .next/static .next/standalone/.next/static
+          cp -r public .next/standalone/public
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: .
+          path: .next/standalone/
 
   deploy:
     runs-on: ubuntu-latest
@@ -82,4 +87,5 @@ jobs:
           app-name: 'app-conjectural-assist'
           slot-name: 'Production'
           package: .
+          startup-command: 'node server.js'
           
