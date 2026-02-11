@@ -53,13 +53,14 @@ jobs:
         run: |
           cp -r .next/static .next/standalone/.next/static
           cp -r public .next/standalone/public
+          cd .next/standalone
+          zip -r -y ../../deploy.zip .
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: .next/standalone/
-          include-hidden-files: true
+          path: deploy.zip
 
   deploy:
     runs-on: ubuntu-latest
@@ -108,14 +109,13 @@ jobs:
           az webapp config set \
             -g "${{ steps.rg.outputs.name }}" \
             -n app-conjectural-assist \
-            --startup-file "[ -L node_modules ] && rm node_modules && mv _del_node_modules node_modules; rm -f node_modules.tar.gz oryx-manifest.toml; node server.js"
+            --startup-file "node server.js"
 
       - name: Wait for SCM to stabilize
         run: sleep 30
 
       - name: 'Deploy to Azure Web App'
         run: |
-          zip -r deploy.zip .
           az webapp deploy \
             -g "${{ steps.rg.outputs.name }}" \
             -n app-conjectural-assist \
@@ -123,4 +123,19 @@ jobs:
             --type zip \
             --clean true \
             --async false
+
+      - name: Clean up Oryx artifacts via Kudu
+        run: |
+          TOKEN=$(az account get-access-token --query accessToken -o tsv)
+          curl -sf -X POST \
+            "https://app-conjectural-assist.scm.azurewebsites.net/api/command" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"command":"rm -rf /home/site/wwwroot/node_modules.tar.gz /home/site/wwwroot/oryx-manifest.toml /home/site/wwwroot/_del_node_modules","dir":"/home/site/wwwroot"}'
+
+      - name: Restart app cleanly
+        run: |
+          az webapp restart \
+            -g "${{ steps.rg.outputs.name }}" \
+            -n app-conjectural-assist
           
