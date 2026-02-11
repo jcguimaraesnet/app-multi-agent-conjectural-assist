@@ -43,13 +43,18 @@ jobs:
         working-directory: backend
         run: uv sync --frozen
 
+      - name: Prepare deployment package
+        working-directory: backend
+        run: |
+          # Move .venv packages into the project so Azure can find them
+          # Azure Linux Python apps expect packages in antenv or .venv
+          cp -r .venv .venv_deploy
+
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
         with:
           name: python-app
-          path: |
-            .
-            !backend/.venv/
+          path: backend/
 
   deploy:
     runs-on: ubuntu-latest
@@ -63,7 +68,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: python-app
-      
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -76,12 +81,14 @@ jobs:
         with:
           app-name: 'api-conjectural-assist'
           app-settings-json: |
-              [{ "name": "NEXT_PUBLIC_SUPABASE_URL", "value": "${{ vars.NEXT_PUBLIC_SUPABASE_URL }}",
-              "name": "NEXT_PUBLIC_SUPABASE_ANON_KEY", "value": "${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}",
-              "name": "SUPABASE_SERVICE_ROLE_KEY", "value": "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}",
-              "name": "GEMINI_API_KEY", "value": "${{ secrets.GEMINI_API_KEY }}",
-              "name": "OPENAI_API_KEY", "value": "${{ secrets.OPENAI_API_KEY }}" }]
-
+            [
+              { "name": "NEXT_PUBLIC_SUPABASE_URL", "value": "${{ vars.NEXT_PUBLIC_SUPABASE_URL }}" },
+              { "name": "NEXT_PUBLIC_SUPABASE_ANON_KEY", "value": "${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" },
+              { "name": "SUPABASE_SERVICE_ROLE_KEY", "value": "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" },
+              { "name": "GEMINI_API_KEY", "value": "${{ secrets.GEMINI_API_KEY }}" },
+              { "name": "OPENAI_API_KEY", "value": "${{ secrets.OPENAI_API_KEY }}" },
+              { "name": "SCM_DO_BUILD_DURING_DEPLOYMENT", "value": "false" }
+            ]
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
@@ -89,3 +96,5 @@ jobs:
         with:
           app-name: 'api-conjectural-assist'
           slot-name: 'Production'
+          package: .
+          startup-command: '.venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 8181'
