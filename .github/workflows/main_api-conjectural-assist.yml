@@ -28,27 +28,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Gera requirements.txt a partir do pyproject.toml para o Oryx entender
       - name: Set up uv
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           cache-dependency-glob: 'backend/uv.lock'
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install dependencies
+      - name: Export requirements.txt
         working-directory: backend
-        run: uv sync --frozen
-
-      - name: Prepare deployment package
-        working-directory: backend
-        run: |
-          # Move .venv packages into the project so Azure can find them
-          # Azure Linux Python apps expect packages in antenv or .venv
-          cp -r .venv .venv_deploy
+        run: uv export --format requirements-txt --no-hashes -o requirements.txt
 
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
@@ -87,14 +76,13 @@ jobs:
               { "name": "SUPABASE_SERVICE_ROLE_KEY", "value": "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" },
               { "name": "GEMINI_API_KEY", "value": "${{ secrets.GEMINI_API_KEY }}" },
               { "name": "OPENAI_API_KEY", "value": "${{ secrets.OPENAI_API_KEY }}" },
-              { "name": "SCM_DO_BUILD_DURING_DEPLOYMENT", "value": "false" }
+              { "name": "SCM_DO_BUILD_DURING_DEPLOYMENT", "value": "true" }
             ]
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
-        id: deploy-to-webapp
         with:
           app-name: 'api-conjectural-assist'
           slot-name: 'Production'
           package: .
-          startup-command: '.venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 8181'
+          startup-command: 'python -m uvicorn main:app --host 0.0.0.0 --port $PORT'
