@@ -93,8 +93,14 @@ jobs:
             -g "${{ steps.rg.outputs.name }}" \
             -n app-conjectural-assist \
             --settings \
-              SCM_DO_BUILD_DURING_DEPLOYMENT=false \
-              WEBSITE_RUN_FROM_PACKAGE=1
+              SCM_DO_BUILD_DURING_DEPLOYMENT=false
+
+      - name: Remove stale WEBSITE_RUN_FROM_PACKAGE setting
+        run: |
+          az webapp config appsettings delete \
+            -g "${{ steps.rg.outputs.name }}" \
+            -n app-conjectural-assist \
+            --setting-names WEBSITE_RUN_FROM_PACKAGE || true
 
       - name: Configure startup command
         run: |
