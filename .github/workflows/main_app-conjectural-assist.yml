@@ -53,8 +53,11 @@ jobs:
         run: |
           cp -r .next/static .next/standalone/.next/static
           cp -r public .next/standalone/public
-          cd .next/standalone
-          zip -r -y ../../deploy.zip .
+          # Dereference symlinks so Azure can extract properly
+          mkdir -p standalone-flat
+          cp -rL .next/standalone/. standalone-flat/
+          cd standalone-flat
+          zip -r ../deploy.zip .
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
