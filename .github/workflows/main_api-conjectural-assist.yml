@@ -71,6 +71,20 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_823C4066FA574ECE9147D681D6C9D63E }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_9CD59334491944CEA00F09088E9C4DE0 }}
 
+      - name: Configure Azure App Settings
+        uses: azure/appservice-settings@v1
+        with:
+          app-name: 'api-conjectural-assist'
+          app-settings-json: |
+            [
+              { "name": "NEXT_PUBLIC_SUPABASE_URL", "value": "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" },
+              { "name": "NEXT_PUBLIC_SUPABASE_ANON_KEY", "value": "${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" },
+              { "name": "SUPABASE_SERVICE_ROLE_KEY", "value": "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" },
+              { "name": "GEMINI_API_KEY", "value": "${{ secrets.GEMINI_API_KEY }}" },
+              { "name": "OPENAI_API_KEY", "value": "${{ secrets.OPENAI_API_KEY }}" },
+            ]
+
+
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
