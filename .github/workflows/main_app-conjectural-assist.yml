@@ -53,9 +53,9 @@ jobs:
         run: |
           cp -r .next/static .next/standalone/.next/static
           cp -r public .next/standalone/public
-          # Dereference symlinks so Azure can extract properly
+          # Dereference symlinks, skip broken ones
           mkdir -p standalone-flat
-          cp -rL .next/standalone/. standalone-flat/
+          rsync -a --copy-links --safe-links .next/standalone/ standalone-flat/
           cd standalone-flat
           zip -r ../deploy.zip .
 
