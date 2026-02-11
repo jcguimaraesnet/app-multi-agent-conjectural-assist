@@ -59,6 +59,7 @@ jobs:
         with:
           name: node-app
           path: .next/standalone/
+          include-hidden-files: true
 
   deploy:
     runs-on: ubuntu-latest
@@ -91,7 +92,9 @@ jobs:
           az webapp config appsettings set \
             -g "${{ steps.rg.outputs.name }}" \
             -n app-conjectural-assist \
-            --settings SCM_DO_BUILD_DURING_DEPLOYMENT=false
+            --settings \
+              SCM_DO_BUILD_DURING_DEPLOYMENT=false \
+              WEBSITE_RUN_FROM_PACKAGE=1
 
       - name: Configure startup command
         run: |
