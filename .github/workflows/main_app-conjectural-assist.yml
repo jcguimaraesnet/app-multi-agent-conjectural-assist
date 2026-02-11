@@ -93,7 +93,8 @@ jobs:
             -g "${{ steps.rg.outputs.name }}" \
             -n app-conjectural-assist \
             --settings \
-              SCM_DO_BUILD_DURING_DEPLOYMENT=false
+              SCM_DO_BUILD_DURING_DEPLOYMENT=false \
+              ENABLE_ORYX_BUILD=false
 
       - name: Remove stale WEBSITE_RUN_FROM_PACKAGE setting
         run: |
@@ -107,7 +108,7 @@ jobs:
           az webapp config set \
             -g "${{ steps.rg.outputs.name }}" \
             -n app-conjectural-assist \
-            --startup-file "node server.js"
+            --startup-file "[ -L node_modules ] && rm node_modules && mv _del_node_modules node_modules; rm -f node_modules.tar.gz oryx-manifest.toml; node server.js"
 
       - name: Wait for SCM to stabilize
         run: sleep 30
