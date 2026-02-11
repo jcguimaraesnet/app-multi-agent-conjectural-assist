@@ -65,6 +65,17 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_823C4066FA574ECE9147D681D6C9D63E }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_9CD59334491944CEA00F09088E9C4DE0 }}
 
+      - name: 'Deploy to Azure Web App'
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'api-conjectural-assist'
+          slot-name: 'Production'
+          package: .
+          startup-command: 'python -m uvicorn main:app --host 0.0.0.0 --port $PORT'
+
+      - name: Wait for SCM to stabilize
+        run: sleep 30
+
       - name: Configure Azure App Settings
         uses: azure/appservice-settings@v1
         with:
@@ -78,11 +89,3 @@ jobs:
               { "name": "OPENAI_API_KEY", "value": "${{ secrets.OPENAI_API_KEY }}" },
               { "name": "SCM_DO_BUILD_DURING_DEPLOYMENT", "value": "true" }
             ]
-
-      - name: 'Deploy to Azure Web App'
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: 'api-conjectural-assist'
-          slot-name: 'Production'
-          package: .
-          startup-command: 'python -m uvicorn main:app --host 0.0.0.0 --port $PORT'
