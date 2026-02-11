@@ -78,9 +78,20 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_12F71D222204432D8C0D63D89CDB83A8 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_2F71B5129DCD45ECB7A18CEF83B0EAD5 }}
 
+      - name: Disable Oryx build
+        run: |
+          az webapp config appsettings set \
+            -n app-conjectural-assist \
+            -g $(az webapp list --query "[?name=='app-conjectural-assist'].resourceGroup | [0]" -o tsv) \
+            --settings \
+              SCM_DO_BUILD_DURING_DEPLOYMENT=false \
+              ENABLE_ORYX_BUILD=false
+
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: app-conjectural-assist
           package: .
+          clean: true
+          restart: true
           startup-command: 'node server.js'
