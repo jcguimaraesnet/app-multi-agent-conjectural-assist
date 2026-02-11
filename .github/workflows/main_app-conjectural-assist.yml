@@ -53,9 +53,10 @@ jobs:
         run: |
           cp -r .next/static .next/standalone/.next/static
           cp -r public .next/standalone/public
-          # Dereference symlinks, skip broken ones
-          mkdir -p standalone-flat
-          rsync -a --copy-links --safe-links .next/standalone/ standalone-flat/
+          # Use tar to avoid symlink errors, then zip for Azure
+          tar -cf standalone.tar -C .next/standalone .
+          mkdir standalone-flat
+          tar -xf standalone.tar -C standalone-flat
           cd standalone-flat
           zip -r ../deploy.zip .
 
@@ -141,4 +142,3 @@ jobs:
           az webapp restart \
             -g "${{ steps.rg.outputs.name }}" \
             -n app-conjectural-assist
-          
