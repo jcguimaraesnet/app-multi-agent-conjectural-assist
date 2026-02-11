@@ -87,6 +87,9 @@ jobs:
               SCM_DO_BUILD_DURING_DEPLOYMENT=false \
               ENABLE_ORYX_BUILD=false
 
+      - name: Wait for SCM to stabilize
+        run: sleep 30
+
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
