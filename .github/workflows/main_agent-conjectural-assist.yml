@@ -32,14 +32,16 @@ jobs:
         run: |
           uv python install 3.13
           uv sync
-                
-      # By default, when you enable GitHub CI/CD integration through the Azure portal, the platform automatically sets the SCM_DO_BUILD_DURING_DEPLOYMENT application setting to true. This triggers the use of Oryx, a build engine that handles application compilation and dependency installation (e.g., pip install) directly on the platform during deployment. Hence, we exclude the antenv virtual environment directory from the deployment artifact to reduce the payload size. 
+          uv export --frozen --no-hashes -o requirements.txt
+
+      # Oryx uses requirements.txt to install dependencies on Azure App Service.
+      # We exclude the .venv directory to reduce the artifact size.
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
         with:
           name: python-app
           path: |
-            .
+            backend/
             !backend/.venv/
 
       # 🚫 Opting Out of Oryx Build
@@ -74,4 +76,5 @@ jobs:
         with:
           app-name: 'agent-conjectural-assist'
           slot-name: 'Production'
+          startup-command: 'langgraph dev --port 8123 --no-browser'
           
