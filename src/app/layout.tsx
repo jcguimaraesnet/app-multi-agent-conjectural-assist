@@ -7,6 +7,7 @@ import { RequirementsProvider } from "@/contexts/RequirementsContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 import { CopilotKit } from "@copilotkit/react-core";
 import "@copilotkit/react-ui/styles.css";
+import { HttpAgent } from "@ag-ui/client";
 
 export const metadata: Metadata = {
   title: "Conjectural Assist",
@@ -33,7 +34,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="antialiased">
-        <CopilotKit publicApiKey="ck_pub_5acb553c22b36526ed920447b52f0b24" showDevConsole={true}>
+        <CopilotKit runtimeUrl="/api/copilotkit" agent="sample_agent" showDevConsole={true}>
           <ThemeProvider>
             <AuthProvider>
               <ProjectProvider>

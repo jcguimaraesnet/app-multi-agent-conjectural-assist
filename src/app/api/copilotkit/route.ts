@@ -23,6 +23,13 @@ const runtime = new CopilotRuntime({
   },
 });
 
+export const GET = async (req: NextRequest) => {
+  return new Response(
+    JSON.stringify({ message: "CopilotKit endpoint — use POST to interact" }),
+    { status: 200, headers: { "Content-Type": "application/json" } }
+  );
+};
+
 // 3. Build a Next.js API route that handles the CopilotKit runtime requests.
 export const POST = async (req: NextRequest) => {
   const { handleRequest } = copilotRuntimeNextJSAppRouterEndpoint({
@@ -32,4 +39,16 @@ export const POST = async (req: NextRequest) => {
   });
 
   return handleRequest(req);
+};
+
+export const OPTIONS = async () => {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "Allow": "GET,POST,OPTIONS",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    },
+  });
 };
