@@ -33,7 +33,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="antialiased">
-        <CopilotKit runtimeUrl="/api/copilotkit" agent="sample_agent" showDevConsole={true}>
+        <CopilotKit publicApiKey="ck_pub_5acb553c22b36526ed920447b52f0b24" showDevConsole={true}>
           <ThemeProvider>
             <AuthProvider>
               <ProjectProvider>
