@@ -9,6 +9,7 @@ on:
       - main
     paths-ignore:
       - 'backend/**'
+      - '.github/workflows/main_agent-conjectural-assist.yml'
       - '.github/workflows/main_api-conjectural-assist.yml'
   workflow_dispatch:
 

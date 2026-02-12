@@ -2,12 +2,15 @@
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 # More info on Python, GitHub Actions, and Azure App Service: https://aka.ms/python-webapps-actions
 
-name: Build and deploy Python app to Azure Web App - agent-conjectural-assist
+name: (Agent) api-conjectural-assist
 
 on:
   push:
     branches:
       - main
+    paths:
+      - 'backend/**'
+      - '.github/workflows/main_agent-conjectural-assist.yml'
   workflow_dispatch:
 
 jobs:
