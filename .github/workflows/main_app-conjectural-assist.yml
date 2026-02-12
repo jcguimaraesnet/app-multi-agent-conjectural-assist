@@ -85,6 +85,13 @@ jobs:
           RG=$(az webapp list --query "[?name=='app-conjectural-assist'].resourceGroup | [0]" -o tsv)
           echo "name=$RG" >> $GITHUB_OUTPUT
 
+      - name: Configure startup command
+        run: |
+          az webapp config set \
+            -n app-conjectural-assist \
+            -g "${{ steps.rg.outputs.name }}" \
+            --startup-file "ln -sfn _modules node_modules && node server.js"
+
       - name: Deploy to Azure Web App
         run: |
           zip -rq deploy.zip .
@@ -95,13 +102,3 @@ jobs:
             --type zip \
             --clean true \
             --async false
-
-      - name: Configure startup and restart
-        run: |
-          az webapp config set \
-            -n app-conjectural-assist \
-            -g "${{ steps.rg.outputs.name }}" \
-            --startup-file "rm -rf node_modules 2>/dev/null; ln -sfn _modules node_modules; node server.js"
-          az webapp restart \
-            -n app-conjectural-assist \
-            -g "${{ steps.rg.outputs.name }}"
