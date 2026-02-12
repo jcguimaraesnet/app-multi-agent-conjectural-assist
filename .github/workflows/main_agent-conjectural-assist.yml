@@ -76,5 +76,5 @@ jobs:
         with:
           app-name: 'agent-conjectural-assist'
           slot-name: 'Production'
-          startup-command: 'langgraph dev --port 8123 --no-browser'
+          startup-command: 'langgraph dev --host 0.0.0.0 --port 8000 --no-browser'
           
