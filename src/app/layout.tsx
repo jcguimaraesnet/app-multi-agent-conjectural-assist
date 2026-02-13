@@ -35,10 +35,10 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         <CopilotKit 
-        publicApiKey="ck_pub_5acb553c22b36526ed920447b52f0b24"
-        // runtimeUrl="/api/copilotkit" 
-        // agent="sample_agent" 
-        // showDevConsole={true}
+        // publicApiKey="ck_pub_5acb553c22b36526ed920447b52f0b24"
+        runtimeUrl="/api/copilotkit" 
+        agent="sample_agent" 
+        showDevConsole={true}
         >
           <ThemeProvider>
             <AuthProvider>
