@@ -1,6 +1,20 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+function getRedirectUrl(request: NextRequest, pathname: string): URL {
+  const forwardedHost = request.headers.get('x-forwarded-host')
+  const forwardedProto = request.headers.get('x-forwarded-proto')
+
+  if (forwardedHost) {
+    const protocol = forwardedProto || 'https'
+    return new URL(pathname, `${protocol}://${forwardedHost}`)
+  }
+
+  const url = request.nextUrl.clone()
+  url.pathname = pathname
+  return url
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -38,16 +52,12 @@ export async function updateSession(request: NextRequest) {
   const isProtectedRoute = !isAuthRoute && !isPublicApiRoute
 
   if (!user && isProtectedRoute) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/auth/login'
-    return NextResponse.redirect(url)
+    return NextResponse.redirect(getRedirectUrl(request, '/auth/login'))
   }
 
   // Redirect authenticated users away from auth pages (except signout)
   if (user && isAuthRoute && !request.nextUrl.pathname.includes('/signout')) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/'
-    return NextResponse.redirect(url)
+    return NextResponse.redirect(getRedirectUrl(request, '/'))
   }
 
   return supabaseResponse

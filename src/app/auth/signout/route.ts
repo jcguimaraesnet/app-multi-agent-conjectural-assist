@@ -15,9 +15,20 @@ export async function POST(req: NextRequest) {
   }
 
   revalidatePath('/', 'layout')
-  const url = req.nextUrl.clone()
-  url.pathname = '/auth/login'
-  return NextResponse.redirect(url, {
+
+  const forwardedHost = req.headers.get('x-forwarded-host')
+  const forwardedProto = req.headers.get('x-forwarded-proto')
+  let redirectUrl: URL
+
+  if (forwardedHost) {
+    const protocol = forwardedProto || 'https'
+    redirectUrl = new URL('/auth/login', `${protocol}://${forwardedHost}`)
+  } else {
+    redirectUrl = req.nextUrl.clone()
+    redirectUrl.pathname = '/auth/login'
+  }
+
+  return NextResponse.redirect(redirectUrl, {
     status: 302,
   })
 }
