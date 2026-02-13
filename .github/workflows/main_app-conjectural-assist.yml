@@ -41,7 +41,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          echo "shamefully-hoist=true" >> .npmrc
+          echo "node-linker=hoisted" >> .npmrc
           pnpm install --frozen-lockfile
 
       - name: Build
