@@ -96,6 +96,16 @@ jobs:
             -g "${{ steps.rg.outputs.name }}" \
             --startup-file "ln -sfn _modules node_modules && node server.js"
 
+      - name: Configure Azure App Settings
+        uses: azure/appservice-settings@v1
+        with:
+          app-name: 'app-conjectural-assist'
+          app-settings-json: |
+            [
+              { "name": "LANGGRAPH_DEPLOYMENT_URL", "value": "${{ vars.LANGGRAPH_DEPLOYMENT_URL }}" },
+              { "name": "LANGSMITH_API_KEY", "value": "${{ secrets.LANGSMITH_API_KEY }}" }
+            ]
+
       - name: Deploy to Azure Web App
         run: |
           zip -rq deploy.zip .

@@ -25,7 +25,10 @@ const runtime = new CopilotRuntime({
 
 export const GET = async (req: NextRequest) => {
   return new Response(
-    JSON.stringify({ message: "CopilotKit endpoint — use POST to interact" }),
+    JSON.stringify({
+      message: "CopilotKit endpoint — use POST to interact",
+      langgraph_deployment_url: process.env.LANGGRAPH_DEPLOYMENT_URL || "(empty — fallback to http://localhost:8123)",
+    }),
     { status: 200, headers: { "Content-Type": "application/json" } }
   );
 };
