@@ -9,7 +9,7 @@
     "dev:original": "next dev --webpack",
     "dev:turbo": "next dev --turbopack",
     "dev:agent": "cd backend && npx @langchain/langgraph-cli dev --port 8123 --no-browser",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint"
   },
