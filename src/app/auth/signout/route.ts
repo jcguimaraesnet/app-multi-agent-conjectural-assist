@@ -15,7 +15,9 @@ export async function POST(req: NextRequest) {
   }
 
   revalidatePath('/', 'layout')
-  return NextResponse.redirect(new URL('/auth/login', req.url), {
+  const url = req.nextUrl.clone()
+  url.pathname = '/auth/login'
+  return NextResponse.redirect(url, {
     status: 302,
   })
 }
