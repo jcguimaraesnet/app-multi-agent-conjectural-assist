@@ -35,7 +35,7 @@ export async function updateSession(request: NextRequest) {
   // Protected routes - redirect to login if not authenticated
   const isAuthRoute = request.nextUrl.pathname.startsWith('/auth')
   const isPublicApiRoute = request.nextUrl.pathname.startsWith('/api/copilotkit')
-  const isProtectedRoute = !isAuthRoute && !isPublicApiRoute && request.nextUrl.pathname !== '/'
+  const isProtectedRoute = !isAuthRoute && !isPublicApiRoute
 
   if (!user && isProtectedRoute) {
     const url = request.nextUrl.clone()
