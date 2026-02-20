@@ -117,4 +117,5 @@ jobs:
             --src-path deploy.zip \
             --type zip \
             --clean true \
-            --async false
+            --async false \
+            --timeout 600
