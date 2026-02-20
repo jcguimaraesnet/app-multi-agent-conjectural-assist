@@ -104,7 +104,8 @@ jobs:
           app-settings-json: |
             [
               { "name": "LANGGRAPH_DEPLOYMENT_URL", "value": "${{ vars.LANGGRAPH_DEPLOYMENT_URL }}" },
-              { "name": "LANGSMITH_API_KEY", "value": "${{ secrets.LANGSMITH_API_KEY }}" }
+              { "name": "LANGSMITH_API_KEY", "value": "${{ secrets.LANGSMITH_API_KEY }}" },
+              { "name": "NEXT_PUBLIC_SITE_URL", "value": "${{ vars.NEXT_PUBLIC_SITE_URL }}" }
             ]
 
       - name: Deploy to Azure Web App
