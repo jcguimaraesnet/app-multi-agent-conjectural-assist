@@ -41,20 +41,19 @@ async def list_requirements_by_project(
     List all requirements for a specific project.
     Optionally filter by requirement type.
     """
-    user_id = get_user_id_from_header(authorization)
+    get_user_id_from_header(authorization)
     supabase = get_supabase_client()
-    
+
     try:
-        # Verify project ownership
+        # Verify project exists
         project_check = supabase.table("projects")\
             .select("id")\
             .eq("id", str(project_id))\
-            .eq("user_id", user_id)\
             .execute()
-        
+
         if not project_check.data:
             raise HTTPException(status_code=404, detail="Project not found")
-        
+
         # Build query
         query = supabase.table("requirements")\
             .select("*")\
@@ -84,17 +83,16 @@ async def create_requirement(
     """
     Create a new requirement for a project.
     """
-    user_id = get_user_id_from_header(authorization)
+    get_user_id_from_header(authorization)
     supabase = get_supabase_client()
-    
+
     try:
-        # Verify project ownership
+        # Verify project exists
         project_check = supabase.table("projects")\
             .select("id")\
             .eq("id", str(requirement.project_id))\
-            .eq("user_id", user_id)\
             .execute()
-        
+
         if not project_check.data:
             raise HTTPException(status_code=404, detail="Project not found")
         
@@ -131,26 +129,19 @@ async def get_requirement(
     """
     Get a specific requirement by ID.
     """
-    user_id = get_user_id_from_header(authorization)
+    get_user_id_from_header(authorization)
     supabase = get_supabase_client()
-    
+
     try:
-        # Get requirement with project join to verify ownership
         result = supabase.table("requirements")\
-            .select("*, projects!inner(user_id)")\
+            .select("*")\
             .eq("id", str(requirement_id))\
             .execute()
-        
+
         if not result.data:
             raise HTTPException(status_code=404, detail="Requirement not found")
-        
-        # Verify ownership
-        if result.data[0]["projects"]["user_id"] != user_id:
-            raise HTTPException(status_code=404, detail="Requirement not found")
-        
-        # Remove the joined project data from response
-        req_data = {k: v for k, v in result.data[0].items() if k != "projects"}
-        return req_data
+
+        return result.data[0]
         
     except HTTPException:
         raise
@@ -170,22 +161,19 @@ async def update_requirement(
     """
     Update an existing requirement.
     """
-    user_id = get_user_id_from_header(authorization)
+    get_user_id_from_header(authorization)
     supabase = get_supabase_client()
-    
+
     try:
-        # Verify requirement exists and user owns the project
+        # Verify requirement exists
         check = supabase.table("requirements")\
-            .select("*, projects!inner(user_id)")\
+            .select("id")\
             .eq("id", str(requirement_id))\
             .execute()
-        
+
         if not check.data:
             raise HTTPException(status_code=404, detail="Requirement not found")
-        
-        if check.data[0]["projects"]["user_id"] != user_id:
-            raise HTTPException(status_code=404, detail="Requirement not found")
-        
+
         # Update requirement
         update_data = {
             "requirement_id": requirement.requirement_id,
@@ -218,20 +206,17 @@ async def delete_requirement(
     """
     Delete a requirement.
     """
-    user_id = get_user_id_from_header(authorization)
+    get_user_id_from_header(authorization)
     supabase = get_supabase_client()
-    
+
     try:
-        # Verify requirement exists and user owns the project
+        # Verify requirement exists
         check = supabase.table("requirements")\
-            .select("*, projects!inner(user_id)")\
+            .select("id")\
             .eq("id", str(requirement_id))\
             .execute()
-        
+
         if not check.data:
-            raise HTTPException(status_code=404, detail="Requirement not found")
-        
-        if check.data[0]["projects"]["user_id"] != user_id:
             raise HTTPException(status_code=404, detail="Requirement not found")
         
         # Delete requirement

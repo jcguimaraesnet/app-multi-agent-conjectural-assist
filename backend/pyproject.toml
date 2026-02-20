@@ -22,5 +22,5 @@ dependencies = [
     "langchain-openai>=1.1.7",
     "copilotkit==0.1.78",
     # necessary for path graph cross plataform (win/linux)
-    "langgraph-cli[inmem]>=0.1.0",
+    "langgraph-cli[inmem]>=0.4.12",
 ]

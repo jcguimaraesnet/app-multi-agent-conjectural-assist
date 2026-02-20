@@ -35,7 +35,6 @@ async def orchestrator_node(state: WorkflowState, config: Optional[RunnableConfi
     # Route based on intent
     if response.content == "right_intent":
         return Command(
-            goto="right_node",
             update={
                 "messages": state.get("messages", []),
                 "intent": response.content,
@@ -44,7 +43,6 @@ async def orchestrator_node(state: WorkflowState, config: Optional[RunnableConfi
     else:
         # Route to generic node for conversational response
         return Command(
-            goto="left_node",
             update={
                 "messages": state.get("messages", []),
                 "intent": response.content,

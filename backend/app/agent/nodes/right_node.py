@@ -30,7 +30,6 @@ async def right_node(state: WorkflowState, config: Optional[RunnableConfig] = No
     await copilotkit_exit(config_internal)
 
     return Command(
-        goto=END,
         update={
             "messages": state.get('messages', []) + [response]
         }

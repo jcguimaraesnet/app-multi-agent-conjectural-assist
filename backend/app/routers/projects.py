@@ -327,17 +327,16 @@ async def create_project(
 @router.get("", response_model=list[ProjectResponse])
 async def list_projects(authorization: Optional[str] = Header(None)):
     """
-    List all projects for the authenticated user.
+    List all projects.
     Excludes document blob data to keep response size small.
     """
-    user_id = get_user_id_from_header(authorization)
+    get_user_id_from_header(authorization)
     supabase = get_supabase_client()
-    
+
     try:
         # Select specific columns, excluding blob data
         result = supabase.table("projects")\
             .select(PROJECT_SELECT_COLUMNS)\
-            .eq("user_id", user_id)\
             .order("created_at", desc=True)\
             .execute()
         
@@ -362,30 +361,29 @@ async def get_project(
     Get a specific project by ID.
     Excludes document blob data to keep response size small.
     """
-    user_id = get_user_id_from_header(authorization)
+    get_user_id_from_header(authorization)
     supabase = get_supabase_client()
-    
+
     try:
         # Select specific columns, excluding blob data
         result = supabase.table("projects")\
             .select(PROJECT_SELECT_COLUMNS)\
             .eq("id", str(uuid))\
-            .eq("user_id", user_id)\
             .single()\
             .execute()
-        
+
         if not result.data:
             raise HTTPException(status_code=404, detail="Project not found")
-        
+
         profiles_map = _fetch_profiles_map(supabase, {result.data.get("user_id")})
         enriched = _attach_author_metadata([result.data], profiles_map)
         return enriched[0]
-        
+
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
-            status_code=500, 
+            status_code=500,
             detail=f"Failed to get project: {str(e)}"
         )
 
@@ -396,14 +394,13 @@ async def get_project_details(
     authorization: Optional[str] = Header(None)
 ):
     """Return project metadata along with requirement counts."""
-    user_id = get_user_id_from_header(authorization)
+    get_user_id_from_header(authorization)
     supabase = get_supabase_client()
 
     try:
         result = supabase.table("projects")\
             .select(PROJECT_SELECT_COLUMNS)\
             .eq("id", str(uuid))\
-            .eq("user_id", user_id)\
             .single()\
             .execute()
 
@@ -432,7 +429,7 @@ async def download_project_document(
     authorization: Optional[str] = Header(None)
 ):
     """Download a stored project document (vision or requirements)."""
-    user_id = get_user_id_from_header(authorization)
+    get_user_id_from_header(authorization)
     supabase = get_supabase_client()
 
     if doc_type not in {"vision", "requirements"}:
@@ -442,7 +439,6 @@ async def download_project_document(
         result = supabase.table("projects")\
             .select("id, user_id, vision_document_name, vision_document_data, requirements_document_name, requirements_document_data")\
             .eq("id", str(uuid))\
-            .eq("user_id", user_id)\
             .single()\
             .execute()
 
@@ -494,17 +490,16 @@ async def delete_project(
     """
     Delete a project and all its requirements.
     """
-    user_id = get_user_id_from_header(authorization)
+    get_user_id_from_header(authorization)
     supabase = get_supabase_client()
-    
+
     try:
-        # Verify ownership
+        # Verify project exists
         check = supabase.table("projects")\
             .select("id")\
             .eq("id", str(uuid))\
-            .eq("user_id", user_id)\
             .execute()
-        
+
         if not check.data:
             raise HTTPException(status_code=404, detail="Project not found")
         
