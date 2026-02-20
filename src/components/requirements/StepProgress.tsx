@@ -1,6 +1,7 @@
 "use client";
 
 import Spinner from "@/components/ui/Spinner";
+import { randomUUID } from "crypto";
 
 interface StepState {
   step1_elicitation: boolean;
@@ -10,6 +11,7 @@ interface StepState {
 }
 
 interface StepProgressProps {
+  status: string;
   state: StepState;
 }
 
@@ -20,22 +22,26 @@ const steps = [
   { key: "step4_validation", label: "Validation Step" },
 ] as const;
 
-export default function StepProgress({ state }: StepProgressProps) {
+export default function StepProgress({ status, state }: StepProgressProps) {
   return (
-    <div>
-      <h2 className="text-lg font-bold mb-4">Subagents Progress</h2>
-      <ul className="list-disc list-inside space-y-2">
-        {steps.map(({ key, label }) => (
-          <li key={key} className="flex items-center gap-2">
-            <span>{label}:</span>
-            {state[key] ? (
-              <span className="text-green-600">✅ Completed</span>
-            ) : (
-              <Spinner size="sm" />
-            )}
-          </li>
-        ))}
-      </ul>
+      (state.step1_elicitation || state.step2_analysis || state.step3_specification || state.step4_validation) ? (
+    // key aleatory to force re-render on state change
+    <div className="p-4 border rounded-lg bg-gray-50">
+        {/* <pre>{JSON.stringify(state, null, 2)}</pre> */}
+        <h2 className="text-lg font-bold mb-4">Subagents Progress</h2>
+        <ul className="list-disc list-inside space-y-2">
+          {steps.map(({ key, label }) => (
+            <li key={key} className="flex items-center gap-2">
+              <span>{label}:</span>
+              {state[key] ? (
+                <span className="text-green-600">✅ Completed</span>
+              ) : (
+                <Spinner size="sm" />
+              )}
+            </li>
+          ))}
+        </ul>
     </div>
+    ) : null
   );
 }

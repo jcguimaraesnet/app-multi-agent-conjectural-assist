@@ -11,7 +11,7 @@ from typing import Optional
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.messages import AIMessage
 from langgraph.types import Command
-from copilotkit.langgraph import copilotkit_emit_message
+from copilotkit.langgraph import copilotkit_emit_message, copilotkit_customize_config
 
 from app.agent.state import WorkflowState
 
@@ -24,16 +24,17 @@ async def analysis_node(state: WorkflowState, config: Optional[RunnableConfig] =
     and categorizes them appropriately.
     """
     print("Analysis node started.")
+    config = copilotkit_customize_config(config, emit_messages=False)
     await asyncio.sleep(1)
 
     feedback = AIMessage(content="🔍 **Analysis Complete!!!**")
-    await copilotkit_emit_message(config, feedback.content)
+    # await copilotkit_emit_message(config, feedback.content)
     messages = state.get("messages", []) + [feedback]
 
     return Command(
         goto="specification_node",
         update={
-            "messages": messages,
+            # "messages": messages,
             "step2_analysis": True
         }
     )

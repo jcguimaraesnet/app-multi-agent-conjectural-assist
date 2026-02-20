@@ -199,13 +199,25 @@ function RequirementsContent() {
       )
   });
 
-  useCoAgentStateRender<AgentState>({
-    name: "sample_agent",
-    render: ({ state }) => (
-      console.log("Rendering StepProgress with state:", state),
-      <StepProgress state={state} />
-    ),
-  });
+  // useCoAgentStateRender<AgentState>({
+  //   name: "sample_agent",
+  //   render: ({ status, state }) => (
+  //     console.log("Rendering StepProgress with status:", status, "and state:", state),
+  //     <StepProgress status={status} state={state} />
+  //   ),
+  // });
+
+  // ERRO: abrido mão do progresso do agente porque
+  // quando desabilita interrupt, dá o erro:
+  // "Run ended without emitting a terminal event" quando
+  // termina o nó de elicitação
+  // useCoAgentStateRender<AgentState>({
+  //   name: "sample_agent",
+  //   render: ({  status, state, nodeName }) => (
+  //     console.log("useCoAgentStateRender nodeName:", nodeName),
+  //     <StepProgress status={status} state={state} />
+  //   ),
+  // });
 
   return (
     <CopilotSidebar
@@ -220,10 +232,13 @@ function RequirementsContent() {
           title: "Generate conjectural requirements",
           message: "Generate conjectural requirements for the current project.",
         },
+        {
+          title: "Quantity functional requirements",
+          message: "How many functional requirements are there in the current project?",
+        },
       ]}>
       <AppLayout>
         <PageTitle title="Requirements" backHref="/projects" backLabel="Back Projects" />
-
         {successMessage && (
           <div className="fixed top-24 right-6 z-50 w-80 rounded-xl bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 p-4 text-sm text-gray-800 dark:text-gray-100">
             <div className="flex items-start justify-between gap-4">

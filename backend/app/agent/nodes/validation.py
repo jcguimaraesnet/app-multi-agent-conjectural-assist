@@ -12,7 +12,7 @@ from langchain_core.runnables.config import RunnableConfig
 from langchain_core.messages import AIMessage
 from langgraph.graph import END
 from langgraph.types import Command
-from copilotkit.langgraph import copilotkit_emit_message
+from copilotkit.langgraph import copilotkit_emit_message, copilotkit_exit
 
 from app.agent.state import WorkflowState
 
@@ -28,8 +28,10 @@ async def validation_node(state: WorkflowState, config: Optional[RunnableConfig]
     await asyncio.sleep(2)
 
     feedback = AIMessage(content="🔍 **Validation Complete!**")
-    await copilotkit_emit_message(config, feedback.content)
+    # await copilotkit_emit_message(config, feedback.content)
     messages = state.get("messages", []) + [feedback]
+
+    await copilotkit_exit(config)
 
     return Command(
         goto=END,

@@ -52,7 +52,7 @@ sdk = CopilotKitSDK(
     agents=[
         LangGraphAGUIAgent(
             name="sample_agent",
-            description="A requirements engineering assistant that can analyze, classify, and suggest improvements for software requirements.",
+            description="A requirements engineering assistant that can specify conjectural requirements for a software project.",
             graph=graph,
         )
     ]

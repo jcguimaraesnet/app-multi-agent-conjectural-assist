@@ -27,7 +27,7 @@ async def specification_node(state: WorkflowState, config: Optional[RunnableConf
     await asyncio.sleep(1)
 
     feedback = AIMessage(content="🔍 **Specification Complete!!!**")
-    await copilotkit_emit_message(config, feedback.content)
+    # await copilotkit_emit_message(config, feedback.content)
     messages = state.get("messages", []) + [feedback]
 
     return Command(
