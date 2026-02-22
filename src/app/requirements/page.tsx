@@ -63,8 +63,8 @@ function RequirementsContent() {
     }
   }, [projectIdFromQuery, projects, isLoadingProjects, selectProjectById]);
 
-  // Determine if we should show requirements (only when projectId is provided and project is loaded)
-  const hasValidProjectId = Boolean(projectIdFromQuery && selectedProject);
+  // Show loading when: actively fetching, project loading, or project selected but requirements not yet fetched
+  const showLoading = isLoading || (!!projectIdFromQuery && (!selectedProject || currentProjectId !== selectedProject.id));
 
   // Fetch requirements when project changes (only if not already cached)
   useEffect(() => {
@@ -280,7 +280,7 @@ function RequirementsContent() {
           </div>
         )}
 
-        {!hasValidProjectId && (
+        {!projectIdFromQuery && (
           <div className="mb-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
             <p className="text-sm text-yellow-800 dark:text-yellow-200">
               No project selected. Please access this page with a valid projectId parameter.
@@ -298,7 +298,7 @@ function RequirementsContent() {
 
         <RequirementsTable 
           requirements={paginatedRequirements}
-          isLoading={isLoading}
+          isLoading={showLoading}
           error={error}
           onDelete={handleDelete}
           currentPage={currentPage}

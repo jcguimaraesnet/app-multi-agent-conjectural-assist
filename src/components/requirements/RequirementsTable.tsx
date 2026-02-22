@@ -19,7 +19,7 @@ interface RequirementsTableProps {
 
 export default function RequirementsTable({ 
   requirements, 
-  isLoading = false,
+  isLoading = true,
   error = null,
   onDelete,
   currentPage,
@@ -48,21 +48,27 @@ export default function RequirementsTable({
     );
   }
 
-  if (isLoading) {
+  if (isLoading || requirements.length === 0) {
     return (
       <Card className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        <span className="ml-3 text-gray-600 dark:text-gray-300">Loading requirements...</span>
+        {isLoading ? (
+          <>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <span className="ml-3 text-gray-600 dark:text-gray-300">Loading requirements...</span>
+          </>
+        ) : (
+          <p className="text-gray-500 dark:text-gray-400 text-center">
+            No requirements found.
+          </p>
+        )}
       </Card>
     );
   }
 
-  if (requirements.length === 0) {
+  if (false) {
     return (
       <Card className="flex flex-col items-center justify-center py-12">
-        <p className="text-gray-500 dark:text-gray-400 text-center">
-          No requirements found. Select a project to view its requirements.
-        </p>
+        <div></div>
       </Card>
     );
   }
