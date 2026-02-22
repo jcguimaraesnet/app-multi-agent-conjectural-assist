@@ -78,8 +78,11 @@ export default function ProjectsTable({
           <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
             {isLoading ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                  Loading projects...
+                <td colSpan={5} className="px-4 py-12 text-center">
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <span className="ml-3 text-gray-600 dark:text-gray-300">Loading projects...</span>
+                  </div>
                 </td>
               </tr>
             ) : projects.length > 0 ? (
@@ -144,7 +147,7 @@ export default function ProjectsTable({
             ) : showEmptyState ? (
               <tr>
                 <td colSpan={5} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                  No projects found. Click &quot;Add Project&quot; to create one.
+                  No projects found. Create a new project to get started.
                 </td>
               </tr>
             ) : null}

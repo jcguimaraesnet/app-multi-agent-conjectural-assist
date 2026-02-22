@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode, useMemo } from 'react';
 import { useAuth } from './AuthContext';
 import { Project } from '@/types';
 
@@ -25,8 +25,8 @@ let cachedUserId: string | null = null;
 let hasFetched = false;
 
 export function ProjectProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
-  
+  const { user, isLoading: isAuthLoading } = useAuth();
+
   const getInitialProjects = () => {
     // First try in-memory cache for same user
     if (user?.id && user.id === cachedUserId && cachedProjects) {
@@ -37,11 +37,14 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
 
   const initialProjects = getInitialProjects();
   const initialLoading = initialProjects.length === 0;
-  
+
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [isLoading, setIsLoading] = useState(initialLoading);
+  const [isFetching, setIsFetching] = useState(initialLoading);
   const [error, setError] = useState<string | null>(null);
+
+  // Consider loading while auth is still resolving or while fetching projects
+  const isLoading = useMemo(() => isAuthLoading || isFetching, [isAuthLoading, isFetching]);
   
   // Track if we've already fetched for this user
   const fetchedForUser = useRef<string | null>(null);
@@ -49,7 +52,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   const fetchProjects = useCallback(async (forceRefresh = false) => {
     if (!user?.id) {
       setProjects([]);
-      setIsLoading(false);
+      setIsFetching(false);
       return;
     }
 
@@ -58,7 +61,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    setIsLoading(true);
+    setIsFetching(true);
     setError(null);
 
     try {
@@ -92,16 +95,19 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       setError(message);
       console.error('Error fetching projects:', err);
     } finally {
-      setIsLoading(false);
+      setIsFetching(false);
     }
   }, [user?.id]);
 
   // Fetch projects when user becomes available
   useEffect(() => {
+    // Don't clear state while auth is still resolving
+    if (isAuthLoading) return;
+
     if (!user?.id) {
       setProjects([]);
       setSelectedProject(null);
-      setIsLoading(false);
+      setIsFetching(false);
       return;
     }
 
@@ -114,7 +120,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       hasFetched = true;
       fetchedForUser.current = user.id;
       setProjects(cacheToUse);
-      setIsLoading(false);
+      setIsFetching(false);
       if (cacheToUse.length > 0) {
         setSelectedProject(prev => prev || cacheToUse[0]);
       }
@@ -123,7 +129,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
 
     // Otherwise fetch from API
     fetchProjects();
-  }, [user?.id, fetchProjects]);
+  }, [user?.id, isAuthLoading, fetchProjects]);
 
   const selectProject = useCallback((project: Project | null) => {
     setSelectedProject(project);
