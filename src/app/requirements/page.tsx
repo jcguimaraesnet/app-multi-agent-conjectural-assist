@@ -10,7 +10,7 @@ import { useProject } from '@/contexts/ProjectContext';
 import { useRequirements } from '@/contexts/RequirementsContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { CopilotSidebar } from "@copilotkit/react-ui";
-import { useCoAgent, useCoAgentStateRender, useLangGraphInterrupt } from "@copilotkit/react-core";
+import { useCoAgent, useCoAgentStateRender, useCopilotReadable, useLangGraphInterrupt } from "@copilotkit/react-core";
 import StepProgress from '@/components/requirements/StepProgress';
 import InterruptForm from '@/components/requirements/InterruptForm';
 import Spinner from "@/components/ui/Spinner";
@@ -167,28 +167,45 @@ function RequirementsContent() {
   const { user } = useAuth();
   const { settings } = useSettings();
   
-  // Usar useCoAgent ao invés de useAgent
-  const { state: agentState, setState: setAgentState } = useCoAgent<AgentState>({
-    name: "sample_agent",
-    initialState: {
-      user_id: user?.id || "",
-      project_id: selectedProject?.id || "",
-      require_brief_description: settings.require_brief_description,
-      batch_mode: settings.batch_mode,
-      quantity_req_batch: settings.quantity_req_batch,
-    },
-  });
+  useCopilotReadable({
+    description: "CurrentUser",
+    value: user,
+  }, [user]);
 
-  useEffect(() => {
-    setAgentState({
-      ...agentState,
-      user_id: user?.id || "",
-      project_id: selectedProject?.id || "",
-      require_brief_description: settings.require_brief_description,
-      batch_mode: settings.batch_mode,
-      quantity_req_batch: settings.quantity_req_batch,
-    });
-  }, [user?.id, selectedProject?.id, settings.require_brief_description, settings.batch_mode, settings.quantity_req_batch]);
+  useCopilotReadable({
+    description: "CurrentProjectId",
+    value: selectedProject?.id,
+  }, [selectedProject?.id]);
+
+  //settings
+  useCopilotReadable({
+    description: "CurrentUserSettings",
+    value: settings,
+  }, [settings]);
+
+
+  // // Usar useCoAgent ao invés de useAgent
+  // const { state: agentState, setState: setAgentState } = useCoAgent<AgentState>({
+  //   name: "sample_agent",
+  //   initialState: {
+  //     user_id: user?.id || "",
+  //     project_id: selectedProject?.id || "",
+  //     require_brief_description: settings.require_brief_description,
+  //     batch_mode: settings.batch_mode,
+  //     quantity_req_batch: settings.quantity_req_batch,
+  //   },
+  // });
+
+  // useEffect(() => {
+  //   setAgentState({
+  //     ...agentState,
+  //     user_id: user?.id || "",
+  //     project_id: selectedProject?.id || "",
+  //     require_brief_description: settings.require_brief_description,
+  //     batch_mode: settings.batch_mode,
+  //     quantity_req_batch: settings.quantity_req_batch,
+  //   });
+  // }, [user?.id, selectedProject?.id, settings.require_brief_description, settings.batch_mode, settings.quantity_req_batch]);
 
   useLangGraphInterrupt({
       render: ({ event, resolve }) => (
@@ -197,7 +214,7 @@ function RequirementsContent() {
             onSubmit={resolve}
           />
       )
-  });
+  }, [settings.quantity_req_batch]);
 
   // useCoAgentStateRender<AgentState>({
   //   name: "sample_agent",
