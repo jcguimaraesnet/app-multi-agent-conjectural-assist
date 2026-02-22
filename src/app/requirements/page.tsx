@@ -35,13 +35,14 @@ interface AgentState {
 function RequirementsContent() {
 
   const { selectedProject, selectProjectById, projects, isLoading: isLoadingProjects } = useProject();
-  const { 
-    requirements, 
+  const {
+    requirements,
     currentProjectId,
-    isLoading, 
-    error, 
-    fetchRequirements, 
-    deleteRequirement 
+    isLoading,
+    error,
+    fetchRequirements,
+    deleteRequirement,
+    clearRequirements
   } = useRequirements();
 
   const searchParams = useSearchParams();
@@ -63,8 +64,16 @@ function RequirementsContent() {
     }
   }, [projectIdFromQuery, projects, isLoadingProjects, selectProjectById]);
 
+  // Clear requirements when project ID is invalid
+  const projectNotFound = !!projectIdFromQuery && !isLoadingProjects && projects.length > 0 && !selectedProject;
+  useEffect(() => {
+    if (projectNotFound) {
+      clearRequirements();
+    }
+  }, [projectNotFound, clearRequirements]);
+
   // Show loading when: actively fetching, project loading, or project selected but requirements not yet fetched
-  const showLoading = isLoading || (!!projectIdFromQuery && (!selectedProject || currentProjectId !== selectedProject.id));
+  const showLoading = isLoading || (!!projectIdFromQuery && !projectNotFound && (!selectedProject || currentProjectId !== selectedProject.id));
 
   // Fetch requirements when project changes (only if not already cached)
   useEffect(() => {
@@ -125,7 +134,9 @@ function RequirementsContent() {
   };
 
   // Filter requirements by type and search query (client-side)
-  const filteredRequirements = requirements.filter(req => {
+  // Use empty array when project is not found to avoid showing stale data
+  const activeRequirements = projectNotFound ? [] : requirements;
+  const filteredRequirements = activeRequirements.filter(req => {
     const matchesType = filterType ? req.type === filterType : true;
     const matchesSearch = searchQuery
       ? req.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -280,10 +291,11 @@ function RequirementsContent() {
           </div>
         )}
 
-        {!projectIdFromQuery && (
-          <div className="mb-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-            <p className="text-sm text-yellow-800 dark:text-yellow-200">
-              No project selected. Please access this page with a valid projectId parameter.
+
+        {(!projectIdFromQuery || (!isLoadingProjects && projects.length > 0 && !selectedProject)) && (
+          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <p className="text-sm text-red-800 dark:text-red-200">
+              Project not found. Select a valid project to view its requirements.
             </p>
           </div>
         )}

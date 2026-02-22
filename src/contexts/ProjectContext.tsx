@@ -131,9 +131,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
 
   const selectProjectById = useCallback((projectId: string) => {
     const project = projects.find(p => p.id === projectId);
-    if (project) {
-      setSelectedProject(project);
-    }
+    setSelectedProject(project || null);
   }, [projects]);
 
   const refreshProjects = useCallback(async () => {
