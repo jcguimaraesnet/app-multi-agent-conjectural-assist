@@ -12,7 +12,6 @@ export async function GET(request: NextRequest) {
   const token_hash = searchParams.get('token_hash')
   const type = searchParams.get('type') as EmailOtpType | null
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/'
 
   const supabase = await createClient()
 
@@ -20,7 +19,9 @@ export async function GET(request: NextRequest) {
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      return NextResponse.redirect(getRedirectUrl(next))
+      // Sign out so the user is not auto-logged in
+      await supabase.auth.signOut()
+      return NextResponse.redirect(getRedirectUrl('/auth/login?confirmed=true'))
     }
   }
 
@@ -31,7 +32,9 @@ export async function GET(request: NextRequest) {
       token_hash,
     })
     if (!error) {
-      return NextResponse.redirect(getRedirectUrl(next))
+      // Sign out so the user is not auto-logged in
+      await supabase.auth.signOut()
+      return NextResponse.redirect(getRedirectUrl('/auth/login?confirmed=true'))
     }
   }
 

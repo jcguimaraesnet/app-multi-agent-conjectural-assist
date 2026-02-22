@@ -2,13 +2,15 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const confirmed = searchParams.get('confirmed') === 'true'
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -49,6 +51,17 @@ export default function LoginPage() {
               Sign in to continue to Conjectural Assist
             </p>
           </div>
+
+          {/* Confirmation Success Message */}
+          {confirmed && (
+            <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex items-start gap-3">
+              <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-green-800 dark:text-green-300">Email confirmed successfully!</p>
+                <p className="text-sm text-green-600 dark:text-green-400 mt-1">You can now sign in with your credentials.</p>
+              </div>
+            </div>
+          )}
 
           {/* Error Message */}
           {error && (
