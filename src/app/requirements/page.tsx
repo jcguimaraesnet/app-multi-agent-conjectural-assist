@@ -32,7 +32,7 @@ interface AgentState {
   step4_validation: boolean;
 }
 
-function RequirementsContent() {
+function RequirementsInner() {
 
   const { selectedProject, selectProjectById, projects, isLoading: isLoadingProjects } = useProject();
   const {
@@ -47,7 +47,7 @@ function RequirementsContent() {
 
   const searchParams = useSearchParams();
   const projectIdFromQuery = searchParams.get('projectId');
-  
+
   const [filterType, setFilterType] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -166,7 +166,7 @@ function RequirementsContent() {
     setSuccessMessage(null);
 
     const success = await deleteRequirement(requirementId);
-    
+
     if (success) {
       setSuccessMessage('Requirement deleted successfully.');
     } else {
@@ -174,10 +174,68 @@ function RequirementsContent() {
     }
   }, [deleteRequirement]);
 
+  return (
+    <>
+      <PageTitle title="Requirements" backHref="/projects" backLabel="Back Projects" />
+      {successMessage && (
+        <div className="fixed top-24 right-6 z-50 w-80 rounded-xl bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 p-4 text-sm text-gray-800 dark:text-gray-100">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="font-semibold text-green-600 dark:text-green-400">Success</div>
+              <p className="mt-1 text-gray-600 dark:text-gray-300">{successMessage}</p>
+            </div>
+            <button
+              onClick={handleDismissSuccess}
+              className="text-xs font-medium text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors"
+            >
+              Close
+            </button>
+          </div>
+          <div className="mt-3 h-1 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+            <div
+              className="h-full bg-green-500 dark:bg-green-400 transition-[width] duration-100 ease-linear"
+              style={{ width: `${toastProgress}%` }}
+              aria-hidden="true"
+            />
+          </div>
+        </div>
+      )}
 
+
+      {(!projectIdFromQuery || (!isLoadingProjects && projects.length > 0 && !selectedProject)) && (
+        <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <p className="text-sm text-red-800 dark:text-red-200">
+            Project not found. Select a valid project to view its requirements.
+          </p>
+        </div>
+      )}
+
+      <RequirementsToolbar
+        filterType={filterType}
+        setFilterType={setFilterType}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        onClear={handleClear}
+      />
+
+      <RequirementsTable
+        requirements={paginatedRequirements}
+        isLoading={showLoading}
+        error={error}
+        onDelete={handleDelete}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
+    </>
+  );
+}
+
+export default function RequirementsPage() {
   const { user } = useAuth();
   const { settings } = useSettings();
-  
+  const { selectedProject } = useProject();
+
   useCopilotReadable({
     description: "CurrentUser",
     value: user,
@@ -266,72 +324,14 @@ function RequirementsContent() {
         },
       ]}>
       <AppLayout>
-        <PageTitle title="Requirements" backHref="/projects" backLabel="Back Projects" />
-        {successMessage && (
-          <div className="fixed top-24 right-6 z-50 w-80 rounded-xl bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 p-4 text-sm text-gray-800 dark:text-gray-100">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="font-semibold text-green-600 dark:text-green-400">Success</div>
-                <p className="mt-1 text-gray-600 dark:text-gray-300">{successMessage}</p>
-              </div>
-              <button
-                onClick={handleDismissSuccess}
-                className="text-xs font-medium text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors"
-              >
-                Close
-              </button>
-            </div>
-            <div className="mt-3 h-1 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
-              <div
-                className="h-full bg-green-500 dark:bg-green-400 transition-[width] duration-100 ease-linear"
-                style={{ width: `${toastProgress}%` }}
-                aria-hidden="true"
-              />
-            </div>
+        <Suspense fallback={
+          <div className="flex items-center justify-center h-64">
+            <Spinner />
           </div>
-        )}
-
-
-        {(!projectIdFromQuery || (!isLoadingProjects && projects.length > 0 && !selectedProject)) && (
-          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-            <p className="text-sm text-red-800 dark:text-red-200">
-              Project not found. Select a valid project to view its requirements.
-            </p>
-          </div>
-        )}
-
-        <RequirementsToolbar
-          filterType={filterType}
-          setFilterType={setFilterType}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          onClear={handleClear}
-        />
-
-        <RequirementsTable 
-          requirements={paginatedRequirements}
-          isLoading={showLoading}
-          error={error}
-          onDelete={handleDelete}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-        />
+        }>
+          <RequirementsInner />
+        </Suspense>
       </AppLayout>
     </CopilotSidebar>
-  );
-}
-
-export default function RequirementsPage() {
-  return (
-    <Suspense fallback={
-      <AppLayout>
-        <div className="flex items-center justify-center h-64">
-          <Spinner />
-        </div>
-      </AppLayout>
-    }>
-      <RequirementsContent />
-    </Suspense>
   );
 }
