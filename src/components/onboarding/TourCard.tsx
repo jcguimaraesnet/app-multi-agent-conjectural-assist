@@ -99,7 +99,7 @@ export default function TourCard({
       {/* Footer */}
       <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
         <div className="flex items-center gap-2">
-          {!isLastStepOfFinalTour && !isLastStepOfIntermediateTour && (
+          {!isLastStepOfFinalTour && !(isLastStepOfIntermediateTour && totalSteps > 1) && (
             <button
               onClick={handleSkip}
               className="px-3 py-2 text-xs font-medium text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
