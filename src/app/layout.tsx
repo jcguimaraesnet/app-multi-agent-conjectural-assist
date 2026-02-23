@@ -8,6 +8,7 @@ import { SettingsProvider } from "@/contexts/SettingsContext";
 import { CopilotKit } from "@copilotkit/react-core";
 import "@copilotkit/react-ui/styles.css";
 import AuthHashErrorHandler from "@/components/auth/AuthHashErrorHandler";
+import OnboardingWrapper from "@/components/onboarding/OnboardingWrapper";
 
 export const metadata: Metadata = {
   title: "Conjectural Assist",
@@ -47,7 +48,9 @@ export default function RootLayout({
               <ProjectProvider>
                 <RequirementsProvider>
                   <SettingsProvider>
-                    {children}
+                    <OnboardingWrapper>
+                      {children}
+                    </OnboardingWrapper>
                   </SettingsProvider>
                 </RequirementsProvider>
               </ProjectProvider>

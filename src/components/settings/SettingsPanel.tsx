@@ -85,7 +85,7 @@ export default function SettingsPanel() {
     <Card noPadding>
       
       {/* Setting 1: Require Description */}
-      <div className="px-6 py-5 border-b border-border-light dark:border-border-dark">
+      <div id="setting-require-description" className="px-6 py-5 border-b border-border-light dark:border-border-dark">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-medium text-gray-900 dark:text-white">
@@ -103,7 +103,7 @@ export default function SettingsPanel() {
       </div>
 
       {/* Setting 2: Generation Mode */}
-      <div className="px-6 py-5 border-b border-border-light dark:border-border-dark">
+      <div id="setting-generation-mode" className="px-6 py-5 border-b border-border-light dark:border-border-dark">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-medium text-gray-900 dark:text-white">
@@ -139,7 +139,7 @@ export default function SettingsPanel() {
       </div>
 
       {/* Setting 3: Batch Quantity */}
-      <div className="px-6 py-5">
+      <div id="setting-batch-quantity" className="px-6 py-5">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-medium text-gray-900 dark:text-white">

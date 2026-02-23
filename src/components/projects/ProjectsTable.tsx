@@ -72,7 +72,7 @@ export default function ProjectsTable({
               <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider w-1/2">Title</th>
               <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider">Author</th>
               <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider">Created At</th>
-              <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider text-center">Actions</th>
+              <th id="table-actions-header" className="px-4 py-4 text-xs font-semibold uppercase tracking-wider text-center">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -86,7 +86,7 @@ export default function ProjectsTable({
                 </td>
               </tr>
             ) : projects.length > 0 ? (
-              projects.map((project) => (
+              projects.map((project, index) => (
                 <tr key={project.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group">
                   <td className="px-4 py-3 text-sm font-mono text-gray-500 dark:text-gray-400 text-center align-middle">
                     {project.project_id || '-'}
@@ -134,6 +134,7 @@ export default function ProjectsTable({
                       </button>
 
                       <button
+                        id={index === 0 ? 'btn-go-to-requirements-first' : undefined}
                         className="p-1.5 text-orange-500 hover:text-orange-600 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
                         title="Go to Requirements"
                         onClick={() => onNavigateToRequirements?.(project.id)}

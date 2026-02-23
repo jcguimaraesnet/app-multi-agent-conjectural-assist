@@ -37,7 +37,7 @@ export default function ProjectsToolbar({
 
       <div className="flex-grow"></div>
 
-      <Button variant="primary" onClick={onAdd}>
+      <Button id="btn-add-project" variant="primary" onClick={onAdd}>
         <Plus className="w-4 h-4" />
         Add Project
       </Button>

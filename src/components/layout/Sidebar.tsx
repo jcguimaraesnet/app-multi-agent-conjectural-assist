@@ -27,11 +27,11 @@ export default function Sidebar() {
           <LayoutDashboard className={isActive('/') ? "w-5 h-5 text-primary dark:text-orange-400" : "w-5 h-5 group-hover:text-primary transition-colors"} />
           <span className="font-medium">Home</span>
         </Link>
-        <Link className={isActive('/projects') ? activeClass : inactiveClass} href="/projects">
+        <Link id="sidebar-projects" className={isActive('/projects') ? activeClass : inactiveClass} href="/projects">
           <FolderKanban className={isActive('/projects') ? "w-5 h-5 text-primary dark:text-orange-400" : "w-5 h-5 group-hover:text-primary transition-colors"} />
           <span className="font-medium">Projects</span>
         </Link>
-        <Link className={isActive('/settings') ? activeClass : inactiveClass} href="/settings">
+        <Link id="sidebar-settings" className={isActive('/settings') ? activeClass : inactiveClass} href="/settings">
           <Settings className={isActive('/settings') ? "w-5 h-5 text-primary dark:text-orange-400" : "w-5 h-5 group-hover:text-primary transition-colors"} />
           <span className="font-medium">Settings</span>
         </Link>
