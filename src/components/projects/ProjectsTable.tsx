@@ -133,8 +133,8 @@ export default function ProjectsTable({
                         <Trash2 className="w-4 h-4" />
                       </button>
 
-                      <button 
-                        className="p-1.5 text-gray-400 hover:text-primary transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+                      <button
+                        className="p-1.5 text-orange-500 hover:text-orange-600 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
                         title="Go to Requirements"
                         onClick={() => onNavigateToRequirements?.(project.id)}
                       >
