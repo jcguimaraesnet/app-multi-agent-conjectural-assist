@@ -21,6 +21,7 @@ const PAGE_SIZE = 10;
 const TOAST_DURATION_MS = 5000;
 
 interface AgentState {
+  run_id: string;
   user_id: string;
   project_id: string;
   require_brief_description: boolean;
@@ -293,17 +294,36 @@ export default function RequirementsPage() {
   //   ),
   // });
 
-  // ERRO: abrido mão do progresso do agente porque
-  // quando desabilita interrupt, dá o erro:
-  // "Run ended without emitting a terminal event" quando
-  // termina o nó de elicitação
-  // useCoAgentStateRender<AgentState>({
-  //   name: "sample_agent",
-  //   render: ({  status, state, nodeName }) => (
-  //     console.log("useCoAgentStateRender nodeName:", nodeName),
-  //     <StepProgress status={status} state={state} />
-  //   ),
-  // });
+  // Mantém uma key estável por run para forçar remount entre runs distintas.
+  // Quando run_id está ausente mas já houve um run anterior (lastRunIdRef truthy),
+  // significa que uma nova run começou → gera nova key via crypto.randomUUID().
+  const lastRunIdRef = useRef<string | null>(null);
+  const renderKeyRef = useRef<string>(crypto.randomUUID());
+
+  const getRenderKey = (runId?: string) => {
+    if (runId) {
+      lastRunIdRef.current = runId;
+      renderKeyRef.current = runId;
+    } else if (lastRunIdRef.current) {
+      // Nova run: run_id voltou a ser vazio após ter sido preenchido
+      lastRunIdRef.current = null;
+      renderKeyRef.current = crypto.randomUUID();
+    }
+    return renderKeyRef.current;
+  };
+
+  useCoAgentStateRender<AgentState>({
+    name: "sample_agent",
+    render: ({ status, state, nodeName }) => (
+      console.log("render key:", getRenderKey(state.run_id), "state.run_id:", state.run_id),
+      <StepProgress
+        key={getRenderKey(state.run_id)}
+        status={status}
+        state={state}
+        nodeName={nodeName}
+        runId={state.run_id} />
+    ),
+  });
 
   return (
     <CopilotSidebar

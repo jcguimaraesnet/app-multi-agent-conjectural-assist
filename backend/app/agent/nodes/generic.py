@@ -16,6 +16,42 @@ from copilotkit.langgraph import copilotkit_customize_config, copilotkit_emit_me
 
 from app.agent.state import WorkflowState
 
+async def generic_node(state: WorkflowState, config: Optional[RunnableConfig] = None):
+    """
+    Generic response node for conversational interactions.
+    
+    Handles greetings, help requests, informational queries, and any
+    messages that don't require the requirement generation workflow.
+    
+    This node ends the workflow after responding.
+    """
+    config_internal = copilotkit_customize_config(config, emit_messages=True)
+
+    # Get the conversation context
+    messages = state.get('messages', [])
+    last_message = str(messages[-1].content) if messages else ""
+    print(f"Last message from chat: {last_message}")
+
+    # Initialize the model
+    model = ChatOpenAI(model="gpt-4o")
+
+    conversation = [SystemMessage(content=GENERIC_RESPONSE_PROMPT.format(message=last_message))]
+
+    try:
+        response = await model.ainvoke(conversation, config_internal)
+        print(f"Generic response: {response.content[:100]}...")
+
+    except Exception as e:
+        print(f"Generic node error: {e}")
+        msg_exception = "I'm sorry, I encountered an error processing your request. How can I help you with requirements engineering today?"
+        response = AIMessage(content=msg_exception)
+
+    return Command(
+        update={
+            "messages": messages + [response]
+        }
+    )
+
 
 # System prompt for generic conversational responses
 GENERIC_RESPONSE_PROMPT = """You are a helpful assistant for a requirements engineering application that helps users find information about a software project.
@@ -37,63 +73,3 @@ Provide a clear and concise answer based on the information available about the 
 Current Project: Huddle Project
 Requirements: 120 functional requirements, 30 non-functional requirements, 15 conjectural requirements.
 """
-
-
-async def generic_node(state: WorkflowState, config: Optional[RunnableConfig] = None):
-    """
-    Generic response node for conversational interactions.
-    
-    Handles greetings, help requests, informational queries, and any
-    messages that don't require the requirement generation workflow.
-    
-    This node ends the workflow after responding.
-    """
-    print("Generic node started!")
-
-    # Use emit_messages=True so the model response is streamed automatically.
-    # Do NOT also call copilotkit_emit_message for the same response — that
-    # would create duplicate TEXT_MESSAGE events and trigger the
-    # "No active text message found" error.
-    config_internal = copilotkit_customize_config(config, emit_messages=True)
-    ai_message = AIMessage(content="Chat Finalized. Ending workflow.")
-    await copilotkit_emit_message(config_internal, ai_message.content)
-
-    return Command(
-        goto=END,
-        update={
-            "messages": state.get('messages', []) + [ai_message]
-        }
-    )
-
-
-
-    # Get the conversation context
-    messages = state.get('messages', [])
-    last_message = messages[-1].content if messages else ""
-    print(f"Last message from chat: {last_message}")
-
-    # Initialize the model
-    model = ChatOpenAI(model="gpt-4o")
-
-    # Build conversation for context
-    conversation = [SystemMessage(content=GENERIC_RESPONSE_PROMPT.format(message=last_message))]
-
-    # Generate response — the config will stream it to the chat automatically
-    try:
-        response = await model.ainvoke(conversation, config_internal)
-        response_content = response.content
-        print(f"Generic response: {response_content[:100]}...")
-    except Exception as e:
-        print(f"Generic node error: {e}")
-        response_content = "I'm sorry, I encountered an error processing your request. How can I help you with requirements engineering today?"
-        response = AIMessage(content=response_content)
-
-    print("Generic node completed, exiting workflow.")
-
-    # End the workflow after generic response
-    return Command(
-        goto=END,
-        update={
-            "messages": messages + [response]
-        }
-    )

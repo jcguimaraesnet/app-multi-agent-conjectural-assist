@@ -57,6 +57,7 @@ class WorkflowState(CopilotKitState):
     """
     tools: List[Any]
 
+    run_id: Optional[str] = Field(default=None, description="LangGraph run_id for tracing and debugging")
     user_id: str = Field(default="", description="User identifier")
     project_id: str = Field(default="", description="Project identifier")
     require_brief_description: bool = Field(default=True, description="Brief description of requirements")

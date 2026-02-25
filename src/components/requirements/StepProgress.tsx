@@ -13,6 +13,8 @@ interface StepState {
 interface StepProgressProps {
   status: string;
   state: StepState;
+  nodeName?: string;
+  runId?: string;
 }
 
 const steps = [
@@ -22,9 +24,9 @@ const steps = [
   { key: "step4_validation", label: "Validation Step" },
 ] as const;
 
-export default function StepProgress({ status, state }: StepProgressProps) {
+export default function StepProgress({ status, state, nodeName, runId }: StepProgressProps) {
   return (
-      (state.step1_elicitation || state.step2_analysis || state.step3_specification || state.step4_validation) ? (
+      (nodeName == "elicitation_node" && status === "inProgress" && runId) ? (
     // key aleatory to force re-render on state change
     <div className="p-4 border rounded-lg bg-gray-50">
         {/* <pre>{JSON.stringify(state, null, 2)}</pre> */}

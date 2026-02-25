@@ -17,8 +17,11 @@ from langgraph.graph import START, END, StateGraph
 from app.agent.state import WorkflowState
 from app.agent.nodes import (
     orchestrator_node,
-    left_node,
-    right_node
+    elicitation_node,
+    analysis_node,
+    specification_node,
+    validation_node,
+    generic_node
 )
 
 
@@ -31,9 +34,9 @@ def route_after_orchestrator(state: WorkflowState) -> str:
     - generic_response: routes to generic node
     """
     intent = state.get("intent", "")
-    if intent == "right_intent":
-        return "right_node"
-    return "left_node"
+    if intent == "conjectural_requirement_generate_response":
+        return "elicitation_node"
+    return "generic_node"
 
 
 def create_graph():
@@ -41,8 +44,11 @@ def create_graph():
 
     # Add nodes
     workflow.add_node("orchestrator_node", orchestrator_node)
-    workflow.add_node("left_node", left_node)
-    workflow.add_node("right_node", right_node)
+    workflow.add_node("elicitation_node", elicitation_node)
+    workflow.add_node("analysis_node", analysis_node)
+    workflow.add_node("specification_node", specification_node)
+    workflow.add_node("validation_node", validation_node)
+    workflow.add_node("generic_node", generic_node)
 
     # Set entry point to orchestrator
     workflow.set_entry_point("orchestrator_node")
@@ -53,14 +59,17 @@ def create_graph():
         "orchestrator_node",
         route_after_orchestrator,
         {
-            "right_node": "right_node",
-            "left_node": "left_node"
+            "elicitation_node": "elicitation_node",
+            "generic_node": "generic_node"
         }
     )
     
     # Generic node ends the workflow
-    workflow.add_edge("left_node", END)
-    workflow.add_edge("right_node", END)    
+    workflow.add_edge("elicitation_node", "analysis_node")
+    workflow.add_edge("analysis_node", "specification_node")
+    workflow.add_edge("specification_node", "validation_node")
+    workflow.add_edge("validation_node", END)
+    workflow.add_edge("generic_node", END)
 
     # Conditionally use a checkpointer based on the environment
     is_fast_api = os.environ.get("LANGGRAPH_FAST_API", "false").lower() == "true"

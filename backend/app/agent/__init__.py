@@ -9,7 +9,6 @@ from app.agent.graph import graph
 from app.agent.state import WorkflowState, Step
 from app.agent.tools import generate_task_steps_generative_ui
 from app.agent.nodes import (
-    start_node,
     elicitation_node,
     analysis_node,
     specification_node,
@@ -21,8 +20,6 @@ __all__ = [
     "graph",
     "WorkflowState",
     "Step",
-    "generate_task_steps_generative_ui",
-    "start_node",
     "elicitation_node",
     "analysis_node",
     "specification_node",
