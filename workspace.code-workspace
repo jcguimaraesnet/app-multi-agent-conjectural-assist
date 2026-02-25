@@ -1,0 +1,31 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../dependencies/ag-ui/sdks/python"
+		},
+		{
+			"path": "../dependencies/ag-ui/integrations/langgraph/python"
+		},
+		{
+			"path": "../dependencies/ag-ui/sdks/typescript/packages/client"
+		},
+		{
+			"path": "../dependencies/CopilotKit/packages/v1/react-core"
+		},
+		{
+			"path": "../dependencies/CopilotKit/packages/v1/react-ui"
+		},
+		{
+			"path": "../dependencies/CopilotKit/packages/v1/runtime"
+		}
+	],
+	"settings": {
+		"chat.tools.terminal.autoApprove": {
+			".specify/scripts/bash/": true,
+			".specify/scripts/powershell/": true
+		}
+	}
+}

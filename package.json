@@ -33,6 +33,9 @@
   "pnpm": {
     "overrides": {
       "@ag-ui/client": "0.0.43"
+    },
+    "patchedDependencies": {
+      "@copilotkit/runtime@1.51.4": "patches/@copilotkit__runtime@1.51.4.patch"
     }
   },
   "devDependencies": {
