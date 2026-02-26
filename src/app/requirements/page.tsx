@@ -270,7 +270,7 @@ export default function RequirementsPage() {
 
 
 
-  function CustomInput({ inProgress, onSend }) {
+  function CustomInput({ inProgress, onSend }: { inProgress: boolean; onSend: (text: string) => void }) {
   const { agent } = useAgent({ agentId: "sample_agent" });
   const [text, setText] = useState("");
   return (
@@ -281,8 +281,8 @@ export default function RequirementsPage() {
         {agent.isRunning && <StepProgress status="InProgress" state={agent.state} />}
       </div>
     </div>
-  );
-}
+    );
+  }
 
   return (
     <CopilotSidebar
