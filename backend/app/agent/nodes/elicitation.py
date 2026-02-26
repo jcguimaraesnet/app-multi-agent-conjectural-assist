@@ -45,19 +45,18 @@ async def elicitation_node(state: WorkflowState, config: Optional[RunnableConfig
             "Before we start generating requirements, please provide a brief description of your project or requirements context:"
         )
 
-    state["step1_elicitation"] = False
-    state["step2_analysis"] = False
-    state["step3_specification"] = False
-    state["step4_validation"] = False
-    state["pending_progress"] = True
-    run_id = config["metadata"]["run_id"] if "metadata" in config and "run_id" in config["metadata"] else "unknown_run_id"
-    state["run_id"] = run_id
-
+    # state["step1_elicitation"] = False
+    # state["step2_analysis"] = False
+    # state["step3_specification"] = False
+    # state["step4_validation"] = False
+    # state["pending_progress"] = True
+    # run_id = config["metadata"]["run_id"] if "metadata" in config and "run_id" in config["metadata"] else "unknown_run_id"
+    # state["run_id"] = run_id
     # await copilotkit_emit_state(config, state)
 
     print("Elicitation node completed.")
-    state["step1_elicitation"] = True
-    # await copilotkit_emit_state(config, state)
+    state["step1_elicitation"] = False
+    await copilotkit_emit_state(config, state)
     await asyncio.sleep(1)
 
     # Initialize the model
@@ -89,9 +88,6 @@ async def elicitation_node(state: WorkflowState, config: Optional[RunnableConfig
         update={
             "messages": messages,
             "step1_elicitation": True,
-            "step2_analysis": False,
-            "step3_specification": False,
-            "step4_validation": False,
             "pending_progress": True,
         }
     )

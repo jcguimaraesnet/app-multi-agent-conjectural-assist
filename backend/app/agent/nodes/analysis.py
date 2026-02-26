@@ -47,11 +47,12 @@ async def analysis_node(state: WorkflowState, config: Optional[RunnableConfig] =
         response = AIMessage(content=msg_exception)
     
     messages = messages
-    await asyncio.sleep(1)
+    await asyncio.sleep(3)
 
     return Command(
         update={
             "messages": messages,
+            "step1_elicitation": True,
             "step2_analysis": True,
             "pending_progress": True,
         }

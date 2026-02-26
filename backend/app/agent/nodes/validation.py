@@ -55,8 +55,11 @@ async def validation_node(state: WorkflowState, config: Optional[RunnableConfig]
     return Command(
         update={
             "messages": messages,
+            "step1_elicitation": True,
+            "step2_analysis": True,
+            "step3_specification": True,
             "step4_validation": True,
-            "pending_progress": True
+            "pending_progress": False
         }
     )
 

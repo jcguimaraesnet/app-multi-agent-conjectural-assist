@@ -33,7 +33,10 @@ async def orchestrator_node(state: WorkflowState, config: Optional[RunnableConfi
     if config is None:
         config = RunnableConfig(recursion_limit=25)
 
-    await copilotkit_emit_message(config, "Routing your message...")
+    # await copilotkit_emit_message(config, "Routing your message...")
+    state["pending_progress"] = False
+    await copilotkit_emit_state(config, state)
+
 
     # run_id = config["metadata"]["run_id"] if "metadata" in config and "run_id" in config["metadata"] else "unknown_run_id"
     # state["run_id"] = run_id
@@ -78,7 +81,11 @@ async def orchestrator_node(state: WorkflowState, config: Optional[RunnableConfi
             update={
                 "messages": messages,
                 "intent": classification.intent,
-                "pending_progress": True
+                "step1_elicitation": False,
+                "step2_analysis": False,
+                "step3_specification": False,
+                "step4_validation": False,
+                "pending_progress": True,
             }
         )
     else:
@@ -86,7 +93,8 @@ async def orchestrator_node(state: WorkflowState, config: Optional[RunnableConfi
         return Command(
             update={
                 "messages": messages,
-                "intent": classification.intent
+                "intent": classification.intent,
+                "pending_progress": False,
             }
         )
 

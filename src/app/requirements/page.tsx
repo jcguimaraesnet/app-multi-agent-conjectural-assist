@@ -9,7 +9,7 @@ import RequirementsToolbar from '@/components/requirements/RequirementsToolbar';
 import { useProject } from '@/contexts/ProjectContext';
 import { useRequirements } from '@/contexts/RequirementsContext';
 import { useSettings } from '@/contexts/SettingsContext';
-import { CopilotSidebar } from "@copilotkit/react-ui";
+import { CopilotChat, CopilotSidebar } from "@copilotkit/react-ui";
 import { useCoAgent, useCoAgentStateRender, useCopilotReadable, useLangGraphInterrupt } from "@copilotkit/react-core";
 import { useAgent } from "@copilotkit/react-core/v2";
 import StepProgress from '@/components/requirements/StepProgress';
@@ -17,6 +17,8 @@ import InterruptForm from '@/components/requirements/InterruptForm';
 import Spinner from "@/components/ui/Spinner";
 import { useAuth } from '@/contexts/AuthContext';
 import Button from '@/components/ui/Button';
+import Textarea from '@/components/ui/Textarea';
+import { stat } from 'fs';
 
 const PAGE_SIZE = 10;
 const TOAST_DURATION_MS = 5000;
@@ -268,42 +270,35 @@ export default function RequirementsPage() {
 
 
 
-  const { agent } = useAgent({agentId: "sample_agent"});
-
-  const lastRunIdRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (!agent.isRunning) {
-      lastRunIdRef.current = crypto.randomUUID();
-      console.log("Agent is not running. Generated new render key:", lastRunIdRef.current);
-    }
-  }, [agent.isRunning]);
-
-  const getRenderKey = () => {
-    return lastRunIdRef.current!;
-  };
-
-
-
-  useCoAgentStateRender<AgentState>({
-    name: "sample_agent",
-    render: ({ status, state, nodeName }) => (
-      console.log("getRenderKey():", getRenderKey(), "pending_progress:", state.pending_progress),
-      <StepProgress
-        // key={getRenderKey()}
-        status={status}
-        state={state}
-        nodeName={nodeName}
-        runId={getRenderKey()} />
-    ),
-  });
+  function CustomInput({ inProgress, onSend }) {
+  const { agent } = useAgent({ agentId: "sample_agent" });
+  const [text, setText] = useState("");
+  return (
+    <div className="p-2">
+      <Textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Ask me anything about the current project" />
+      <div className="flex items-center justify-between">
+        <Button disabled={inProgress || !text.trim()} onClick={() => { onSend(text); setText(""); }}>Send</Button>
+        {agent.isRunning && <StepProgress status="InProgress" state={agent.state} />}
+      </div>
+    </div>
+  );
+}
 
   return (
     <CopilotSidebar
+      Input={CustomInput}
       clickOutsideToClose={false}
       defaultOpen={true}
+      hideStopButton={false}
       labels={{
-        title: "Agent AI",
-        initial: "👋 Hi, there! You're chatting with an agent.",
+        title: "MultiAgent AI for Conjectural Requirements",
+        initial: "👋 Hi, I'm ready to answer anything about the current project.",
+        placeholder: "Ask me anything about the current project",
+        stopGenerating: "Stop",
+      }}
+      icons={{
+        spinnerIcon: <Spinner size='lg' />,
+        stopIcon: <span className="inline-block w-4 h-4 bg-red-400 border border-red-600 rounded-sm" />,
       }}
       suggestions={[
         {

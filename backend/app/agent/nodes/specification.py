@@ -51,6 +51,8 @@ async def specification_node(state: WorkflowState, config: Optional[RunnableConf
     return Command(
         update={
             "messages": messages,
+            "step1_elicitation": True,
+            "step2_analysis": True,
             "step3_specification": True,
             "pending_progress": True
         }

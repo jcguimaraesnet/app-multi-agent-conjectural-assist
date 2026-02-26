@@ -41,10 +41,11 @@ const sizeStyles: Record<ButtonSize, string> = {
 };
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'primary', size = 'md', fullWidth, children, ...props }, ref) => {
+  ({ className, variant = 'primary', size = 'md', fullWidth, children, disabled, ...props }, ref) => {
     return (
       <button
         ref={ref}
+        disabled={disabled}
         className={cn(
           "font-medium rounded-lg transition-colors",
           "flex items-center justify-center gap-2",
@@ -52,6 +53,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           variantStyles[variant],
           sizeStyles[size],
           fullWidth && "w-full",
+          disabled && "opacity-50 cursor-not-allowed pointer-events-none",
           className
         )}
         {...props}
