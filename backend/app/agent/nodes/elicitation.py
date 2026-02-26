@@ -33,7 +33,7 @@ async def elicitation_node(state: WorkflowState, config: Optional[RunnableConfig
     Uses GPT-4o to process user messages and generate task steps
     through the generative UI tool.
     """
-    config = copilotkit_customize_config(config, emit_messages=True)
+    config = copilotkit_customize_config(config, emit_messages=False)
 
     print("Elicitation node initialized!")
     context = extract_copilotkit_context(state)
@@ -49,14 +49,15 @@ async def elicitation_node(state: WorkflowState, config: Optional[RunnableConfig
     state["step2_analysis"] = False
     state["step3_specification"] = False
     state["step4_validation"] = False
+    state["pending_progress"] = True
     run_id = config["metadata"]["run_id"] if "metadata" in config and "run_id" in config["metadata"] else "unknown_run_id"
     state["run_id"] = run_id
 
-    await copilotkit_emit_state(config, state)
+    # await copilotkit_emit_state(config, state)
 
     print("Elicitation node completed.")
     state["step1_elicitation"] = True
-    await copilotkit_emit_state(config, state)
+    # await copilotkit_emit_state(config, state)
     await asyncio.sleep(1)
 
     # Initialize the model
@@ -77,7 +78,7 @@ async def elicitation_node(state: WorkflowState, config: Optional[RunnableConfig
         msg_exception = "I'm sorry, I encountered an error processing your request. How can I help you with requirements engineering today?"
         response = AIMessage(content=msg_exception)
     
-    messages = messages + [response]
+    messages = messages
 
 
     # feedback = AIMessage(content="🔍 **Elicitation Complete!**")
@@ -91,6 +92,6 @@ async def elicitation_node(state: WorkflowState, config: Optional[RunnableConfig
             "step2_analysis": False,
             "step3_specification": False,
             "step4_validation": False,
-            "run_id": run_id
+            "pending_progress": True,
         }
     )

@@ -25,7 +25,7 @@ async def analysis_node(state: WorkflowState, config: Optional[RunnableConfig] =
     and categorizes them appropriately.
     """
     print("Analysis node started.")
-    config = copilotkit_customize_config(config, emit_messages=True)
+    config = copilotkit_customize_config(config, emit_messages=False)
     
 
     # Initialize the model
@@ -46,13 +46,14 @@ async def analysis_node(state: WorkflowState, config: Optional[RunnableConfig] =
         msg_exception = "I'm sorry, I encountered an error processing your request. How can I help you with requirements engineering today?"
         response = AIMessage(content=msg_exception)
     
-    messages = messages + [response]
+    messages = messages
     await asyncio.sleep(1)
 
     return Command(
         update={
             "messages": messages,
-            "step2_analysis": True
+            "step2_analysis": True,
+            "pending_progress": True,
         }
     )
 

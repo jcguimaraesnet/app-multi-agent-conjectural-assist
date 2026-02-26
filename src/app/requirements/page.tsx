@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense, useEffectEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
 import AppLayout from '@/components/layout/AppLayout';
 import PageTitle from '@/components/ui/PageTitle';
@@ -11,6 +11,7 @@ import { useRequirements } from '@/contexts/RequirementsContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { CopilotSidebar } from "@copilotkit/react-ui";
 import { useCoAgent, useCoAgentStateRender, useCopilotReadable, useLangGraphInterrupt } from "@copilotkit/react-core";
+import { useAgent } from "@copilotkit/react-core/v2";
 import StepProgress from '@/components/requirements/StepProgress';
 import InterruptForm from '@/components/requirements/InterruptForm';
 import Spinner from "@/components/ui/Spinner";
@@ -31,6 +32,7 @@ interface AgentState {
   step2_analysis: boolean;
   step3_specification: boolean;
   step4_validation: boolean;
+  pending_progress: boolean;
 }
 
 function RequirementsInner() {
@@ -254,29 +256,6 @@ export default function RequirementsPage() {
   }, [settings]);
 
 
-  // // Usar useCoAgent ao invés de useAgent
-  // const { state: agentState, setState: setAgentState } = useCoAgent<AgentState>({
-  //   name: "sample_agent",
-  //   initialState: {
-  //     user_id: user?.id || "",
-  //     project_id: selectedProject?.id || "",
-  //     require_brief_description: settings.require_brief_description,
-  //     batch_mode: settings.batch_mode,
-  //     quantity_req_batch: settings.quantity_req_batch,
-  //   },
-  // });
-
-  // useEffect(() => {
-  //   setAgentState({
-  //     ...agentState,
-  //     user_id: user?.id || "",
-  //     project_id: selectedProject?.id || "",
-  //     require_brief_description: settings.require_brief_description,
-  //     batch_mode: settings.batch_mode,
-  //     quantity_req_batch: settings.quantity_req_batch,
-  //   });
-  // }, [user?.id, selectedProject?.id, settings.require_brief_description, settings.batch_mode, settings.quantity_req_batch]);
-
   useLangGraphInterrupt({
       render: ({ event, resolve }) => (
           <InterruptForm
@@ -286,42 +265,35 @@ export default function RequirementsPage() {
       )
   }, [settings.quantity_req_batch]);
 
-  // useCoAgentStateRender<AgentState>({
-  //   name: "sample_agent",
-  //   render: ({ status, state }) => (
-  //     console.log("Rendering StepProgress with status:", status, "and state:", state),
-  //     <StepProgress status={status} state={state} />
-  //   ),
-  // });
 
-  // Mantém uma key estável por run para forçar remount entre runs distintas.
-  // Quando run_id está ausente mas já houve um run anterior (lastRunIdRef truthy),
-  // significa que uma nova run começou → gera nova key via crypto.randomUUID().
+
+
+  const { agent } = useAgent({agentId: "sample_agent"});
+
   const lastRunIdRef = useRef<string | null>(null);
-  const renderKeyRef = useRef<string>(crypto.randomUUID());
-
-  const getRenderKey = (runId?: string) => {
-    if (runId) {
-      lastRunIdRef.current = runId;
-      renderKeyRef.current = runId;
-    } else if (lastRunIdRef.current) {
-      // Nova run: run_id voltou a ser vazio após ter sido preenchido
-      lastRunIdRef.current = null;
-      renderKeyRef.current = crypto.randomUUID();
+  useEffect(() => {
+    if (!agent.isRunning) {
+      lastRunIdRef.current = crypto.randomUUID();
+      console.log("Agent is not running. Generated new render key:", lastRunIdRef.current);
     }
-    return renderKeyRef.current;
+  }, [agent.isRunning]);
+
+  const getRenderKey = () => {
+    return lastRunIdRef.current!;
   };
+
+
 
   useCoAgentStateRender<AgentState>({
     name: "sample_agent",
     render: ({ status, state, nodeName }) => (
-      console.log("render key:", getRenderKey(state.run_id), "state.run_id:", state.run_id),
+      console.log("getRenderKey():", getRenderKey(), "pending_progress:", state.pending_progress),
       <StepProgress
-        key={getRenderKey(state.run_id)}
+        // key={getRenderKey()}
         status={status}
         state={state}
         nodeName={nodeName}
-        runId={state.run_id} />
+        runId={getRenderKey()} />
     ),
   });
 

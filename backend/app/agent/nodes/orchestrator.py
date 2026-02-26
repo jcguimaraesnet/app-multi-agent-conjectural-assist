@@ -33,10 +33,12 @@ async def orchestrator_node(state: WorkflowState, config: Optional[RunnableConfi
     if config is None:
         config = RunnableConfig(recursion_limit=25)
 
-    run_id = config["metadata"]["run_id"] if "metadata" in config and "run_id" in config["metadata"] else "unknown_run_id"
-    state["run_id"] = run_id
-    print(f"run id orchestrator: {run_id}")
-    await copilotkit_emit_state(config, state)
+    await copilotkit_emit_message(config, "Routing your message...")
+
+    # run_id = config["metadata"]["run_id"] if "metadata" in config and "run_id" in config["metadata"] else "unknown_run_id"
+    # state["run_id"] = run_id
+    # print(f"run id orchestrator: {run_id}")
+    # await copilotkit_emit_state(config, state)
 
     # Extract the last user message for classification
     print("Run id state before classification:", state.get("run_id", "No run_id in state"))
@@ -49,8 +51,6 @@ async def orchestrator_node(state: WorkflowState, config: Optional[RunnableConfi
     # Define config for the model
     if config is None:
         config = RunnableConfig(recursion_limit=25)
-
-    await copilotkit_emit_message(config, "Routing your message...")
 
     context = extract_copilotkit_context(state)
 
@@ -78,11 +78,7 @@ async def orchestrator_node(state: WorkflowState, config: Optional[RunnableConfi
             update={
                 "messages": messages,
                 "intent": classification.intent,
-                "step1_elicitation": False,
-                "step2_analysis": False,
-                "step3_specification": False,
-                "step4_validation": False,
-                "run_id": run_id
+                "pending_progress": True
             }
         )
     else:

@@ -13,7 +13,7 @@ from langchain_core.messages import AIMessage
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END
 from langgraph.types import Command
-from copilotkit.langgraph import SystemMessage, copilotkit_emit_message, copilotkit_exit
+from copilotkit.langgraph import SystemMessage, copilotkit_emit_message, copilotkit_exit, copilotkit_customize_config, copilotkit_emit_state
 
 from app.agent.state import WorkflowState
 
@@ -25,11 +25,12 @@ async def validation_node(state: WorkflowState, config: Optional[RunnableConfig]
     Performs final validation checks on the specification
     to ensure it meets quality standards.
     """
+    config = copilotkit_customize_config(config, emit_messages=False)
+
     if config is None:
         config = RunnableConfig(recursion_limit=25)
 
     print("Validation node started.")
-    await asyncio.sleep(2)
 
     # Initialize the model
     model = ChatOpenAI(model="gpt-4o")
@@ -51,12 +52,11 @@ async def validation_node(state: WorkflowState, config: Optional[RunnableConfig]
     
     messages = messages + [response]
 
-    await copilotkit_exit(config)
-
     return Command(
         update={
             "messages": messages,
-            "step4_validation": True
+            "step4_validation": True,
+            "pending_progress": True
         }
     )
 

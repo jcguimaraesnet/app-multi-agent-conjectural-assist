@@ -12,7 +12,7 @@ from langchain_core.runnables.config import RunnableConfig
 from langchain_core.messages import AIMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 from langgraph.types import Command
-from copilotkit.langgraph import copilotkit_emit_message
+from copilotkit.langgraph import copilotkit_emit_message, copilotkit_customize_config
 
 from app.agent.state import WorkflowState
 
@@ -24,6 +24,7 @@ async def specification_node(state: WorkflowState, config: Optional[RunnableConf
     Creates structured specification documents based on the
     analysis results.
     """
+    config = copilotkit_customize_config(config, emit_messages=False)
     print("Specification node started.")
     await asyncio.sleep(1)
 
@@ -45,12 +46,13 @@ async def specification_node(state: WorkflowState, config: Optional[RunnableConf
         msg_exception = "I'm sorry, I encountered an error processing your request. How can I help you with requirements engineering today?"
         response = AIMessage(content=msg_exception)
     
-    messages = messages + [response]
+    messages = messages
     
     return Command(
         update={
             "messages": messages,
-            "step3_specification": True
+            "step3_specification": True,
+            "pending_progress": True
         }
     )
 

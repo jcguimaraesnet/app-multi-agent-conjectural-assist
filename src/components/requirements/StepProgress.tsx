@@ -8,6 +8,7 @@ interface StepState {
   step2_analysis: boolean;
   step3_specification: boolean;
   step4_validation: boolean;
+  pending_progress: boolean;
 }
 
 interface StepProgressProps {
@@ -26,9 +27,8 @@ const steps = [
 
 export default function StepProgress({ status, state, nodeName, runId }: StepProgressProps) {
   return (
-      (nodeName == "elicitation_node" && status === "inProgress" && runId) ? (
     // key aleatory to force re-render on state change
-    <div className="p-4 border rounded-lg bg-gray-50">
+    <div key={runId} className="p-4 border rounded-lg bg-gray-50">
         {/* <pre>{JSON.stringify(state, null, 2)}</pre> */}
         <h2 className="text-lg font-bold mb-4">Subagents Progress</h2>
         <ul className="list-disc list-inside space-y-2">
@@ -44,6 +44,5 @@ export default function StepProgress({ status, state, nodeName, runId }: StepPro
           ))}
         </ul>
     </div>
-    ) : null
   );
 }

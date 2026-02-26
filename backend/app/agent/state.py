@@ -6,6 +6,7 @@ Contains the WorkflowState and Step models used across all nodes.
 
 from typing import Any, List, Literal, Optional
 from pydantic import BaseModel, Field
+from typing_extensions import NotRequired
 from copilotkit import CopilotKitState
 
 
@@ -57,18 +58,19 @@ class WorkflowState(CopilotKitState):
     """
     tools: List[Any]
 
-    run_id: Optional[str] = Field(default=None, description="LangGraph run_id for tracing and debugging")
-    user_id: str = Field(default="", description="User identifier")
-    project_id: str = Field(default="", description="Project identifier")
-    require_brief_description: bool = Field(default=True, description="Brief description of requirements")
-    batch_mode: bool = Field(default=True, description="Whether to generate requirements in batch mode")
-    quantity_req_batch: int = Field(default=5, description="Number of requirements to generate in batch mode")
-    json_brief_description: str = Field(default="", description="JSON brief description input from user")
-    
-    # Orchestrator routing field
-    intent: Optional[str] = Field(default=None, description="Classified intent from orchestrator: conjectural_requirement_generate_response or generic_response")
+    run_id: Optional[str]
+    user_id: str
+    project_id: str
+    require_brief_description: bool
+    batch_mode: bool
+    quantity_req_batch: int
+    json_brief_description: str
 
-    step1_elicitation: bool = Field(default=False, description="Step 1: Elicitation completed")
-    step2_analysis: bool = Field(default=False, description="Step 2: Analysis completed")
-    step3_specification: bool = Field(default=False, description="Step 3: Specification completed")
-    step4_validation: bool = Field(default=False, description="Step 4: Validation completed")
+    # Orchestrator routing field
+    intent: Optional[str]
+
+    pending_progress: bool
+    step1_elicitation: bool
+    step2_analysis: bool
+    step3_specification: bool
+    step4_validation: bool
