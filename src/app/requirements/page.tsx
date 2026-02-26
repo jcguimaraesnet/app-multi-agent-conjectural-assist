@@ -291,7 +291,7 @@ export default function RequirementsPage() {
       defaultOpen={true}
       hideStopButton={false}
       labels={{
-        title: "MultiAgent AI for Conjectural Requirements",
+        title: "Multi-Agent AI for Conjectural Requirements",
         initial: "👋 Hi, I'm ready to answer anything about the current project.",
         placeholder: "Ask me anything about the current project",
         stopGenerating: "Stop",
