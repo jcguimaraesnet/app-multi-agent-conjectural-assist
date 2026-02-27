@@ -275,7 +275,18 @@ export default function RequirementsPage() {
   const [text, setText] = useState("");
   return (
     <div className="p-2">
-      <Textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Ask me anything about the current project" />
+      <Textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Ask me anything about the current project"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey && !inProgress && text.trim()) {
+            e.preventDefault();
+            onSend(text);
+            setText("");
+          }
+        }}
+      />
       <div className="flex items-center justify-between">
         <Button disabled={inProgress || !text.trim()} onClick={() => { onSend(text); setText(""); }}>Send</Button>
         {agent.isRunning && <StepProgress status="InProgress" state={agent.state} />}
