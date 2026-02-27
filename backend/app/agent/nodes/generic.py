@@ -15,17 +15,25 @@ from langgraph.types import Command
 from copilotkit.langgraph import copilotkit_customize_config, copilotkit_emit_message
 
 from app.agent.state import WorkflowState
+from app.agent.utils.context_utils import extract_copilotkit_context
+from app.agent.utils.project_data import fetch_project_context
 
 async def generic_node(state: WorkflowState, config: Optional[RunnableConfig] = None):
     """
     Generic response node for conversational interactions.
-    
+
     Handles greetings, help requests, informational queries, and any
     messages that don't require the requirement generation workflow.
-    
+
     This node ends the workflow after responding.
     """
     config_internal = copilotkit_customize_config(config, emit_messages=True)
+
+    context = extract_copilotkit_context(state)
+    current_project_id = context['current_project_id']
+
+    # Fetch vision document text and existing requirements from Supabase
+    vision_extracted_text, existing_requirements = await fetch_project_context(current_project_id)
 
     # Get the conversation context
     messages = state.get('messages', [])
@@ -35,7 +43,23 @@ async def generic_node(state: WorkflowState, config: Optional[RunnableConfig] = 
     # Initialize the model
     model = ChatOpenAI(model="gpt-4o")
 
-    conversation = [SystemMessage(content=GENERIC_RESPONSE_PROMPT.format(message=last_message))]
+    # Build requirements context from fetched data
+    functional = [r for r in existing_requirements if r.get("type") == "functional"]
+    non_functional = [r for r in existing_requirements if r.get("type") == "non_functional"]
+    conjectural = [r for r in existing_requirements if r.get("type") == "conjectural"]
+    requirements_summary = f"{len(functional)} functional, {len(non_functional)} non-functional, {len(conjectural)} conjectural"
+
+    requirements_list = "\n".join(
+        f"- [{r.get('requirement_id')}] ({r.get('type')}): {r.get('description')}"
+        for r in existing_requirements
+    ) if existing_requirements else "No requirements registered yet."
+
+    conversation = [SystemMessage(content=GENERIC_RESPONSE_PROMPT.format(
+        message=last_message,
+        vision_extracted_text=vision_extracted_text or "No vision document available.",
+        requirements_summary=requirements_summary,
+        requirements_list=requirements_list,
+    ))]
 
     try:
         response = await model.ainvoke(conversation, config_internal)
@@ -70,6 +94,10 @@ The user's question is as follows:
 {message}
 
 Provide a clear and concise answer based on the information available about the project and its requirements.
-Current Project: Huddle Project
-Requirements: 120 functional requirements, 30 non-functional requirements, 15 conjectural requirements.
+
+## Project Vision Document
+{vision_extracted_text}
+
+## Existing Requirements ({requirements_summary})
+{requirements_list}
 """

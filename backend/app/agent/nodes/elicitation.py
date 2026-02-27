@@ -18,6 +18,8 @@ from langgraph.types import Command, interrupt
 from app.agent.state import WorkflowState
 from app.agent.tools import generate_task_steps_generative_ui
 from app.agent.utils.context_utils import extract_copilotkit_context
+from app.agent.utils.project_data import fetch_project_context
+from app.agent.utils.nlp_entity_extractor import extract_domain_entities
 
 
 ELICITATION_SYSTEM_PROMPT = """You are a helpful assistant for any questions. 
@@ -38,6 +40,17 @@ async def elicitation_node(state: WorkflowState, config: Optional[RunnableConfig
     print("Elicitation node initialized!")
     context = extract_copilotkit_context(state)
     require_brief_description = context['require_brief_description']
+    current_project_id = context['current_project_id']
+
+    # Fetch vision document text and existing requirements from Supabase
+    vision_extracted_text, existing_requirements = await fetch_project_context(
+        current_project_id,
+        requirement_types=["functional", "non_functional"],
+    )
+
+    # Extract domain entities from vision text using NLP (spaCy NER + TF-IDF)
+    domain_entities = await extract_domain_entities(vision_extracted_text, language="pt")
+    print(f"Domain entities extracted: {domain_entities}")
 
     # Handle interrupt for brief description if required
     if require_brief_description == True:
@@ -87,6 +100,8 @@ async def elicitation_node(state: WorkflowState, config: Optional[RunnableConfig
     return Command(
         update={
             "messages": messages,
+            "domain_entities": domain_entities,
+            "existing_requirements": existing_requirements,
             "step1_elicitation": True,
             "pending_progress": True,
         }

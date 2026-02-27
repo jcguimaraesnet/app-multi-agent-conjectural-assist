@@ -4,7 +4,7 @@ State definitions for the LangGraph workflow.
 Contains the WorkflowState and Step models used across all nodes.
 """
 
-from typing import Any, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 from pydantic import BaseModel, Field
 from typing_extensions import NotRequired
 from copilotkit import CopilotKitState
@@ -68,6 +68,12 @@ class WorkflowState(CopilotKitState):
 
     # Orchestrator routing field
     intent: Optional[str]
+
+    # NLP extracted data
+    domain_entities: List[str]
+
+    # Existing functional and non-functional requirements for the current project
+    existing_requirements: List[Dict[str, Any]]
 
     pending_progress: bool
     step1_elicitation: bool
