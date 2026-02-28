@@ -17,7 +17,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 _loaded_models: dict[str, spacy.language.Language] = {}
 
 SPACY_MODELS = {
-    "pt": "pt_core_news_lg",
+    "pt": "pt_core_news_md",
     "en": "en_core_web_sm",
 }
 
