@@ -1,4 +1,4 @@
-import { Eye, ArrowRight, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { Eye, ListChecks, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { Project } from '@/types';
 import Card from '@/components/ui/Card';
 
@@ -135,11 +135,11 @@ export default function ProjectsTable({
 
                       <button
                         id={index === 0 ? 'btn-go-to-requirements-first' : undefined}
-                        className="p-1.5 text-orange-500 hover:text-orange-600 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+                        className="p-1.5 text-gray-400 hover:text-orange-500 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
                         title="Go to Requirements"
                         onClick={() => onNavigateToRequirements?.(project.id)}
                       >
-                        <ArrowRight className="w-4 h-4" />
+                        <ListChecks className="w-4 h-4" />
                       </button>
                     </div>
                   </td>
