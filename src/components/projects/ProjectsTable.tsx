@@ -1,4 +1,4 @@
-import { Eye, ListChecks, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { Eye, ListChecks, Bot, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { Project } from '@/types';
 import Card from '@/components/ui/Card';
 
@@ -10,6 +10,7 @@ interface ProjectsTableProps {
   onDelete?: (projectId: string) => void;
   onView?: (project: Project) => void;
   onNavigateToRequirements?: (projectId: string) => void;
+  onNavigateToConjecturalRequirements?: (projectId: string) => void;
   isLoading?: boolean;
   showEmptyState?: boolean; // Only show "No projects" when explicitly true
   isDeleting?: string | null;
@@ -23,6 +24,7 @@ export default function ProjectsTable({
   onDelete,
   onView,
   onNavigateToRequirements,
+  onNavigateToConjecturalRequirements,
   isLoading = false,
   showEmptyState = false,
   isDeleting = null
@@ -140,6 +142,14 @@ export default function ProjectsTable({
                         onClick={() => onNavigateToRequirements?.(project.id)}
                       >
                         <ListChecks className="w-4 h-4" />
+                      </button>
+
+                      <button
+                        className="p-1.5 text-orange-500 hover:text-orange-600 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+                        title="Go to Conjectural Requirements"
+                        onClick={() => onNavigateToConjecturalRequirements?.(project.id)}
+                      >
+                        <Bot className="w-4 h-4" />
                       </button>
                     </div>
                   </td>

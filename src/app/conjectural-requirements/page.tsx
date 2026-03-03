@@ -5,10 +5,20 @@ import { useSearchParams } from 'next/navigation';
 import AppLayout from '@/components/layout/AppLayout';
 import PageTitle from '@/components/ui/PageTitle';
 import RequirementsTable from '@/components/requirements/RequirementsTable';
-import RequirementsToolbar from '@/components/requirements/RequirementsToolbar';
+import ConjecturalRequirementsToolbar from '@/components/conjectural-requirements/ConjecturalRequirementsToolbar';
 import { useProject } from '@/contexts/ProjectContext';
 import { useRequirements } from '@/contexts/RequirementsContext';
+import { useSettings } from '@/contexts/SettingsContext';
+import { CopilotSidebar } from "@copilotkit/react-ui";
+import { useCopilotReadable, useLangGraphInterrupt } from "@copilotkit/react-core";
+import { useAgent } from "@copilotkit/react-core/v2";
+import StepProgress from '@/components/requirements/StepProgress';
+import InterruptForm from '@/components/requirements/InterruptForm';
 import Spinner from "@/components/ui/Spinner";
+import { useAuth } from '@/contexts/AuthContext';
+import Button from '@/components/ui/Button';
+import Textarea from '@/components/ui/Textarea';
+import { RequirementType } from '@/types';
 
 const PAGE_SIZE = 10;
 const TOAST_DURATION_MS = 5000;
@@ -27,7 +37,7 @@ interface AgentState {
   pending_progress: boolean;
 }
 
-function RequirementsInner() {
+function ConjecturalRequirementsInner() {
 
   const { selectedProject, selectProjectById, projects, isLoading: isLoadingProjects } = useProject();
   const {
@@ -43,7 +53,6 @@ function RequirementsInner() {
   const searchParams = useSearchParams();
   const projectIdFromQuery = searchParams.get('projectId');
 
-  const [filterType, setFilterType] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -90,15 +99,14 @@ function RequirementsInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedProject?.id, projectIdFromQuery, currentProjectId, fetchRequirements]);
 
-  // Reset page when filters change
-  const prevFiltersRef = useRef({ filterType, searchQuery });
+  // Reset page when search changes
+  const prevSearchRef = useRef(searchQuery);
   useEffect(() => {
-    const prev = prevFiltersRef.current;
-    if (prev.filterType !== filterType || prev.searchQuery !== searchQuery) {
+    if (prevSearchRef.current !== searchQuery) {
       setCurrentPage(1);
-      prevFiltersRef.current = { filterType, searchQuery };
+      prevSearchRef.current = searchQuery;
     }
-  }, [filterType, searchQuery]);
+  }, [searchQuery]);
 
   // Toast progress animation
   useEffect(() => {
@@ -128,16 +136,15 @@ function RequirementsInner() {
     setSuccessMessage(null);
   };
 
-  // Filter requirements by type and search query (client-side)
-  // Use empty array when project is not found to avoid showing stale data
+  // Filter requirements: only Conjectural type + search query
   const activeRequirements = projectNotFound ? [] : requirements;
   const filteredRequirements = activeRequirements.filter(req => {
-    const matchesType = filterType ? req.type === filterType : true;
+    const isConjectural = req.type === RequirementType.Conjectural;
     const matchesSearch = searchQuery
       ? req.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
         req.requirement_id.toLowerCase().includes(searchQuery.toLowerCase())
       : true;
-    return matchesType && matchesSearch;
+    return isConjectural && matchesSearch;
   });
 
   // Pagination
@@ -148,13 +155,12 @@ function RequirementsInner() {
   );
 
   const handleClear = () => {
-    setFilterType("");
     setSearchQuery("");
     setCurrentPage(1);
   };
 
   const handleDelete = useCallback(async (requirementId: string) => {
-    if (!confirm('Are you sure you want to delete this requirement?')) {
+    if (!confirm('Are you sure you want to delete this conjectural requirement?')) {
       return;
     }
 
@@ -163,15 +169,15 @@ function RequirementsInner() {
     const success = await deleteRequirement(requirementId);
 
     if (success) {
-      setSuccessMessage('Requirement deleted successfully.');
+      setSuccessMessage('Conjectural requirement deleted successfully.');
     } else {
-      alert('Failed to delete requirement');
+      alert('Failed to delete conjectural requirement');
     }
   }, [deleteRequirement]);
 
   return (
     <>
-      <PageTitle title="Requirements" backHref="/projects" backLabel="Back Projects" />
+      <PageTitle title="Conjectural Requirements" backHref="/projects" backLabel="Back Projects" />
       {successMessage && (
         <div className="fixed top-24 right-6 z-50 w-80 rounded-xl bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 p-4 text-sm text-gray-800 dark:text-gray-100">
           <div className="flex items-start justify-between gap-4">
@@ -200,14 +206,12 @@ function RequirementsInner() {
       {(!projectIdFromQuery || (!isLoadingProjects && projects.length > 0 && !selectedProject)) && (
         <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
           <p className="text-sm text-red-800 dark:text-red-200">
-            Project not found. Select a valid project to view its requirements.
+            Project not found. Select a valid project to view its conjectural requirements.
           </p>
         </div>
       )}
 
-      <RequirementsToolbar
-        filterType={filterType}
-        setFilterType={setFilterType}
+      <ConjecturalRequirementsToolbar
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         onClear={handleClear}
@@ -226,16 +230,95 @@ function RequirementsInner() {
   );
 }
 
-export default function RequirementsPage() {
-  return (
-    <AppLayout>
-      <Suspense fallback={
-        <div className="flex items-center justify-center h-64">
-          <Spinner />
+export default function ConjecturalRequirementsPage() {
+  const { user } = useAuth();
+  const { settings } = useSettings();
+  const { selectedProject } = useProject();
+
+  useCopilotReadable({
+    description: "CurrentUser",
+    value: user,
+  }, [user]);
+
+  useCopilotReadable({
+    description: "CurrentProjectId",
+    value: selectedProject?.id,
+  }, [selectedProject?.id]);
+
+  useCopilotReadable({
+    description: "CurrentUserSettings",
+    value: settings,
+  }, [settings]);
+
+  useLangGraphInterrupt({
+      render: ({ event, resolve }) => (
+          <InterruptForm
+            inputCount={settings.quantity_req_batch}
+            onSubmit={resolve}
+          />
+      )
+  }, [settings.quantity_req_batch]);
+
+  function CustomInput({ inProgress, onSend }: { inProgress: boolean; onSend: (text: string) => void }) {
+    const { agent } = useAgent({ agentId: "sample_agent" });
+    const [text, setText] = useState("");
+    return (
+      <div className="p-2">
+        <Textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Ask me anything about the current project"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey && !inProgress && text.trim()) {
+              e.preventDefault();
+              onSend(text);
+              setText("");
+            }
+          }}
+        />
+        <div className="flex items-center justify-between">
+          <Button disabled={inProgress || !text.trim()} onClick={() => { onSend(text); setText(""); }}>Send</Button>
+          {agent.isRunning && <StepProgress status="InProgress" state={agent.state} />}
         </div>
-      }>
-        <RequirementsInner />
-      </Suspense>
-    </AppLayout>
+      </div>
+    );
+  }
+
+  return (
+    <CopilotSidebar
+      Input={CustomInput}
+      clickOutsideToClose={false}
+      defaultOpen={true}
+      hideStopButton={false}
+      labels={{
+        title: "Multi-Agent AI for Conjectural Requirements",
+        initial: "\u{1F44B} Hi, I'm ready to answer anything about the current project.",
+        placeholder: "Ask me anything about the current project",
+        stopGenerating: "Stop",
+      }}
+      icons={{
+        spinnerIcon: <Spinner size='lg' />,
+        stopIcon: <span className="inline-block w-4 h-4 bg-red-400 border border-red-600 rounded-sm" />,
+      }}
+      suggestions={[
+        {
+          title: "Generate conjectural requirements",
+          message: "Generate conjectural requirements for the current project.",
+        },
+        {
+          title: "Quantity conjectural requirements",
+          message: "How many conjectural requirements are there in the current project?",
+        },
+      ]}>
+      <AppLayout>
+        <Suspense fallback={
+          <div className="flex items-center justify-center h-64">
+            <Spinner />
+          </div>
+        }>
+          <ConjecturalRequirementsInner />
+        </Suspense>
+      </AppLayout>
+    </CopilotSidebar>
   );
 }

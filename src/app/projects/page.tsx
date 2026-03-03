@@ -158,6 +158,20 @@ export default function ProjectsPage() {
     setIsDetailsOpen(false);
   }, [router, projects, prefetchRequirements]);
 
+  const handleNavigateToConjecturalRequirements = useCallback(async (projectId: string) => {
+    const project = projects.find(p => p.id === projectId);
+    if (project) {
+      const projectAuthor = [project.author_first_name, project.author_last_name]
+        .filter(Boolean)
+        .join(' ') || project.author || 'Unknown';
+
+      await prefetchRequirements(projectId, projectAuthor);
+    }
+
+    router.push(`/conjectural-requirements?projectId=${projectId}`);
+    setIsDetailsOpen(false);
+  }, [router, projects, prefetchRequirements]);
+
   const handleViewProject = useCallback(async (project: Project) => {
     if (!user?.id) return;
 
@@ -301,6 +315,7 @@ export default function ProjectsPage() {
         onDelete={handleDeleteProject}
         onView={handleViewProject}
         onNavigateToRequirements={handleNavigateToRequirements}
+        onNavigateToConjecturalRequirements={handleNavigateToConjecturalRequirements}
         isLoading={isLoading}
         showEmptyState={!isLoading && projects.length === 0}
         isDeleting={isDeleting}

@@ -11,7 +11,7 @@ export default function Header() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const projectIdFromQuery = searchParams.get('projectId');
-  const isRequirementsPage = pathname === '/requirements';
+  const isRequirementsPage = pathname === '/requirements' || pathname === '/conjectural-requirements';
   const { isDarkMode, toggleTheme, mounted } = useTheme();
   const { user } = useAuth();
   const { selectedProject, isLoading: isLoadingProjects } = useProject();
