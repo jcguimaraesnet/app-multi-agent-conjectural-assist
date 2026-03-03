@@ -160,7 +160,7 @@ export default function SettingsPanel() {
                   ? 'bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white'
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500'
               }`}>
-                {settings.quantity_req_batch}
+                {settings.batch_mode ? settings.quantity_req_batch : '—'}
               </div>
               <div className="flex flex-col border-l border-border-light dark:border-gray-600">
                 <button
