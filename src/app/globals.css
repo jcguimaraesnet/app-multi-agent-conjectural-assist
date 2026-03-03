@@ -20,6 +20,17 @@
 
 @variant dark (&:where(.dark, .dark *));
 
+/* CopilotKit theme overrides - need !important to override @copilotkit/react-ui/styles.css */
+:root {
+  --copilot-kit-background-color: #FFFFFF !important;
+  --copilot-kit-contrast-color: white !important;
+}
+
+html.dark {
+  --copilot-kit-background-color: #1E293B !important;
+  --copilot-kit-contrast-color: #0f172a !important;
+}
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -27,4 +38,8 @@
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+.copilotKitMessages footer .suggestions .suggestion {
+    background-color: var(--copilot-kit-contrast-color);
 }

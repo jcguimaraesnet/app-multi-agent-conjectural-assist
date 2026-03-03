@@ -37,7 +37,7 @@ export default function RootLayout({
       <body className="antialiased">
         <CopilotKit runtimeUrl="/api/copilotkit" 
                     agent="sample_agent" 
-                    showDevConsole={true}
+                    showDevConsole={false}
                     properties={{
                       user_id_test: "123",
                     }}
