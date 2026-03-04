@@ -1,11 +1,8 @@
-## Getting Started
+## ⭐ Getting Started
 
 CONREQ Multi-Agent is an application for conjectural requirements specification, split into three parts: frontend (Next.js), backend API (FastAPI), and AI agent (LangGraph).
 
-## Setup
-
-<details>
-<summary>Show setup steps</summary>
+## ⚙️ Setup
 
 ### 1. Install
 
@@ -34,7 +31,7 @@ This project uses two different environment files:
 # Frontend (root)
 cp env.local.example .env.local
 
-# Backend API
+# Backend API and Agent
 cp backend/.env.example backend/.env
 ```
 
@@ -49,7 +46,7 @@ LANGSMITH_API_KEY=your-langsmith-api-key
 OPENAI_API_KEY=your-openai-api-key
 ```
 
-#### Backend (`backend/.env`)
+#### Backend and Agent (`backend/.env`)
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
@@ -80,16 +77,15 @@ pnpm dev:backend
 # 2) Frontend
 pnpm dev:frontend
 
-# 3) AI Agent
+# 3) Agent
 cd backend
 uv run langgraph dev --port 8123 --no-browser
 # or
 pnpm dev:agent
 ```
 
-</details>
 
-## Links
+## 🔗 Links
 
 <details>
 <summary>Show links</summary>
@@ -128,7 +124,7 @@ Agent
   
 
 
-## API Endpoints
+## 🌐 API Endpoints
 
 <details>
 <summary>Show API endpoints</summary>
@@ -165,7 +161,7 @@ Agent
 
 
 
-## Database (Supabase)
+## ℹ️ Database (Supabase)
 
 <details>
 <summary>Show database tables</summary>
@@ -225,7 +221,7 @@ Agent
 </details>
 
 
-## Tips
+## 🧩 Tips
 
 <details>
 <summary>Show tips</summary>
