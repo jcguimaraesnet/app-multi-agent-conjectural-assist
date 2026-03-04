@@ -54,14 +54,13 @@ async def generic_node(state: WorkflowState, config: Optional[RunnableConfig] = 
         for r in existing_requirements
     ) if existing_requirements else "No requirements registered yet."
 
-    conversation = [
-        SystemMessage(content=GENERIC_RESPONSE_PROMPT.format(
-            vision_extracted_text=vision_extracted_text or "No vision document available.",
-            requirements_summary=requirements_summary,
-            requirements_list=requirements_list,
-        )),
-        HumanMessage(content=last_message),
-    ]
+    system_message = SystemMessage(content=GENERIC_RESPONSE_PROMPT.format(
+        vision_extracted_text=vision_extracted_text or "No vision document available.",
+        requirements_summary=requirements_summary,
+        requirements_list=requirements_list,
+    ))
+
+    conversation = [system_message] + messages
 
     try:
         response = await model.ainvoke(conversation, config_internal)
@@ -82,19 +81,14 @@ async def generic_node(state: WorkflowState, config: Optional[RunnableConfig] = 
 
 
 # System prompt for generic conversational responses
-GENERIC_RESPONSE_PROMPT = """You are a helpful assistant for a requirements engineering application that helps users find information about a software project.
+GENERIC_RESPONSE_PROMPT = """You are a helpful assistant for a requirements engineering application.
 
-Your role in this conversation is:
-
-1. To answer general questions about the software project and its functional, non-functional, and conjectural requirements.
-
-Keep your answers concise, friendly, and helpful. 
-If the user asks about matters unrelated to the software project and its requirements, 
-politely reply that you cannot answer because the question is outside your scope.
-
-Respond in the same language the user is using (English or Portuguese).
-
-Provide a clear and concise answer based on the information available about the project and its requirements.
+## Rules
+- Answer ONLY and EXACTLY what the user asked. Do not add extra information, suggestions, or follow-up questions unless explicitly requested.
+- Keep your answer short and direct.
+- If the question is unrelated to the software project and its requirements, reply briefly that it is outside your scope.
+- Respond in the same language the user is using.
+- Base your answer solely on the project context provided below.
 
 ## Project Vision Document
 {vision_extracted_text}
