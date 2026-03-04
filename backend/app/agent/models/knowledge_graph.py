@@ -20,6 +20,10 @@ class EntityNode(BaseModel):
         description="Origin of the meaning: 'extracted' (Known Known, from documents) "
         "or 'inferred' (Unknown Known, via stakeholder persona simulation)"
     )
+    is_ambiguous: bool = Field(
+        default=False,
+        description="Whether this entity was identified as ambiguous (subjective/vague term)"
+    )
 
 
 class EntityRelation(BaseModel):
@@ -37,6 +41,14 @@ class KnowledgeGraph(BaseModel):
     edges: List[EntityRelation] = Field(default_factory=list)
     stakeholder: str = Field(default="end user", description="Primary stakeholder identified")
     domain: str = Field(default="general software", description="Project domain identified")
+    ambiguous_terms: List[str] = Field(
+        default_factory=list,
+        description="List of entity names identified as ambiguous by the analysis node"
+    )
+    non_ambiguity_metric: float = Field(
+        default=1.0,
+        description="Ratio of non-ambiguous terms to total terms (0.0 to 1.0)"
+    )
 
 
 def to_networkx(kg: KnowledgeGraph) -> nx.DiGraph:
@@ -44,13 +56,15 @@ def to_networkx(kg: KnowledgeGraph) -> nx.DiGraph:
     G = nx.DiGraph()
 
     for node in kg.nodes:
-        G.add_node(node.entity, meaning=node.meaning, source=node.source)
+        G.add_node(node.entity, meaning=node.meaning, source=node.source, is_ambiguous=node.is_ambiguous)
 
     for edge in kg.edges:
         G.add_edge(edge.source, edge.target, relation=edge.relation)
 
     G.graph["stakeholder"] = kg.stakeholder
     G.graph["domain"] = kg.domain
+    G.graph["ambiguous_terms"] = kg.ambiguous_terms
+    G.graph["non_ambiguity_metric"] = kg.non_ambiguity_metric
 
     return G
 
@@ -58,7 +72,12 @@ def to_networkx(kg: KnowledgeGraph) -> nx.DiGraph:
 def from_networkx(G: nx.DiGraph) -> KnowledgeGraph:
     """Convert a NetworkX DiGraph back to a KnowledgeGraph Pydantic model."""
     nodes = [
-        EntityNode(entity=n, meaning=data.get("meaning", ""), source=data.get("source", "extracted"))
+        EntityNode(
+            entity=n,
+            meaning=data.get("meaning", ""),
+            source=data.get("source", "extracted"),
+            is_ambiguous=data.get("is_ambiguous", False),
+        )
         for n, data in G.nodes(data=True)
     ]
     edges = [
@@ -70,6 +89,8 @@ def from_networkx(G: nx.DiGraph) -> KnowledgeGraph:
         edges=edges,
         stakeholder=G.graph.get("stakeholder", "end user"),
         domain=G.graph.get("domain", "general software"),
+        ambiguous_terms=G.graph.get("ambiguous_terms", []),
+        non_ambiguity_metric=G.graph.get("non_ambiguity_metric", 1.0),
     )
 
 

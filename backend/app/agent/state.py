@@ -76,6 +76,10 @@ class WorkflowState(CopilotKitState):
     # Serialized from KnowledgeGraph Pydantic model via kg_to_state()
     knowledge_graph: Dict[str, Any]
 
+    # Ambiguity analysis results from the analysis node
+    ambiguous_terms: List[str]
+    non_ambiguity_metric: float
+
     # Existing functional and non-functional requirements for the current project
     existing_requirements: List[Dict[str, Any]]
 
