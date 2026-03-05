@@ -20,6 +20,9 @@
 		},
 		{
 			"path": "../dependencies/CopilotKit/packages/v1/runtime"
+		},
+		{
+			"path": "../dependencies/CopilotKit/examples/v1/research-canvas"
 		}
 	],
 	"settings": {
