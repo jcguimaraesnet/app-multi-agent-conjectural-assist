@@ -23,6 +23,9 @@
 		},
 		{
 			"path": "../dependencies/CopilotKit/examples/v1/research-canvas"
+		},
+		{
+			"path": "../8-copilotkit-coagents/03-coagent-tool-backend"
 		}
 	],
 	"settings": {

@@ -6,10 +6,12 @@ node, scoring each one from 1 to 10 based on quality criteria.
 """
 
 import asyncio
-from typing import Optional, List, Dict, Any
+import json
+from typing import Optional, List, Dict, Any, Annotated
 
 from langchain_core.runnables.config import RunnableConfig
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langchain_core.tools import tool
 from app.agent.llm_config import get_model, extract_text
 from langgraph.graph import END
 from langgraph.types import Command
@@ -17,6 +19,13 @@ from copilotkit.langgraph import SystemMessage, copilotkit_emit_message, copilot
 
 from app.agent.state import WorkflowState
 from app.agent.models.knowledge_graph import kg_from_state
+
+
+@tool
+def ValidationCard(
+    requirements: Annotated[str, "JSON array of conjectural requirements, each with requirement_number, desired_behavior, positive_impact, uncertainties, solution_assumption, uncertainty_evaluated, observation_analysis"],
+):
+    """Display conjectural requirement cards with FERC and QESS data."""
 
 
 VALIDATION_SYSTEM_PROMPT = """You are an expert evaluator of conjectural software requirements.
@@ -138,9 +147,55 @@ async def validation_node(state: WorkflowState, config: Optional[RunnableConfig]
 
     messages = messages + [response]
 
+    # --- Stream ValidationCard tool call to the frontend via predict_state ---
+    config["metadata"]["predict_state"] = [{
+        "state_key": "validation_card_requirements",
+        "tool": "ValidationCard",
+        "tool_argument": "requirements",
+    }]
+
+    card_model = get_model(temperature=0)
+    card_model_with_tool = card_model.bind_tools(
+        [ValidationCard],
+        tool_choice="ValidationCard",
+    )
+
+    requirements_list = []
+    for i, cr in enumerate(conjectural_requirements):
+        ferc = cr.get("ferc", {})
+        qess = cr.get("qess", {})
+        requirements_list.append({
+            "requirement_number": i + 1,
+            "desired_behavior": ferc.get("desired_behavior", ""),
+            "positive_impact": ferc.get("positive_impact", ""),
+            "uncertainties": "; ".join(ferc.get("uncertainties", [])),
+            "solution_assumption": qess.get("solution_assumption", ""),
+            "uncertainty_evaluated": qess.get("uncertainty_evaluated", ""),
+            "observation_analysis": qess.get("observation_analysis", ""),
+        })
+
+    requirements_json = json.dumps(requirements_list, ensure_ascii=False)
+
+    card_prompt = f"""You MUST call the ValidationCard tool with EXACTLY the following value for the requirements parameter. Do NOT modify it.
+
+requirements: {requirements_json}"""
+
+    card_response = await card_model_with_tool.ainvoke([
+        HumanMessage(content=card_prompt),
+    ], config)
+
+    if hasattr(card_response, "tool_calls") and card_response.tool_calls:
+        tool_call = card_response.tool_calls[0]
+        card_tool_response = ToolMessage(
+            tool_call_id=tool_call["id"],
+            content="Cards displayed.",
+        )
+        messages = messages + [card_response, card_tool_response]
+        print(f"[Validation] Streamed ValidationCard with {len(requirements_list)} requirements")
+
     state["step4_validation"] = True
     await copilotkit_emit_state(config, state)
-    await asyncio.sleep(2)
+    await asyncio.sleep(20)
 
     return Command(
         update={

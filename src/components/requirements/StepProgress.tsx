@@ -87,7 +87,7 @@ export default function StepProgress({ state }: StepProgressProps) {
     return (
       <div className="flex items-center gap-2">
         <Spinner size="sm" />
-        <span>Processing request...</span>
+        <span className="text-gray-700 dark:text-gray-300">Processing request...</span>
       </div>
     );
   }
@@ -101,7 +101,7 @@ export default function StepProgress({ state }: StepProgressProps) {
       ) : (
         <Spinner size="sm" />
       )}
-      <span>{currentStep.label}</span>
+      <span className="text-gray-700 dark:text-gray-300">{currentStep.label}</span>
     </div>
   );
 }

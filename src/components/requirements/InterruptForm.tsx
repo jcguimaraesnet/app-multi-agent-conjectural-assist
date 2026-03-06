@@ -14,7 +14,6 @@ export default function InterruptForm({ inputCount, onSubmit }: InterruptFormPro
     const responsesJson = JSON.stringify({
       brief_descriptions: responses,
     });
-    console.log("Submitting responses:", responsesJson);
     onSubmit(responsesJson);
   };
 
