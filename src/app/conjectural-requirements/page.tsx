@@ -332,16 +332,16 @@ function ConjecturalRequirementsInner() {
   }, [settings]);
 
   useLangGraphInterrupt({
-      render: ({ event, resolve }) => {
-          if (event.value !== "hitl_brief_description") return null;
-          return (
-            <InterruptForm
-              inputCount={settings.quantity_req_batch}
-              onSubmit={resolve}
-            />
-          );
-      }
-  }, [settings.quantity_req_batch]);
+    render: ({ event, resolve }) => {
+        if (event.value !== "hitl_brief_description") return <></>;
+        return (
+          <InterruptForm
+            inputCount={settings.quantity_req_batch}
+            onSubmit={resolve}
+          />
+        );
+    }
+}, [settings.quantity_req_batch]);
 
   useCopilotAction({
     name: "ValidationCard",
