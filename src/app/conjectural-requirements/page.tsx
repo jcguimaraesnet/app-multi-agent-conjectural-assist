@@ -11,7 +11,7 @@ import { useProject } from '@/contexts/ProjectContext';
 import { useRequirements } from '@/contexts/RequirementsContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { CopilotSidebar } from "@copilotkit/react-ui";
-import { useCopilotReadable, useLangGraphInterrupt, useCopilotAction } from "@copilotkit/react-core";
+import { useCopilotReadable, useLangGraphInterrupt } from "@copilotkit/react-core";
 import { useAgent } from "@copilotkit/react-core/v2";
 import StepProgress from '@/components/requirements/StepProgress';
 import InterruptForm from '@/components/requirements/InterruptForm';
@@ -49,11 +49,7 @@ interface RequirementItem {
   observation_analysis: string;
 }
 
-interface ValidationCardArgs {
-  requirements?: string;
-}
-
-function SingleCard({ req, allRequirements }: { req: RequirementItem; allRequirements: RequirementItem[] }) {
+function SingleCard({ req, allRequirements, onShiftClick }: { req: RequirementItem; allRequirements: RequirementItem[]; onShiftClick?: () => void }) {
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState<"ferc" | "qess">("ferc");
   const [modalIndex, setModalIndex] = useState(0);
@@ -91,7 +87,7 @@ function SingleCard({ req, allRequirements }: { req: RequirementItem; allRequire
   return (
     <>
       <div
-        onClick={openModal}
+        onClick={(e) => { if (e.shiftKey && onShiftClick) { e.preventDefault(); window.getSelection()?.removeAllRanges(); onShiftClick(); } else { openModal(); } }}
         className="rounded-lg border border-orange-200 bg-orange-50 dark:border-orange-700 dark:bg-orange-900/20 p-3 mt-6 mb-2 relative w-62 shrink-0 h-65 overflow-hidden transition-colors cursor-pointer hover:border-orange-300 dark:hover:border-orange-600">
         <div className="absolute top-0.5 right-2 p-0.5 text-orange-400">
           <Maximize2 className="w-3.5 h-3.5" />
@@ -242,36 +238,100 @@ function SingleCard({ req, allRequirements }: { req: RequirementItem; allRequire
   );
 }
 
-function ValidationCardRender({ args }: { args: ValidationCardArgs }) {
-  let requirements: RequirementItem[] = [];
-  try {
-    if (args.requirements) {
-      requirements = JSON.parse(args.requirements);
-    }
-  } catch {
-    // JSON not yet complete (streaming in progress)
-  }
+const INTRO_TEXT = "Conjectural requirements have been generated based on the provided data. Select the ones you want to approve and store in the system.";
+const TYPEWRITER_SPEED_MS = 18;
+const CARD_REVEAL_DELAY_MS = 300;
 
-  if (requirements.length === 0) {
-    return (
-      <div className="rounded-lg border border-orange-200 bg-orange-50 dark:border-orange-700 dark:bg-orange-900/20 p-3 mt-6 mb-2 w-62 h-65 overflow-hidden animate-pulse">
-        <div className="h-5 w-32 bg-orange-200 dark:bg-orange-800/40 rounded mx-auto mt-4 mb-6" />
-        <div className="space-y-3 px-2">
-          <div className="h-4 bg-orange-200 dark:bg-orange-800/40 rounded w-full" />
-          <div className="h-4 bg-orange-200 dark:bg-orange-800/40 rounded w-5/6 mx-auto" />
-          <div className="h-4 bg-orange-200 dark:bg-orange-800/40 rounded w-4/5 mx-auto" />
-          <div className="h-4 bg-orange-200 dark:bg-orange-800/40 rounded w-full" />
-          <div className="h-4 bg-orange-200 dark:bg-orange-800/40 rounded w-3/4 mx-auto" />
-        </div>
-      </div>
-    );
-  }
+function RequirementApprovalForm({ requirements, onResolve }: { requirements: RequirementItem[]; onResolve: (response: string) => void }) {
+  const [selected, setSelected] = useState<Set<number>>(() => new Set(requirements.map(r => r.requirement_number)));
+  const [displayedChars, setDisplayedChars] = useState(0);
+  const [visibleCards, setVisibleCards] = useState(0);
+  const textDone = displayedChars >= INTRO_TEXT.length;
+  const allCardsVisible = visibleCards >= requirements.length;
+
+  // Typewriter effect for intro text
+  useEffect(() => {
+    if (displayedChars >= INTRO_TEXT.length) return;
+    const timer = setTimeout(() => setDisplayedChars(c => c + 1), TYPEWRITER_SPEED_MS);
+    return () => clearTimeout(timer);
+  }, [displayedChars]);
+
+  // Reveal cards one by one after text finishes
+  useEffect(() => {
+    if (!textDone || visibleCards >= requirements.length) return;
+    const timer = setTimeout(() => setVisibleCards(v => v + 1), CARD_REVEAL_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [textDone, visibleCards, requirements.length]);
+
+  const toggleSelection = (reqNumber: number) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(reqNumber)) {
+        next.delete(reqNumber);
+      } else {
+        next.add(reqNumber);
+      }
+      return next;
+    });
+  };
+
+  const handleApprove = () => {
+    const approved = requirements
+      .filter(r => selected.has(r.requirement_number))
+      .map(r => r.requirement_number);
+    onResolve(JSON.stringify({ action: "approve", requirement_numbers: approved }));
+  };
+
+  const handleReject = () => {
+    onResolve(JSON.stringify({ action: "reject", requirement_numbers: [] }));
+  };
 
   return (
-    <div className="flex gap-3 overflow-x-auto">
-      {requirements.map((req) => (
-        <SingleCard key={req.requirement_number} req={req} allRequirements={requirements} />
-      ))}
+    <div className="mt-4 mb-2">
+      <p className="text-base text-gray-800 dark:text-gray-200 mb-3">
+        {INTRO_TEXT.slice(0, displayedChars)}
+        {!textDone && <span className="inline-block w-0.5 h-4 bg-gray-800 dark:bg-gray-200 align-text-bottom animate-pulse" />}
+      </p>
+      {textDone && (
+        <div className="flex gap-3 overflow-x-auto">
+          {requirements.slice(0, visibleCards).map((req) => (
+            <div
+              key={req.requirement_number}
+              className="relative shrink-0 animate-[fadeSlideIn_0.35s_ease-out_forwards]"
+            >
+              <div
+                className="absolute top-8 left-2 z-10"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <input
+                  type="checkbox"
+                  checked={selected.has(req.requirement_number)}
+                  onChange={() => toggleSelection(req.requirement_number)}
+                  className="w-4 h-4 accent-orange-500 cursor-pointer"
+                />
+              </div>
+              <SingleCard req={req} allRequirements={requirements} onShiftClick={() => toggleSelection(req.requirement_number)} />
+            </div>
+          ))}
+        </div>
+      )}
+      {allCardsVisible && (
+        <div className="flex gap-2 mt-3 animate-[fadeSlideIn_0.35s_ease-out_forwards]">
+          <button
+            onClick={handleApprove}
+            disabled={selected.size === 0}
+            className="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-colors"
+          >
+            Approve ({selected.size})
+          </button>
+          <button
+            onClick={handleReject}
+            className="px-4 py-2 text-sm font-medium text-white bg-red-400 hover:bg-red-500 rounded-lg transition-colors"
+          >
+            Reject All
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -333,26 +393,23 @@ function ConjecturalRequirementsInner() {
 
   useLangGraphInterrupt({
     render: ({ event, resolve }) => {
-        if (event.value !== "hitl_brief_description") return <></>;
-        return (
-          <InterruptForm
-            inputCount={settings.quantity_req_batch}
-            onSubmit={resolve}
-          />
-        );
+        if (event.value === "hitl_brief_description") {
+            return (
+              <InterruptForm
+                inputCount={settings.quantity_req_batch}
+                onSubmit={resolve}
+              />
+            );
+        }
+        if (typeof event.value === "object" && event.value?.event === "hitl_req_approve") {
+            const requirements: RequirementItem[] = event.value.requirements || [];
+            return (
+              <RequirementApprovalForm requirements={requirements} onResolve={resolve} />
+            );
+        }
+        return <></>;
     }
 }, [settings.quantity_req_batch]);
-
-  useCopilotAction({
-    name: "ValidationCard",
-    available: "remote",
-    parameters: [
-      { name: "requirements", type: "string" },
-    ],
-    render: ({ args }) => (
-      <ValidationCardRender args={args} />
-    ),
-  });
 
   const searchParams = useSearchParams();
   const projectIdFromQuery = searchParams.get('projectId');
