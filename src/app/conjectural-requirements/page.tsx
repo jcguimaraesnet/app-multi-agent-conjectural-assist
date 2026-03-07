@@ -104,7 +104,7 @@ function SingleCard({ req, allRequirements, onShiftClick }: { req: RequirementIt
       </div>
 
       {showModal && createPortal(
-        <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/60 p-4" onClick={() => setShowModal(false)}>
+        <div className="fixed inset-0 z-9999 flex items-start justify-center bg-black/60 p-4 pt-[15vh]" onClick={() => setShowModal(false)}>
           <div className="w-full max-w-2xl rounded-2xl bg-white dark:bg-surface-dark shadow-2xl border border-border-light dark:border-border-dark" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between border-b border-border-light dark:border-border-dark px-6 py-4">
               <div className="flex items-center gap-3">
