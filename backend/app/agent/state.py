@@ -91,3 +91,6 @@ class WorkflowState(CopilotKitState):
 
     # Flag to skip LLM re-evaluation on interrupt resume
     validation_evaluated: bool
+
+    # Titles of conjectural requirements emitted to the frontend
+    conjectural_titles: List[str]

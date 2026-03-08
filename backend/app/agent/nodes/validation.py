@@ -164,6 +164,15 @@ async def validation_node(state: WorkflowState, config: Optional[RunnableConfig]
     })
     print(f"[Validation] Approval response: {approval_response}")
 
+    # Emit conjectural requirement titles to the frontend
+    conjectural_titles = []
+    for i, cr in enumerate(conjectural_requirements, start=1):
+        ferc = cr.get("ferc", {})
+        behavior = ferc.get("desired_behavior", "Untitled")
+        conjectural_titles.append(f"Conjectural Req #{i}: {behavior}")
+    state["conjectural_titles"] = conjectural_titles
+    await copilotkit_emit_state(config, state)
+
     response = AIMessage(content="Thanks. Conjectural requirements have been approved/rejected successfully.")
     messages = messages + [response]
     await copilotkit_emit_message(config, response.content)

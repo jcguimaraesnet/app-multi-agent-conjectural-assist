@@ -11,7 +11,7 @@ import { useProject } from '@/contexts/ProjectContext';
 import { useRequirements } from '@/contexts/RequirementsContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { CopilotSidebar } from "@copilotkit/react-ui";
-import { useCopilotReadable, useLangGraphInterrupt } from "@copilotkit/react-core";
+import { useCopilotReadable, useLangGraphInterrupt, useCoAgent } from "@copilotkit/react-core";
 import { useAgent } from "@copilotkit/react-core/v2";
 import StepProgress from '@/components/requirements/StepProgress';
 import InterruptForm from '@/components/requirements/InterruptForm';
@@ -37,6 +37,7 @@ interface AgentState {
   step3_specification: boolean;
   step4_validation: boolean;
   pending_progress: boolean;
+  conjectural_titles: string[];
 }
 
 interface RequirementItem {
@@ -362,6 +363,7 @@ function CustomInput({ inProgress, onSend }: { inProgress: boolean; onSend: (tex
 }
 
 function ConjecturalRequirementsInner() {
+  const { state: agentState } = useCoAgent<AgentState>({ name: "sample_agent" });
 
   const { user } = useAuth();
   const { settings } = useSettings();
@@ -375,6 +377,18 @@ function ConjecturalRequirementsInner() {
     deleteRequirement,
     clearRequirements
   } = useRequirements();
+
+  // When the agent emits conjectural titles, refresh the requirements table
+  useEffect(() => {
+    const incoming = agentState?.conjectural_titles;
+    if (incoming && incoming.length > 0 && selectedProject) {
+      const projectAuthor = [selectedProject.author_first_name, selectedProject.author_last_name]
+        .filter(Boolean)
+        .join(' ') || selectedProject.author || 'Unknown';
+      fetchRequirements(selectedProject.id, projectAuthor, true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agentState?.conjectural_titles]);
 
   useCopilotReadable({
     description: "CurrentUser",
@@ -587,6 +601,7 @@ function ConjecturalRequirementsInner() {
         totalPages={totalPages}
         onPageChange={setCurrentPage}
       />
+
     </>
   );
 }
