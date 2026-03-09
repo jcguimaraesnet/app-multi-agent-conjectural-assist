@@ -1,0 +1,7 @@
+FROM mcr.microsoft.com/devcontainers/typescript-node:20-bullseye
+
+# Instala o pnpm globalmente
+RUN npm install -g pnpm
+
+# Define o diretório de trabalho padrão
+WORKDIR /workspace

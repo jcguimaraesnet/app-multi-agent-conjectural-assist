@@ -1,0 +1,35 @@
+version: "3.8"
+
+services:
+  frontend:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile.frontend
+    volumes:
+      - ..:/workspace:cached
+    ports:
+      - "3000:3000"
+    # O comando garante que as dependências existam antes de rodar o frontend
+    command: /bin/sh -c "pnpm install && pnpm dev:frontend"
+
+  backend:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile.python
+    volumes:
+      - ..:/workspace:cached
+    ports:
+      - "8000:8000"
+    # Inicializa o servidor FastAPI orquestrado pelo pnpm
+    command: /bin/sh -c "pnpm install && pnpm dev:backend"
+
+  agent:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile.python
+    volumes:
+      - ..:/workspace:cached
+    ports:
+      - "8123:8123"
+    # Importante: Adicionamos --host 0.0.0.0 para que o LangGraph permita conexões externas ao contêiner
+    command: /bin/sh -c "cd backend && uv sync && uv run langgraph dev --port 8123 --host 0.0.0.0 --no-browser"

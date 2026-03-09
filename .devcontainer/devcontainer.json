@@ -1,0 +1,29 @@
+{
+  "name": "SMA Conjectural Assist",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "backend",
+  "workspaceFolder": "/workspace",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "/workspace/backend/.venv/bin/python",
+        "editor.formatOnSave": true
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss"
+      ]
+    }
+  },
+  "forwardPorts": [3000, 8000, 8123],
+  "portsAttributes": {
+    "3000": { "label": "Next.js Frontend", "onAutoForward": "notify" },
+    "8000": { "label": "FastAPI Backend", "onAutoForward": "notify" },
+    "8123": { "label": "LangGraph Agent Studio", "onAutoForward": "notify" }
+  },
+  "postCreateCommand": "pnpm install && cd backend && uv sync"
+}

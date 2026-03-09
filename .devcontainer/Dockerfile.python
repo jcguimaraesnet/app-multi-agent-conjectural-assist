@@ -1,0 +1,12 @@
+FROM mcr.microsoft.com/devcontainers/python:1-3.12-bullseye
+
+# Instala o gerenciador de pacotes uv (Astral)
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.local/bin:${PATH}"
+
+# Instala Node.js e pnpm para compatibilidade com o monorepo (scripts da raiz)
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g pnpm
+
+WORKDIR /workspace
