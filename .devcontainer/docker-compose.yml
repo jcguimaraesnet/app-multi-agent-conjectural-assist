@@ -1,27 +1,36 @@
 version: "3.8"
 
 services:
-  frontend:
-    build:
-      context: ..
-      dockerfile: .devcontainer/Dockerfile.frontend
-    volumes:
-      - ..:/workspace:cached
-    ports:
-      - "3000:3000"
-    # O comando garante que as dependências existam antes de rodar o frontend
-    command: /bin/sh -c "pnpm install && pnpm dev:frontend"
-
   backend:
     build:
       context: ..
       dockerfile: .devcontainer/Dockerfile.python
     volumes:
       - ..:/workspace:cached
+    # Centralizamos TODAS as portas no contêiner principal que o VS Code acessa
     ports:
+      - "3000:3000"
       - "8000:8000"
-    # Inicializa o servidor FastAPI orquestrado pelo pnpm
-    command: /bin/sh -c "pnpm install && pnpm dev:backend"
+      - "8123:8123"
+    env_file:
+      - ../backend/.env # ou ../.env se ficar na raiz
+    user: "vscode"
+    # Removemos o sleep infinity e colocamos ele para esperar o .ready e iniciar sozinho
+    command: /bin/sh -c "while [ ! -f /workspace/.ready ]; do sleep 3; done && pnpm dev:backend"
+    # command: sleep infinity
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile.frontend
+    volumes:
+      - ..:/workspace:cached
+    # Obriga este contêiner a compartilhar a mesma rede (localhost) do backend
+    network_mode: service:backend
+    env_file:
+      - ../.env.local # ou ../.env
+    user: "node"
+    command: /bin/sh -c "while [ ! -f /workspace/.ready ]; do sleep 3; done && pnpm dev:frontend"
 
   agent:
     build:
@@ -29,7 +38,9 @@ services:
       dockerfile: .devcontainer/Dockerfile.python
     volumes:
       - ..:/workspace:cached
-    ports:
-      - "8123:8123"
-    # Importante: Adicionamos --host 0.0.0.0 para que o LangGraph permita conexões externas ao contêiner
-    command: /bin/sh -c "cd backend && uv sync && uv run langgraph dev --port 8123 --host 0.0.0.0 --no-browser"
+    # Obriga este contêiner a compartilhar a mesma rede (localhost) do backend
+    network_mode: service:backend
+    env_file:
+      - ../backend/.env # ou ../.env se ficar na raiz
+    user: "vscode"
+    command: /bin/sh -c "while [ ! -f /workspace/.ready ]; do sleep 3; done && cd backend && uv run langgraph dev --port 8123 --host 0.0.0.0 --no-browser"

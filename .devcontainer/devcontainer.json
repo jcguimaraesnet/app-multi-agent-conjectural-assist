@@ -3,6 +3,7 @@
   "dockerComposeFile": "docker-compose.yml",
   "service": "backend",
   "workspaceFolder": "/workspace",
+  "remoteUser": "vscode",
   "customizations": {
     "vscode": {
       "settings": {
@@ -19,11 +20,24 @@
       ]
     }
   },
-  "forwardPorts": [3000, 8000, 8123],
+  "forwardPorts": [
+    3000,
+    8000,
+    8123
+  ],
   "portsAttributes": {
-    "3000": { "label": "Next.js Frontend", "onAutoForward": "notify" },
-    "8000": { "label": "FastAPI Backend", "onAutoForward": "notify" },
-    "8123": { "label": "LangGraph Agent Studio", "onAutoForward": "notify" }
+    "3000": {
+      "label": "Next.js Frontend",
+      "onAutoForward": "notify"
+    },
+    "8000": {
+      "label": "FastAPI Backend",
+      "onAutoForward": "notify"
+    },
+    "8123": {
+      "label": "LangGraph Agent Studio",
+      "onAutoForward": "notify"
+    }
   },
-  "postCreateCommand": "pnpm install && cd backend && uv sync"
+  "postCreateCommand": "sudo chown -R vscode:vscode /workspace && rm -f /workspace/.ready && pnpm config set store-dir /home/vscode/.local/share/pnpm/store && pnpm install && cd backend && uv sync && touch /workspace/.ready"
 }
