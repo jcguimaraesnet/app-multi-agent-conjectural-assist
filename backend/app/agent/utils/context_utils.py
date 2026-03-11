@@ -4,6 +4,7 @@ from app.agent.state import WorkflowState
 def extract_copilotkit_context(state: WorkflowState) -> dict:
     """Extract user, project and settings data from copilotkit context."""
     context = state.get("copilotkit", {}).get("context", [])
+    print(f"Extracted context:\n {context}")
 
     current_user_item = next(
         (item for item in context if item.get("description") == "CurrentUser"),
@@ -15,7 +16,7 @@ def extract_copilotkit_context(state: WorkflowState) -> dict:
         (item for item in context if item.get("description") == "CurrentProjectId"),
         None
     )
-    current_project_id = json.loads(current_project_id_item.get("value")) if current_project_id_item else None
+    current_project_id = current_project_id_item.get("value") if current_project_id_item else None
 
     current_user_settings_item = next(
         (item for item in context if item.get("description") == "CurrentUserSettings"),

@@ -11,7 +11,8 @@ import { useProject } from '@/contexts/ProjectContext';
 import { useRequirements } from '@/contexts/RequirementsContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { CopilotSidebar } from "@copilotkit/react-ui";
-import { useCopilotReadable, useLangGraphInterrupt } from "@copilotkit/react-core";
+import { useLangGraphInterrupt } from "@copilotkit/react-core";
+import { useAgentContext } from "@copilotkit/react-core/v2";
 import { useAgent } from "@copilotkit/react-core/v2";
 import StepProgress from '@/components/requirements/StepProgress';
 import InterruptForm from '@/components/requirements/InterruptForm';
@@ -21,6 +22,7 @@ import Button from '@/components/ui/Button';
 import Textarea from '@/components/ui/Textarea';
 import { RequirementType } from '@/types';
 import { X, Maximize2, ChevronLeft, ChevronRight } from 'lucide-react';
+
 
 const PAGE_SIZE = 10;
 const TOAST_DURATION_MS = 5000;
@@ -376,20 +378,20 @@ function ConjecturalRequirementsInner() {
     clearRequirements
   } = useRequirements();
 
-  useCopilotReadable({
+  useAgentContext({
     description: "CurrentUser",
-    value: user,
-  }, [user]);
+    value: user ? JSON.parse(JSON.stringify(user)) : undefined,
+  });
 
-  useCopilotReadable({
+  useAgentContext({
     description: "CurrentProjectId",
-    value: selectedProject?.id,
-  }, [selectedProject?.id]);
+    value: selectedProject?.id ?? "",
+  });
 
-  useCopilotReadable({
+  useAgentContext({
     description: "CurrentUserSettings",
-    value: settings,
-  }, [settings]);
+    value: { ...settings },
+  });
 
   useLangGraphInterrupt({
     render: ({ event, resolve }) => {
