@@ -415,7 +415,7 @@ async def elicitation_node(state: WorkflowState, config: Optional[RunnableConfig
     # Handle interrupt for brief description if required
     if require_brief_description == True:
         state["json_brief_description"] = interrupt(
-            "hitl_brief_description",
+            {"type": "hitl_brief_description"},
         )
 
     print("Elicitation node completed.")

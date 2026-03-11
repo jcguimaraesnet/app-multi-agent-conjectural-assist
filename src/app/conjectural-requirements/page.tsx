@@ -11,7 +11,7 @@ import { useProject } from '@/contexts/ProjectContext';
 import { useRequirements } from '@/contexts/RequirementsContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { CopilotSidebar } from "@copilotkit/react-ui";
-import { useLangGraphInterrupt } from "@copilotkit/react-core";
+import { useInterrupt } from "@copilotkit/react-core/v2";
 import { useAgentContext } from "@copilotkit/react-core/v2";
 import { useAgent } from "@copilotkit/react-core/v2";
 import { useConfigureSuggestions } from "@copilotkit/react-core/v2";
@@ -394,25 +394,29 @@ function ConjecturalRequirementsInner() {
     value: { ...settings },
   });
 
-  useLangGraphInterrupt({
+  useInterrupt({
+    agentId: "conjec-req-agent",
+    enabled: (event) => JSON.parse(event.value).type === 'hitl_brief_description',
     render: ({ event, resolve }) => {
-        if (event.value === "hitl_brief_description") {
-            return (
+      return (
               <InterruptForm
                 inputCount={settings.quantity_req_batch}
                 onSubmit={resolve}
               />
-            );
-        }
-        if (typeof event.value === "object" && event.value?.event === "hitl_req_approve") {
-            const requirements: RequirementItem[] = event.value.requirements || [];
+      )
+    }
+  });
+
+  useInterrupt({
+    agentId: "conjec-req-agent",
+    enabled: (event) => JSON.parse(event.value).type === "hitl_req_approve",
+    render: ({ event, resolve }) => {
+            const requirements: RequirementItem[] = JSON.parse(event.value).requirements || [];
             return (
               <RequirementApprovalForm requirements={requirements} onResolve={resolve} />
             );
-        }
-        return <></>;
     }
-}, [settings.quantity_req_batch]);
+  });
 
   const searchParams = useSearchParams();
   const projectIdFromQuery = searchParams.get('projectId');

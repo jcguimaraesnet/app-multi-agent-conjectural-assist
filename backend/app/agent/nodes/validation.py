@@ -159,7 +159,7 @@ async def validation_node(state: WorkflowState, config: Optional[RunnableConfig]
     # --- Interrupt: send requirements to frontend for approval ---
     print(f"[Validation] Sending {len(requirements_list)} requirements for approval via interrupt")
     approval_response = interrupt({
-        "event": "hitl_req_approve",
+        "type": "hitl_req_approve",
         "requirements": requirements_list,
     })
     print(f"[Validation] Approval response: {approval_response}")
