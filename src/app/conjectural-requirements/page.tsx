@@ -14,6 +14,7 @@ import { CopilotSidebar } from "@copilotkit/react-ui";
 import { useLangGraphInterrupt } from "@copilotkit/react-core";
 import { useAgentContext } from "@copilotkit/react-core/v2";
 import { useAgent } from "@copilotkit/react-core/v2";
+import { useConfigureSuggestions } from "@copilotkit/react-core/v2";
 import StepProgress from '@/components/requirements/StepProgress';
 import InterruptForm from '@/components/requirements/InterruptForm';
 import Spinner from "@/components/ui/Spinner";
@@ -594,6 +595,20 @@ function ConjecturalRequirementsInner() {
 }
 
 export default function ConjecturalRequirementsPage() {
+  useConfigureSuggestions({
+    suggestions: [
+        {
+          title: "Generate conjectural requirements",
+          message: "Generate conjectural requirements for the current project.",
+        },
+        {
+          title: "Quantity conjectural",
+          message: "How many conjectural requirements are there in the current project?",
+        },
+    ],
+    available: "always",
+  });
+
   return (
     <CopilotSidebar
       Input={CustomInput}
@@ -609,17 +624,7 @@ export default function ConjecturalRequirementsPage() {
       icons={{
         spinnerIcon: <Spinner size='lg' />,
         stopIcon: <span className="inline-block w-4 h-4 bg-red-400 border border-red-600 rounded-sm" />,
-      }}
-      suggestions={[
-        {
-          title: "Generate conjectural requirements",
-          message: "Generate conjectural requirements for the current project.",
-        },
-        {
-          title: "Quantity conjectural requirements",
-          message: "How many conjectural requirements are there in the current project?",
-        },
-      ]}>
+      }}>
       <AppLayout>
         <Suspense fallback={
           <div className="flex items-center justify-center h-64">
