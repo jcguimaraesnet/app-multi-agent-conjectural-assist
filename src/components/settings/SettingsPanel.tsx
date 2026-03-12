@@ -6,7 +6,16 @@ import Toggle from '@/components/ui/Toggle';
 import { useSettings } from '@/contexts/SettingsContext';
 
 export default function SettingsPanel() {
-  const { settings, isLoading, updateSetting } = useSettings();
+  const { settings, isLoading, updateSetting, updateSettings } = useSettings();
+
+  const isHumanInTheLoopEnabled = settings.require_brief_description || settings.require_approve;
+
+  const handleHumanInTheLoopToggle = (value: boolean) => {
+    updateSettings({
+      require_brief_description: value,
+      require_approve: value,
+    });
+  };
 
   const incrementQuantity = () => {
     const newValue = Math.min(settings.quantity_req_batch + 1, 10);
@@ -21,15 +30,15 @@ export default function SettingsPanel() {
   if (isLoading) {
     return (
       <Card noPadding>
-        {/* Skeleton: Setting 1 */}
+        {/* Skeleton: Master Human-in-the-Loop */}
         <div className="px-6 py-5 border-b border-border-light dark:border-border-dark">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-sm font-medium text-gray-900 dark:text-white">
-                A brief description of the business need or desired positive impact
+                Human-in-the-Loop on conjectural requirement specification process
               </h3>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                When enabled, a description must be provided before generating requirements
+                When enabled, human intervention will be required during the process.
               </p>
             </div>
             {/* Toggle Skeleton */}
@@ -37,7 +46,39 @@ export default function SettingsPanel() {
           </div>
         </div>
 
-        {/* Skeleton: Setting 2 */}
+        {/* Skeleton: Sub-setting 1 */}
+        <div className="pl-16 pr-6 py-3 border-b border-border-light dark:border-border-dark border-l border-l-primary/30 bg-gray-50/50 dark:bg-gray-800/30">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                A brief description of the business need or desired positive impact
+              </h3>
+              <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
+                When enabled, a description must be provided before generating requirements
+              </p>
+            </div>
+            {/* Small Toggle Skeleton */}
+            <div className="h-5 w-9 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse" />
+          </div>
+        </div>
+
+        {/* Skeleton: Sub-setting 2 */}
+        <div className="pl-16 pr-6 py-3 border-b border-border-light dark:border-border-dark border-l border-l-primary/30 bg-gray-50/50 dark:bg-gray-800/30">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                Approve conjectural requirements
+              </h3>
+              <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
+                When enabled, conjectural requirements must be explicitly approved or rejected.
+              </p>
+            </div>
+            {/* Small Toggle Skeleton */}
+            <div className="h-5 w-9 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse" />
+          </div>
+        </div>
+
+        {/* Skeleton: Setting 3 */}
         <div className="px-6 py-5 border-b border-border-light dark:border-border-dark">
           <div className="flex items-center justify-between">
             <div>
@@ -56,7 +97,7 @@ export default function SettingsPanel() {
           </div>
         </div>
 
-        {/* Skeleton: Setting 3 */}
+        {/* Skeleton: Setting 4 */}
         <div className="px-6 py-5">
           <div className="flex items-center justify-between">
             <div>
@@ -84,25 +125,63 @@ export default function SettingsPanel() {
   return (
     <Card noPadding>
       
-      {/* Setting 1: Require Description */}
-      <div id="setting-require-description" className="px-6 py-5 border-b border-border-light dark:border-border-dark">
+      {/* Master: Human-in-the-Loop */}
+      <div id="setting-human-in-the-loop" className="px-6 py-5 border-b border-border-light dark:border-border-dark">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-medium text-gray-900 dark:text-white">
-              A brief description of the business need or desired positive impact
+              <span className="font-semibold text-primary">Human-in-the-Loop</span> on conjectural requirement specification process
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              When enabled, human intervention will be required during the process.
+            </p>
+          </div>
+          <Toggle
+            checked={isHumanInTheLoopEnabled}
+            onChange={handleHumanInTheLoopToggle}
+          />
+        </div>
+      </div>
+
+      {/* Sub-setting 1: Require Description */}
+      <div id="setting-require-description" className="pl-16 pr-6 py-3 border-b border-border-light dark:border-border-dark border-l border-l-primary/30 bg-gray-50/50 dark:bg-gray-800/30">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-xs font-medium text-gray-700 dark:text-gray-300">
+              <span className="font-semibold text-primary">Human-in-the-Loop</span> for a brief description of the business need
+            </h3>
+            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
               When enabled, a description must be provided before generating requirements
             </p>
           </div>
           <Toggle
+            size="sm"
             checked={settings.require_brief_description}
             onChange={(value) => updateSetting('require_brief_description', value)}
           />
         </div>
       </div>
 
-      {/* Setting 2: Generation Mode */}
+      {/* Sub-setting 2: Require Approve */}
+      <div id="setting-require-approve" className="pl-16 pr-6 py-3 border-b border-border-light dark:border-border-dark border-l border-l-primary/30 bg-gray-50/50 dark:bg-gray-800/30">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-xs font-medium text-gray-700 dark:text-gray-300">
+              <span className="font-semibold text-primary">Human-in-the-Loop</span> for approve conjectural requirements
+            </h3>
+            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
+              When enabled, conjectural requirements must be explicitly approved or rejected.
+            </p>
+          </div>
+          <Toggle
+            size="sm"
+            checked={settings.require_approve}
+            onChange={(value) => updateSetting('require_approve', value)}
+          />
+        </div>
+      </div>
+
+      {/* Setting 3: Generation Mode */}
       <div id="setting-generation-mode" className="px-6 py-5 border-b border-border-light dark:border-border-dark">
         <div className="flex items-center justify-between">
           <div>
@@ -138,7 +217,7 @@ export default function SettingsPanel() {
         </div>
       </div>
 
-      {/* Setting 3: Batch Quantity */}
+      {/* Setting 4: Batch Quantity */}
       <div id="setting-batch-quantity" className="px-6 py-5">
         <div className="flex items-center justify-between">
           <div>

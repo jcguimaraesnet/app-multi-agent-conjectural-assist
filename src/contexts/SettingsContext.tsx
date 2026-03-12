@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 
 export interface UserSettings {
   require_brief_description: boolean;
+  require_approve: boolean;
   batch_mode: boolean;
   quantity_req_batch: number;
 }
@@ -21,6 +22,7 @@ interface SettingsContextType {
 
 const defaultSettings: UserSettings = {
   require_brief_description: true,
+  require_approve: true,
   batch_mode: true,
   quantity_req_batch: 5,
 };
@@ -91,6 +93,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       const loadedSettings: UserSettings = data
         ? {
             require_brief_description: data.require_brief_description,
+            require_approve: data.require_approve,
             batch_mode: data.batch_mode,
             quantity_req_batch: data.quantity_req_batch,
           }
@@ -139,6 +142,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       const persistedSettings: UserSettings = data
         ? {
             require_brief_description: data.require_brief_description,
+            require_approve: data.require_approve,
             batch_mode: data.batch_mode,
             quantity_req_batch: data.quantity_req_batch,
           }

@@ -61,6 +61,7 @@ async def orchestrator_node(state: WorkflowState, config: Optional[RunnableConfi
     print(f"CurrentUser FirstName = {context['current_user_first_name']}")
     print(f"CurrentProjectId = {context['current_project_id']}")
     print(f"require_brief_description = {context['require_brief_description']}")
+    print(f"require_approve = {context['require_approve']}")
     print(f"batch_mode = {context['batch_mode']}")
     print(f"quantity_req_batch = {context['quantity_req_batch']}")
 
