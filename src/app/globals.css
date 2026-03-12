@@ -44,6 +44,9 @@ html.dark {
     background-color: var(--copilot-kit-contrast-color);
 }
 
+/* Scan onborda dist so its Tailwind classes (z-[900], z-[950], etc.) are generated */
+@source "../../node_modules/onborda/dist";
+
 @keyframes fadeSlideIn {
   from {
     opacity: 0;

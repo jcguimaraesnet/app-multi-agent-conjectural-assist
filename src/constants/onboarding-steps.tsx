@@ -1,24 +1,24 @@
 import type { OnbordaProps } from 'onborda';
-import { Settings, CheckCircle, Layers, Hash, PlusCircle, ArrowRightCircle } from 'lucide-react';
+import { Settings, CheckCircle, Layers, Hash, PlusCircle, ArrowRightCircle, UserCheck, ShieldCheck, Cpu } from 'lucide-react';
 
 export function getOnboardingTours(hasProjects: boolean): OnbordaProps['steps'] {
   const projectActionsSelector = hasProjects
-    ? '#btn-go-to-requirements-first'
+    ? '#btn-go-to-conjectural-first'
     : '#table-actions-header';
 
   const projectActionsContent = hasProjects
     ? (
       <>
-        Click the <strong>Go to Requirements</strong> button to navigate to the
-        AI agent where you can create new conjectural requirements for this
-        project.
+        Click the <strong>Go to Conjectural Requirements</strong> button to
+        navigate to the AI agent where you can create new conjectural
+        requirements for this project.
       </>
     )
     : (
       <>
-        Use the <strong>Go to Requirements</strong> action to navigate to the
-        AI agent where you can create new conjectural requirements for your
-        project.
+        Use the <strong>Go to Conjectural Requirements</strong> action to
+        navigate to the AI agent where you can create new conjectural
+        requirements for your project.
       </>
     );
 
@@ -47,8 +47,24 @@ export function getOnboardingTours(hasProjects: boolean): OnbordaProps['steps'] 
     tour: 'settings-tour',
     steps: [
       {
+        icon: <UserCheck className="w-5 h-5" />,
+        title: 'Human-in-the-Loop',
+        content: (
+          <>
+            This master toggle enables <strong>human intervention</strong> during
+            the conjectural requirement specification process. When turned on, the
+            sub-settings below become active.
+          </>
+        ),
+        selector: '#setting-human-in-the-loop',
+        side: 'bottom',
+        showControls: true,
+        pointerPadding: 10,
+        pointerRadius: 10,
+      },
+      {
         icon: <CheckCircle className="w-5 h-5" />,
-        title: 'Brief Description Toggle',
+        title: 'Brief Description',
         content: (
           <>
             Keep this option enabled if you already have initial ideas for your
@@ -57,6 +73,22 @@ export function getOnboardingTours(hasProjects: boolean): OnbordaProps['steps'] 
           </>
         ),
         selector: '#setting-require-description',
+        side: 'bottom',
+        showControls: true,
+        pointerPadding: 10,
+        pointerRadius: 10,
+      },
+      {
+        icon: <ShieldCheck className="w-5 h-5" />,
+        title: 'Approve Requirements',
+        content: (
+          <>
+            When enabled, each conjectural requirement generated must be
+            explicitly <strong>approved</strong> or <strong>rejected</strong>{' '}
+            before being finalized.
+          </>
+        ),
+        selector: '#setting-require-approve',
         side: 'bottom',
         showControls: true,
         pointerPadding: 10,
@@ -89,6 +121,22 @@ export function getOnboardingTours(hasProjects: boolean): OnbordaProps['steps'] 
           </>
         ),
         selector: '#setting-batch-quantity',
+        side: 'top',
+        showControls: true,
+        pointerPadding: 10,
+        pointerRadius: 10,
+      },
+      {
+        icon: <Cpu className="w-5 h-5" />,
+        title: 'Model Configuration',
+        content: (
+          <>
+            Choose the <strong>AI model family</strong> used for generating
+            conjectural requirements. Different model families may produce
+            varying results in quality and style.
+          </>
+        ),
+        selector: '#setting-model',
         side: 'top',
         showControls: true,
         pointerPadding: 10,
