@@ -4,9 +4,9 @@ LangGraph Agent Definition - Orchestrated Workflow
 Workflow for requirement elicitation and validation in Conjectural Assist.
 The orchestrator node classifies user intent and routes to the appropriate workflow.
 
-Flow:a
+Flow:
   orchestrator → [DECISION]
-                    ├── (conjectural_requirement_generate_response) → elicitation → analysis → specification → validation → END
+                    ├── (conjectural_requirement_generate_response) → elicitation → analysis → specification → validation → final → END
                     └── (generic_response) → generic → END
 """
 
@@ -21,7 +21,8 @@ from app.agent.nodes import (
     analysis_node,
     specification_node,
     validation_node,
-    generic_node
+    generic_node,
+    final_node
 )
 
 
@@ -49,6 +50,7 @@ def create_graph():
     workflow.add_node("specification_node", specification_node)
     workflow.add_node("validation_node", validation_node)
     workflow.add_node("generic_node", generic_node)
+    workflow.add_node("final_node", final_node)
 
     # Set entry point to orchestrator
     workflow.set_entry_point("orchestrator_node")
@@ -68,7 +70,8 @@ def create_graph():
     workflow.add_edge("elicitation_node", "analysis_node")
     workflow.add_edge("analysis_node", "specification_node")
     workflow.add_edge("specification_node", "validation_node")
-    workflow.add_edge("validation_node", END)
+    workflow.add_edge("validation_node", "final_node")
+    workflow.add_edge("final_node", END)
     workflow.add_edge("generic_node", END)
 
     # Conditionally use a checkpointer based on the environment

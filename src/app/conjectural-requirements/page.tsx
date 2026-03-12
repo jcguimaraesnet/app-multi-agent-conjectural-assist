@@ -365,10 +365,6 @@ function CustomInput({ inProgress, onSend }: { inProgress: boolean; onSend: (tex
       <div className="flex items-center justify-between">
         <Button disabled={inProgress || !text.trim()} 
         onClick={() => { 
-          agent.setState({
-              ...agent.state,
-              tool_called: false,
-          });  
           onSend(text); 
           setText(""); }}>Send</Button>
         {agent.isRunning && <StepProgress status="InProgress" state={agent.state} />}
@@ -438,6 +434,7 @@ function ConjecturalRequirementsInner() {
     parameters: z.object({
       message: z.string().describe("The message to display"),
     }),
+    followUp: false,
     handler: async ({ message }: { message: string }) => {
       console.log(message);
       return { success: true };
@@ -625,8 +622,6 @@ function ConjecturalRequirementsInner() {
 }
 
 export default function ConjecturalRequirementsPage() {
-  const [isReadyToSubmit, setIsReadyToSubmit] = useState(true);
-
   useConfigureSuggestions({
     suggestions: [
         {

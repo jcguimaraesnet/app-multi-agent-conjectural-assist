@@ -27,89 +27,55 @@ async def generic_node(state: WorkflowState, config: Optional[RunnableConfig] = 
 
     This node ends the workflow after responding.
     """
-    # config_internal = copilotkit_customize_config(config, emit_messages=True)
+    config_internal = copilotkit_customize_config(config, emit_messages=True)
 
-    # context = extract_copilotkit_context(state)
-    # current_project_id = context['current_project_id']
+    context = extract_copilotkit_context(state)
+    current_project_id = context['current_project_id']
 
-    # # Fetch vision document text and existing requirements from Supabase
-    # vision_extracted_text, existing_requirements = await fetch_project_context(current_project_id)
+    # Fetch vision document text and existing requirements from Supabase
+    vision_extracted_text, existing_requirements = await fetch_project_context(current_project_id)
 
-    # # Get the conversation context
-    # messages = state.get('messages', [])
-    # last_message = str(messages[-1].content) if messages else ""
-    # print(f"Last message from chat: {last_message}")
+    # Get the conversation context
+    messages = state.get('messages', [])
+    last_message = str(messages[-1].content) if messages else ""
+    print(f"Last message from chat: {last_message}")
 
-    # # Initialize the model
-    # model = get_model()
+    # Initialize the model
+    model = get_model()
 
-    # # Build requirements context from fetched data
-    # functional = [r for r in existing_requirements if r.get("type") == "functional"]
-    # non_functional = [r for r in existing_requirements if r.get("type") == "non_functional"]
-    # conjectural = [r for r in existing_requirements if r.get("type") == "conjectural"]
-    # requirements_summary = f"{len(functional)} functional, {len(non_functional)} non-functional, {len(conjectural)} conjectural"
+    # Build requirements context from fetched data
+    functional = [r for r in existing_requirements if r.get("type") == "functional"]
+    non_functional = [r for r in existing_requirements if r.get("type") == "non_functional"]
+    conjectural = [r for r in existing_requirements if r.get("type") == "conjectural"]
+    requirements_summary = f"{len(functional)} functional, {len(non_functional)} non-functional, {len(conjectural)} conjectural"
 
-    # requirements_list = "\n".join(
-    #     f"- [{r.get('requirement_id')}] ({r.get('type')}): {r.get('description')}"
-    #     for r in existing_requirements
-    # ) if existing_requirements else "No requirements registered yet."
+    requirements_list = "\n".join(
+        f"- [{r.get('requirement_id')}] ({r.get('type')}): {r.get('description')}"
+        for r in existing_requirements
+    ) if existing_requirements else "No requirements registered yet."
 
-    # system_message = SystemMessage(content=GENERIC_RESPONSE_PROMPT.format(
-    #     vision_extracted_text=vision_extracted_text or "No vision document available.",
-    #     requirements_summary=requirements_summary,
-    #     requirements_list=requirements_list,
-    # ))
+    system_message = SystemMessage(content=GENERIC_RESPONSE_PROMPT.format(
+        vision_extracted_text=vision_extracted_text or "No vision document available.",
+        requirements_summary=requirements_summary,
+        requirements_list=requirements_list,
+    ))
 
-    # conversation = [system_message] + messages
+    conversation = [system_message] + messages
 
-    # try:
-    #     response = await model.ainvoke(conversation, config_internal)
-    #     print(f"Generic response: {extract_text(response.content)[:100]}...")
+    try:
+        response = await model.ainvoke(conversation, config_internal)
+        print(f"Generic response: {extract_text(response.content)[:100]}...")
 
-    # except Exception as e:
-    #     print(f"Generic node error: {e}")
-    #     msg_exception = "I'm sorry, I encountered an error processing your request. How can I help you with requirements engineering today?"
-    #     response = AIMessage(content=msg_exception)
+    except Exception as e:
+        print(f"Generic node error: {e}")
+        msg_exception = "I'm sorry, I encountered an error processing your request. How can I help you with requirements engineering today?"
+        response = AIMessage(content=msg_exception)
 
-    # response.content = extract_text(response.content)
-
-    # return Command(
-    #     update={
-    #         "messages": messages + [response]
-    #     }
-    # )
-
-    messages = state.get("messages", [])
-
-    tool_called = state.get("tool_called", False)
-    print(f"Tool called state: {tool_called}")
-    
-    # se tool called not called yet, call a test tool to demonstrate tool usage
-    if not tool_called:
-        model = get_model(temperature=0)
-        model_with_tools = model.bind_tools(
-            [
-                
-                *state.get("tools", []),  # bind tools defined by ag-ui
-            ],
-        )
-        response = await model_with_tools.ainvoke(
-            [
-                HumanMessage(content="CALL consoleLog tool with message: Hello World!"),
-            ],
-            config,
-        )
-        messages = messages + [response]
-        state["tool_called"] = True
-        tool_called = True
-    else:
-        state["tool_called"] = False
-        tool_called = False # reset for next time
+    response.content = extract_text(response.content)
 
     return Command(
         update={
-            "messages": messages,
-            "tool_called": tool_called,
+            "messages": messages + [response]
         }
     )
 
