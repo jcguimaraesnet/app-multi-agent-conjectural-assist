@@ -18,7 +18,7 @@ export default function SettingsModal({ open, onClose }: SettingsModalProps) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-2xl min-h-105 rounded-2xl bg-white dark:bg-surface-dark shadow-2xl border border-border-light dark:border-border-dark">
+      <div className="w-full max-w-3xl min-h-105 rounded-2xl bg-white dark:bg-surface-dark shadow-2xl border border-border-light dark:border-border-dark">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border-light dark:border-border-dark px-6 py-4">
           <div className="flex items-center gap-3">
