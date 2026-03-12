@@ -98,7 +98,7 @@ export default function SettingsPanel() {
         </div>
 
         {/* Skeleton: Setting 4 */}
-        <div className="px-6 py-5">
+        <div className="px-6 py-5 border-b border-border-light dark:border-border-dark">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-sm font-medium text-gray-900 dark:text-white">
@@ -116,6 +116,22 @@ export default function SettingsPanel() {
                 <div className="px-2 py-1 h-[18px] bg-gray-200 dark:bg-gray-700 animate-pulse border-t border-border-light dark:border-gray-600" />
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Skeleton: Setting 5 - Model */}
+        <div className="px-6 py-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+                Model configuration
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Select the AI model family used for conjectural requirement generation
+              </p>
+            </div>
+            {/* Select Skeleton */}
+            <div className="w-36 h-9 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
           </div>
         </div>
       </Card>
@@ -218,7 +234,7 @@ export default function SettingsPanel() {
       </div>
 
       {/* Setting 4: Batch Quantity */}
-      <div id="setting-batch-quantity" className="px-6 py-5">
+      <div id="setting-batch-quantity" className="px-6 py-5 border-b border-border-light dark:border-border-dark">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-medium text-gray-900 dark:text-white">
@@ -259,6 +275,28 @@ export default function SettingsPanel() {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Setting 5: Model */}
+      <div id="setting-model" className="px-6 py-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+              Model configuration
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Select the AI model family used for conjectural requirement generation
+            </p>
+          </div>
+          <select
+            value={settings.model}
+            onChange={(e) => updateSetting('model', e.target.value)}
+            className="px-3 py-2 text-xs font-medium rounded-lg border border-border-light dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50"
+          >
+            <option value="gemini">Gemini 3 family</option>
+            <option value="gpt">GPT 5 family</option>
+          </select>
         </div>
       </div>
 

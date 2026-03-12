@@ -9,6 +9,7 @@ export interface UserSettings {
   require_approve: boolean;
   batch_mode: boolean;
   quantity_req_batch: number;
+  model: string;
 }
 
 interface SettingsContextType {
@@ -25,6 +26,7 @@ const defaultSettings: UserSettings = {
   require_approve: true,
   batch_mode: true,
   quantity_req_batch: 5,
+  model: 'gemini',
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -96,6 +98,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
             require_approve: data.require_approve,
             batch_mode: data.batch_mode,
             quantity_req_batch: data.quantity_req_batch,
+            model: data.model,
           }
         : defaultSettings;
 
@@ -145,6 +148,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
             require_approve: data.require_approve,
             batch_mode: data.batch_mode,
             quantity_req_batch: data.quantity_req_batch,
+            model: data.model,
           }
         : newSettings;
 

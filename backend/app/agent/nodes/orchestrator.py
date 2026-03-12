@@ -15,7 +15,7 @@ from urllib import response
 
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.messages import SystemMessage, HumanMessage
-from app.agent.llm_config import get_model
+from app.agent.llm_config import get_model, set_model_provider
 from copilotkit.langgraph import (
   copilotkit_emit_message, 
   copilotkit_emit_state,
@@ -29,6 +29,18 @@ from app.agent.utils.context_utils import extract_copilotkit_context
 
 
 async def orchestrator_node(state: WorkflowState, config: Optional[RunnableConfig] = None):
+
+    context = extract_copilotkit_context(state)
+
+    print(f"CurrentUser Id = {context['current_user_id']}")
+    print(f"CurrentUser FirstName = {context['current_user_first_name']}")
+    print(f"CurrentProjectId = {context['current_project_id']}")
+    print(f"require_brief_description = {context['require_brief_description']}")
+    print(f"require_approve = {context['require_approve']}")
+    print(f"batch_mode = {context['batch_mode']}")
+    print(f"quantity_req_batch = {context['quantity_req_batch']}")
+    print(f"model = {context['model']}")
+    set_model_provider(context['model'])
 
     if config is None:
         config = RunnableConfig(recursion_limit=25)
@@ -50,21 +62,6 @@ async def orchestrator_node(state: WorkflowState, config: Optional[RunnableConfi
     print(f"Last message from chat: {last_message}")
     
     print(f"Last message from chat: {last_message}")
-
-    # Define config for the model
-    if config is None:
-        config = RunnableConfig(recursion_limit=25)
-
-    context = extract_copilotkit_context(state)
-
-    print(f"CurrentUser Id = {context['current_user_id']}")
-    print(f"CurrentUser FirstName = {context['current_user_first_name']}")
-    print(f"CurrentProjectId = {context['current_project_id']}")
-    print(f"require_brief_description = {context['require_brief_description']}")
-    print(f"require_approve = {context['require_approve']}")
-    print(f"batch_mode = {context['batch_mode']}")
-    print(f"quantity_req_batch = {context['quantity_req_batch']}")
-
 
     config_internal = copilotkit_customize_config(config, emit_messages=False)
 

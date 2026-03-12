@@ -7,6 +7,7 @@ the whole pipeline between OpenAI and Google Gemini.
 """
 
 import os
+from contextvars import ContextVar
 from typing import Any, Literal, Optional
 
 from langchain_openai import ChatOpenAI
@@ -17,11 +18,24 @@ from google.genai.types import AutomaticFunctionCallingConfig
 # Provider / model constants
 # ---------------------------------------------------------------------------
 
-LLMProvider = Literal["openai", "gemini"]
+LLMProvider = Literal["gpt", "gemini"]
 
 DEFAULT_LLM_PROVIDER: LLMProvider = "gemini"
 DEFAULT_OPENAI_MODEL = "gpt-4o"
 DEFAULT_GEMINI_MODEL = "gemini-3-pro-preview"
+
+# ---------------------------------------------------------------------------
+# Per-request provider (set once in orchestrator, read by all nodes)
+# ---------------------------------------------------------------------------
+
+_current_provider: ContextVar[LLMProvider] = ContextVar(
+    "_current_provider", default=DEFAULT_LLM_PROVIDER
+)
+
+
+def set_model_provider(provider: LLMProvider):
+    """Set the LLM provider for the current async context (request)."""
+    _current_provider.set(provider)
 
 
 # ---------------------------------------------------------------------------
@@ -37,16 +51,17 @@ def get_model(
 
     Parameters
     ----------
-    provider : "openai" | "gemini" | None
-        Which LLM backend to use.  Defaults to ``DEFAULT_LLM_PROVIDER``.
+    provider : "gpt" | "gemini" | None
+        Which LLM backend to use.  Defaults to the per-request provider
+        set via ``set_model_provider()``, or ``DEFAULT_LLM_PROVIDER``.
     model : str | None
         Model name override.  When *None* the provider default is used.
     temperature : float
         Sampling temperature forwarded to the model.
     """
-    provider = provider or DEFAULT_LLM_PROVIDER
+    provider = provider or _current_provider.get()
 
-    if provider == "openai":
+    if provider == "gpt":
         return ChatOpenAI(
             model=model or DEFAULT_OPENAI_MODEL,
             temperature=temperature,
