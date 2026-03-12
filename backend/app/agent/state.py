@@ -58,6 +58,8 @@ class WorkflowState(CopilotKitState):
     """
     tools: List[Any]
 
+    tool_called: bool
+
     run_id: Optional[str]
     user_id: str
     project_id: str

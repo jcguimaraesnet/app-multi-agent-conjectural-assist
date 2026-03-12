@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
+import { useState, useEffect, useCallback, useRef, useContext, createContext, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'next/navigation';
 import AppLayout from '@/components/layout/AppLayout';
@@ -12,6 +12,7 @@ import { useRequirements } from '@/contexts/RequirementsContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { CopilotSidebar } from "@copilotkit/react-ui";
 import { useInterrupt } from "@copilotkit/react-core/v2";
+import { useFrontendTool } from "@copilotkit/react-core/v2";
 import { useAgentContext } from "@copilotkit/react-core/v2";
 import { useAgent } from "@copilotkit/react-core/v2";
 import { useConfigureSuggestions } from "@copilotkit/react-core/v2";
@@ -23,6 +24,7 @@ import Button from '@/components/ui/Button';
 import Textarea from '@/components/ui/Textarea';
 import { RequirementType } from '@/types';
 import { X, Maximize2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { z } from "zod";
 
 
 const PAGE_SIZE = 10;
@@ -351,13 +353,24 @@ function CustomInput({ inProgress, onSend }: { inProgress: boolean; onSend: (tex
         onKeyDown={(e) => {
           if (e.key === "Enter" && !e.shiftKey && !inProgress && text.trim()) {
             e.preventDefault();
+            agent.setState({
+              ...agent.state,
+              tool_called: false,
+            });
             onSend(text);
             setText("");
           }
         }}
       />
       <div className="flex items-center justify-between">
-        <Button disabled={inProgress || !text.trim()} onClick={() => { onSend(text); setText(""); }}>Send</Button>
+        <Button disabled={inProgress || !text.trim()} 
+        onClick={() => { 
+          agent.setState({
+              ...agent.state,
+              tool_called: false,
+          });  
+          onSend(text); 
+          setText(""); }}>Send</Button>
         {agent.isRunning && <StepProgress status="InProgress" state={agent.state} />}
       </div>
     </div>
@@ -365,6 +378,7 @@ function CustomInput({ inProgress, onSend }: { inProgress: boolean; onSend: (tex
 }
 
 function ConjecturalRequirementsInner() {
+  const { agent } = useAgent({ agentId: "conjec-req-agent" });
 
   const { user } = useAuth();
   const { settings } = useSettings();
@@ -417,6 +431,18 @@ function ConjecturalRequirementsInner() {
             );
     }
   });
+  
+  useFrontendTool({
+    name: "consoleLog",
+    description: "Display a message in the console",
+    parameters: z.object({
+      message: z.string().describe("The message to display"),
+    }),
+    handler: async ({ message }: { message: string }) => {
+      console.log(message);
+      return { success: true };
+    },
+  }, []);
 
   const searchParams = useSearchParams();
   const projectIdFromQuery = searchParams.get('projectId');
@@ -599,6 +625,8 @@ function ConjecturalRequirementsInner() {
 }
 
 export default function ConjecturalRequirementsPage() {
+  const [isReadyToSubmit, setIsReadyToSubmit] = useState(true);
+
   useConfigureSuggestions({
     suggestions: [
         {
