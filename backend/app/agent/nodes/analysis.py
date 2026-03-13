@@ -17,6 +17,7 @@ from langgraph.types import Command
 from copilotkit.langgraph import copilotkit_emit_state, copilotkit_customize_config
 
 from app.agent.state import WorkflowState
+from app.agent.models.data_context import DataContext
 from app.agent.models.knowledge_graph import (
     BusinessUncertainty,
     KnowledgeGraph,
@@ -39,9 +40,9 @@ Domain entities:
 """
 
 
-UNCERTAINTY_DETECTION_PROMPT = """You are a software requirements engineering expert specializing in risk and uncertainty analysis.
+IMPACT_UNCERTAINTY_DETECTION_PROMPT = """You are a software requirements engineering expert specializing in risk and uncertainty analysis.
 
-For each business need listed below, identify exactly ONE key uncertainty — an aspect that is unclear, underspecified, or could lead to misunderstandings during implementation. Focus on gaps in knowledge, vague scope, missing constraints, or assumptions that need validation.
+For each positive business impact statement listed below, identify exactly ONE key uncertainty — an aspect that is unclear, underspecified, or could prevent the desired impact from being realized. Focus on gaps in knowledge, vague scope, missing constraints, untested assumptions, or risks that need validation.
 
 Context:
 - Project summary: {project_summary}
@@ -49,14 +50,33 @@ Context:
 - Business objective: {business_objective}
 - Primary stakeholder: {stakeholder}
 
-Business needs:
-{business_needs}
+Positive business impacts:
+{positive_impacts}
 
-You MUST return ONLY a valid JSON array (no markdown, no explanation) where each element has:
-- "business_need": the original business need statement (string)
-- "uncertainty": a concise description of the key uncertainty for that need (up to 200 characters, string)
+You MUST return ONLY a valid JSON array of strings (no markdown, no explanation) where each string is a concise description of the key uncertainty (up to 200 characters). Return exactly {quantity} strings, one per positive impact, in the same order.
+"""
 
-Return exactly {quantity} elements, one per business need.
+
+CONJECTURAL_HYPOTHESIS_PROMPT = """You are a software requirements engineering expert specializing in lean experimentation and hypothesis-driven development.
+
+You are given a list of desired positive business impacts and their associated uncertainties. For each pair, propose ONE experiment hypothesis — a verifiable, testable solution assumption that, if validated, would eliminate (or significantly reduce) the uncertainty and help achieve the desired positive impact.
+
+Each hypothesis MUST be:
+- Verifiable: can be tested with a concrete experiment
+- Measurable: has clear success/failure criteria
+- Focused: directly addresses the uncertainty
+- Actionable: describes what to build, test, or measure
+
+Context:
+- Project summary: {project_summary}
+- Domain: {domain}
+- Business objective: {business_objective}
+- Primary stakeholder: {stakeholder}
+
+Positive impacts and uncertainties:
+{impacts_and_uncertainties}
+
+You MUST return ONLY a valid JSON array of strings (no markdown, no explanation) where each string is a concise experiment hypothesis (up to 300 characters). Return exactly {quantity} strings, one per impact-uncertainty pair, in the same order.
 """
 
 
@@ -69,26 +89,23 @@ def _strip_markdown_fences(raw: str) -> str:
     return raw
 
 
-async def _detect_business_uncertainties(
-    business_needs: List[str],
-    project_summary: str,
-    domain: str,
-    stakeholder: str,
-    business_objective: str,
-) -> List[BusinessUncertainty]:
-    """Call the LLM to identify one uncertainty per business need."""
-    if not business_needs:
+async def _detect_impact_uncertainties(
+    data_context: DataContext,
+) -> List[str]:
+    """Call the LLM to identify one uncertainty per positive business impact. Returns list of uncertainty strings (index-aligned)."""
+    impacts = data_context.positive_impacts
+    if not impacts:
         return []
 
-    needs_text = "\n".join(f"- {need}" for need in business_needs)
+    impacts_text = "\n".join(f"- {pi}" for pi in impacts)
 
-    prompt = UNCERTAINTY_DETECTION_PROMPT.format(
-        business_needs=needs_text,
-        project_summary=project_summary,
-        domain=domain,
-        stakeholder=stakeholder,
-        business_objective=business_objective,
-        quantity=len(business_needs),
+    prompt = IMPACT_UNCERTAINTY_DETECTION_PROMPT.format(
+        positive_impacts=impacts_text,
+        project_summary=data_context.project_summary,
+        domain=data_context.domain,
+        stakeholder=data_context.stakeholder,
+        business_objective=data_context.business_objective,
+        quantity=len(impacts),
     )
 
     model = get_model(temperature=0)
@@ -96,15 +113,46 @@ async def _detect_business_uncertainties(
     try:
         response = await model.ainvoke([HumanMessage(content=prompt)])
         raw_content = _strip_markdown_fences(extract_text(response.content).strip())
-        raw_list: List[Dict[str, str]] = json.loads(raw_content)
-        return [BusinessUncertainty.model_validate(item) for item in raw_list]
+        return json.loads(raw_content)
 
     except (json.JSONDecodeError, Exception) as e:
-        print(f"[Analysis] Error detecting business uncertainties: {e}")
-        return [
-            BusinessUncertainty(business_need=need, uncertainty="Unable to determine uncertainty.")
-            for need in business_needs
-        ]
+        print(f"[Analysis] Error detecting impact uncertainties: {e}")
+        return ["Unable to determine uncertainty."] * len(impacts)
+
+
+async def _generate_conjectural_hypotheses(
+    data_context: DataContext,
+) -> List[str]:
+    """Call the LLM to generate a verifiable experiment hypothesis per impact+uncertainty pair. Returns list of hypothesis strings (index-aligned)."""
+    impacts = data_context.positive_impacts
+    uncertainties = data_context.uncertainties
+    if not impacts or not uncertainties:
+        return []
+
+    pairs_text = "\n".join(
+        f"- Impact: {impact}\n  Uncertainty: {uncertainty}"
+        for impact, uncertainty in zip(impacts, uncertainties)
+    )
+
+    prompt = CONJECTURAL_HYPOTHESIS_PROMPT.format(
+        impacts_and_uncertainties=pairs_text,
+        project_summary=data_context.project_summary,
+        domain=data_context.domain,
+        stakeholder=data_context.stakeholder,
+        business_objective=data_context.business_objective,
+        quantity=len(impacts),
+    )
+
+    model = get_model(temperature=0)
+
+    try:
+        response = await model.ainvoke([HumanMessage(content=prompt)])
+        raw_content = _strip_markdown_fences(extract_text(response.content).strip())
+        return json.loads(raw_content)
+
+    except (json.JSONDecodeError, Exception) as e:
+        print(f"[Analysis] Error generating conjectural hypotheses: {e}")
+        return ["Unable to generate hypothesis."] * len(impacts)
 
 
 async def _detect_ambiguous_terms(
@@ -156,62 +204,26 @@ async def analysis_node(state: WorkflowState, config: Optional[RunnableConfig] =
     print("Analysis node started.")
     config = copilotkit_customize_config(config, emit_messages=False)
 
-    # --- Step 1: Retrieve the knowledge graph from state ---
-    kg = kg_from_state(state["knowledge_graph"])
-    print(f"[Analysis] Knowledge graph loaded: {len(kg.nodes)} nodes, {len(kg.edges)} edges")
+    # Recover elicitation context from state
+    data_context = DataContext.model_validate(state.get("data_context", {}))
+    print(f"[Analysis] Elicitation context loaded — {len(data_context.positive_impacts)} positive impact(s)")
 
-    # --- Step 2: Extract all entity names ---
-    entity_names = [node.entity for node in kg.nodes]
-    total_terms = len(entity_names)
-    print(f"[Analysis] Total entities to analyze: {total_terms}")
+    # Step A: Detect one uncertainty per positive impact (index-aligned)
+    data_context.uncertainties = await _detect_impact_uncertainties(data_context)
+    for impact, uncertainty in zip(data_context.positive_impacts, data_context.uncertainties):
+        print(f"  [Uncertainty] {impact!r} → {uncertainty!r}")
 
-    # # --- Step 3 (old): Call LLM to detect ambiguous terms ---
-    # ambiguous_terms = await _detect_ambiguous_terms(
-    #     entity_names, kg.domain, kg.stakeholder, kg.business_objective
-    # )
-    # ambiguous_count = len(ambiguous_terms)
-    # print(f"[Analysis] Ambiguous terms detected: {ambiguous_count}")
-    # for term in ambiguous_terms:
-    #     print(f"  [Ambiguous] {term}")
+    # Step B: Generate a verifiable experiment hypothesis per impact+uncertainty pair (index-aligned)
+    data_context.suppositions_solution = await _generate_conjectural_hypotheses(data_context)
+    for impact, hypothesis in zip(data_context.positive_impacts, data_context.suppositions_solution):
+        print(f"  [Hypothesis] {impact!r} → {hypothesis!r}")
 
-    # # --- Step 4 (old): Calculate non-ambiguity metric ---
-    # non_ambiguous_count = total_terms - ambiguous_count
-    # non_ambiguity_metric = non_ambiguous_count / total_terms
-    # print(f"[Analysis Metrics] Total terms: {total_terms}")
-    # print(f"[Analysis Metrics] Non-ambiguous terms: {non_ambiguous_count}")
-    # print(f"[Analysis Metrics] Ambiguous terms: {ambiguous_count}")
-    # print(f"[Analysis Metrics] Non-ambiguity metric: {non_ambiguity_metric:.2f}")
-
-    # # --- Step 5 (old): Store ambiguous terms in the knowledge graph ---
-    # ambiguous_set = {t.lower() for t in ambiguous_terms}
-    # for node in kg.nodes:
-    #     node.is_ambiguous = node.entity.lower() in ambiguous_set
-    # kg.ambiguous_terms = ambiguous_terms
-    # kg.non_ambiguity_metric = non_ambiguity_metric
-    # print(f"[Analysis] Knowledge graph updated with ambiguity data.")
-
-    # --- Step 3: Detect uncertainties for each business need ---
-    business_uncertainties = await _detect_business_uncertainties(
-        kg.business_needs,
-        kg.project_summary,
-        kg.domain,
-        kg.stakeholder,
-        kg.business_objective,
-    )
-    print(f"[Analysis] Business uncertainties detected: {len(business_uncertainties)}")
-    for item in business_uncertainties:
-        print(f"  [Uncertainty] {item.business_need[:60]}... → {item.uncertainty[:80]}...")
-
-    kg.business_uncertainties = business_uncertainties
-
-    print(f"[Analysis] Knowledge graph updated with business uncertainties.")
-
-    messages = state.get("messages", [])
+    print(f"[Analysis] Completed — {len(data_context.uncertainties)} uncertainty(ies), {len(data_context.suppositions_solution)} hypothesis(es)")
 
     return Command(
         update={
-            "messages": messages,
-            "knowledge_graph": kg_to_state(kg),
+            "messages": state.get("messages", []),
+            "data_context": data_context.model_dump(),
             "step1_elicitation": True,
             "step2_analysis": True,
             "pending_progress": True,

@@ -19,10 +19,10 @@ from pydantic import BaseModel, Field
 
 from app.agent.state import WorkflowState
 from app.agent.utils.context_utils import extract_copilotkit_context
+from app.agent.models.data_context import DataContext
 from app.agent.models.knowledge_graph import (
     KnowledgeGraph,
     kg_from_state,
-    kg_to_state,
 )
 
 
@@ -62,19 +62,19 @@ here called a "conjectural requirement."
 
 **Business Objective:** {business_objective}
 
-## Business Needs and Associated Uncertainties
+## Positive Business Impacts, Uncertainties, and Solution Hypotheses
 
-Each conjectural requirement MUST be based on one of the following business needs and its associated uncertainty:
+Each conjectural requirement MUST be based on one of the following positive impacts, its associated uncertainty, and the proposed solution hypothesis:
 
-{business_uncertainties_text}
+{conjectural_raw_text}
 
 ## Instruction
 
-For each business need and its associated uncertainty listed above, generate exactly ONE conjectural requirement specification following the FERC writing format and the QESS framework described below.
+For each positive impact, uncertainty, and hypothesis listed above, generate exactly ONE conjectural requirement specification following the FERC writing format and the QESS framework described below.
 
-The FERC's "desired behavior" should address the business need, the "positive impact" should relate to the business objective, and the "uncertainties" MUST include the associated uncertainty identified above (you may add additional uncertainties if relevant).
+The FERC's "desired behavior" should address the positive impact, the "positive impact" should relate to the business objective, and the "uncertainties" MUST include the associated uncertainty identified above (you may add additional uncertainties if relevant).
 
-The QESS framework should propose an experiment to resolve the associated uncertainty.
+The QESS's "solution assumption" should be based on the proposed hypothesis, and the experiment should aim to resolve the associated uncertainty.
 
 Generate exactly {count} conjectural requirement(s) in total.
 
@@ -193,31 +193,33 @@ async def specification_node(state: WorkflowState, config: Optional[RunnableConf
     context = extract_copilotkit_context(state)
     quantity_req_batch = context['quantity_req_batch']
 
-    # --- Step 1: Retrieve the knowledge graph from state ---
-    kg = kg_from_state(state["knowledge_graph"])
-    stakeholder = kg.stakeholder
-    domain = kg.domain
-    project_summary = kg.project_summary
-    business_objective = kg.business_objective
-    business_uncertainties = kg.business_uncertainties
+    # --- Step 1: Retrieve elicitation context from state ---
+    data_context = DataContext.model_validate(state.get("data_context", {}))
+    stakeholder = data_context.stakeholder
+    domain = data_context.domain
+    project_summary = data_context.project_summary
+    business_objective = data_context.business_objective
+    positive_impacts = data_context.positive_impacts
+    uncertainties = data_context.uncertainties
+    suppositions = data_context.suppositions_solution
     print(f"[Specification] Stakeholder: {stakeholder} | Domain: {domain}")
     print(f"[Specification] Project summary ({len(project_summary)} chars): {project_summary[:120]}...")
     print(f"[Specification] Business objective: {business_objective}")
-    print(f"[Specification] Business uncertainties ({len(business_uncertainties)}):")
-    for bu in business_uncertainties:
-        print(f"  [Need] {bu.business_need[:60]} → [Uncertainty] {bu.uncertainty[:80]}")
+    print(f"[Specification] Conjectural descriptions ({len(suppositions)}):")
+    for impact, uncertainty, hypothesis in zip(positive_impacts, uncertainties, suppositions):
+        print(f"  [Impact] {impact[:60]} → [Uncertainty] {uncertainty[:60]} → [Hypothesis] {hypothesis[:80]}")
 
     # --- Step 3: Call LLM to generate conjectural requirements ---
-    business_uncertainties_text = "\n".join(
-        f"- **Business Need:** {bu.business_need}\n  **Associated Uncertainty:** {bu.uncertainty}"
-        for bu in business_uncertainties
+    conjectural_raw_text = "\n".join(
+        f"- **Positive Impact:** {impact}\n  **Uncertainty:** {uncertainty}\n  **Solution Hypothesis:** {hypothesis}"
+        for impact, uncertainty, hypothesis in zip(positive_impacts, uncertainties, suppositions)
     )
     prompt = CONJECTURAL_SPECIFICATION_PROMPT.format(
         project_summary=project_summary,
         domain=domain,
         stakeholder=stakeholder,
         business_objective=business_objective,
-        business_uncertainties_text=business_uncertainties_text,
+        conjectural_raw_text=conjectural_raw_text,
         count=quantity_req_batch,
     )
 
@@ -245,16 +247,16 @@ async def specification_node(state: WorkflowState, config: Optional[RunnableConf
     except (json.JSONDecodeError, Exception) as e:
         print(f"[Specification] Error generating conjectural requirements: {e}")
 
-    # --- Store conjectural requirements in the knowledge graph ---
-    kg.conjectural_requirements = [cr.model_dump() for cr in conjectural_requirements]
-    print(f"[Specification] Knowledge graph updated with {len(kg.conjectural_requirements)} conjectural requirement(s).")
+    # --- Store conjectural requirements inside DataContext ---
+    data_context.conjectural_requirements = [cr.model_dump() for cr in conjectural_requirements]
+    print(f"[Specification] Generated {len(data_context.conjectural_requirements)} conjectural requirement(s).")
 
     messages = state.get("messages", [])
 
     return Command(
         update={
             "messages": messages,
-            "knowledge_graph": kg_to_state(kg),
+            "data_context": data_context.model_dump(),
             "step1_elicitation": True,
             "step2_analysis": True,
             "step3_specification": True,

@@ -10,6 +10,7 @@ import os
 from contextvars import ContextVar
 from typing import Any, Literal, Optional
 
+from pydantic import SecretStr
 from langchain_openai import AzureChatOpenAI, ChatOpenAI
 from langchain_google_genai import ChatGoogleGenerativeAI
 from google.genai.types import AutomaticFunctionCallingConfig
@@ -70,22 +71,24 @@ def get_model(
         )
 
     if provider == "gpt_azure":
+        azure_openai_key = os.environ.get("AZURE_OPENAI_API_KEY")
         return AzureChatOpenAI(
             azure_deployment=os.environ.get(
                 "AZURE_OPENAI_DEPLOYMENT_NAME", model or DEFAULT_AZURE_OPENAI_MODEL
             ),
             azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
-            api_key=os.environ.get("AZURE_OPENAI_API_KEY"),
+            api_key=SecretStr(azure_openai_key) if azure_openai_key else None,
             api_version=os.environ.get("AZURE_OPENAI_API_VERSION", "2025-03-01-preview"),
             temperature=temperature,
             use_responses_api=True,
         )
 
     if provider == "llama_azure":
+        azure_ai_key = os.environ.get("AZURE_AI_API_KEY")
         return ChatOpenAI(
             model=model or DEFAULT_AZURE_AI_MODEL,
             base_url=os.environ["AZURE_AI_ENDPOINT"],
-            api_key=os.environ.get("AZURE_AI_API_KEY"),
+            api_key=SecretStr(azure_ai_key) if azure_ai_key else None,
             temperature=temperature,
         )
 

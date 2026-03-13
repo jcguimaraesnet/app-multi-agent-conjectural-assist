@@ -10,7 +10,7 @@ Routes:
 """
 
 import json
-from typing import Optional
+from typing import Optional, Any, cast
 from urllib import response
 
 from langchain_core.runnables.config import RunnableConfig
@@ -120,7 +120,7 @@ async def classify_intent(user_input: str, config: Optional[RunnableConfig] = No
     model = get_model()
     
     # Use structured output for reliable classification
-    structured_model = model.with_structured_output(IntentClassification)
+    structured_model = cast(Any, model).with_structured_output(IntentClassification)
     
     prompt = INTENT_CLASSIFICATION_PROMPT.format(user_input=user_input)
 

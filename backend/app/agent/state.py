@@ -72,6 +72,10 @@ class WorkflowState(CopilotKitState):
     # NLP extracted data
     domain_entities: List[str]
 
+    # Data context: project summary, domain, stakeholder, business objective, positive impacts
+    # Serialized from DataContext Pydantic model via .model_dump()
+    data_context: Dict[str, Any]
+
     # Domain knowledge graph: entities (nodes), relations (edges), stakeholder, domain
     # Serialized from KnowledgeGraph Pydantic model via kg_to_state()
     knowledge_graph: Dict[str, Any]

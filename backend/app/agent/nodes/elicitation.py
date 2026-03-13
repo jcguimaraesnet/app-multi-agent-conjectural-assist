@@ -9,6 +9,7 @@ relationships, serialized for downstream nodes.
 
 import asyncio
 import json
+from difflib import SequenceMatcher
 from typing import Optional, List, Dict, Any
 
 from langchain_core.runnables.config import RunnableConfig
@@ -30,6 +31,7 @@ from app.agent.models.knowledge_graph import (
     kg_to_state,
     to_networkx,
 )
+from app.agent.models.data_context import DataContext
 
 
 # Processing mode: "quick" (default) or "extended"
@@ -72,20 +74,17 @@ Analyze the following project vision document and existing requirements to extra
 2. **PROJECT DOMAIN**: the business or technical domain of the project (e.g., "healthcare", "e-commerce", "education", "financial services", "logistics", etc.).
 3. **PROJECT SUMMARY**: a comprehensive summary of up to 500 characters that integrates the context from the project vision document with the main capabilities described in the existing requirements. Preserve the understanding of each requirement while adding the broader project context from the vision. This summary will be used as the sole context for all downstream analysis, so maximize information density within the character limit.
 4. **BUSINESS OBJECTIVE**: the main business goal or value proposition the project aims to achieve (e.g., "reduce operational costs by automating X", "increase customer retention through Y", "enable Z for end users"). Up to 200 characters. Focus on the "why" behind the project, not the "what".
-5. **BUSINESS NEEDS**: identify exactly {quantity_req_batch} business needs derived from the project vision and existing requirements. Each business need should represent a high-level capability or necessity that the system must address to fulfill stakeholder goals. Each need should be a concise statement (up to 150 characters) describing what the business requires from the system.
 
 You MUST return ONLY a valid JSON object (no markdown, no explanation) with:
 - "stakeholder": the primary stakeholder role identified (string)
 - "domain": the project domain identified (string)
 - "summary": the concise project summary (string)
 - "business_objective": the main business objective identified (string)
-- "business_needs": an array of exactly {quantity_req_batch} strings, each representing a business need
 
 If you cannot identify a clear stakeholder, use "end user".
 If you cannot identify a clear domain, use "general software".
 If no documents are provided, set summary to "No project documentation available.".
 If no business objective is identifiable, use "No business objective identified.".
-If you cannot identify enough business needs, generate plausible ones based on the project context.
 
 Project vision document:
 {vision_text}
@@ -116,6 +115,48 @@ Existing requirements:
 """
 
 
+REFINE_POSITIVE_IMPACT_SYSTEM_PROMPT = """You are a business analyst specializing in requirements engineering.
+
+You are given a set of brief descriptions of desired positive business impacts provided by a stakeholder, along with the project context.
+
+For each brief description, produce a refined, elaborated sentence that:
+- Preserves the original intent of the brief description
+- Adds specificity and clarity using the project context
+- Is written as a clear, actionable positive business impact statement
+- Has up to 200 characters
+
+Project context:
+- Domain: {domain}
+- Primary stakeholder: {stakeholder}
+- Business objective: {business_objective}
+- Project summary: {project_summary}
+
+Brief descriptions:
+{brief_descriptions}
+
+You MUST return ONLY a valid JSON array (no markdown, no explanation) with exactly {quantity} strings, one refined sentence per brief description, in the same order.
+"""
+
+
+GENERATE_POSITIVE_IMPACT_SYSTEM_PROMPT = """You are a business analyst specializing in requirements engineering.
+
+Based on the project context below, generate {quantity} desired positive business impact statements that the project aims to achieve for its stakeholders.
+
+Each statement should:
+- Be a clear, actionable positive business impact
+- Be directly related to the project domain and objectives
+- Represent a distinct benefit or value the project delivers
+- Have up to 200 characters
+
+Project context:
+- Domain: {domain}
+- Primary stakeholder: {stakeholder}
+- Business objective: {business_objective}
+- Project summary: {project_summary}
+
+You MUST return ONLY a valid JSON array (no markdown, no explanation) with exactly {quantity} strings, each being a positive business impact statement.
+"""
+
 
 def _format_requirements(existing_requirements: List[Dict[str, Any]]) -> str:
     """Format requirements list as readable text for prompts."""
@@ -136,20 +177,97 @@ def _strip_markdown_fences(raw: str) -> str:
     return raw
 
 
+def _compute_similarity(text_a: str, text_b: str) -> float:
+    """Compute similarity ratio (0.0–1.0) between two strings using SequenceMatcher."""
+    return SequenceMatcher(None, text_a.lower(), text_b.lower()).ratio()
+
+
+async def refine_positive_impacts(
+    brief_descriptions: List[str],
+    data_context: "DataContext",
+) -> tuple[List[str], List[int]]:
+    """
+    Refine user-provided brief descriptions into elaborated positive business
+    impact statements using LLM + project context.
+    Returns (refined_list, similarity_percentages).
+    """
+    if not brief_descriptions:
+        return [], []
+
+    descriptions_text = "\n".join(
+        f"{i + 1}. {desc}" for i, desc in enumerate(brief_descriptions)
+    )
+    prompt = REFINE_POSITIVE_IMPACT_SYSTEM_PROMPT.format(
+        domain=data_context.domain,
+        stakeholder=data_context.stakeholder,
+        business_objective=data_context.business_objective,
+        project_summary=data_context.project_summary,
+        brief_descriptions=descriptions_text,
+        quantity=len(brief_descriptions),
+    )
+
+    model = get_model(temperature=0)
+
+    try:
+        response = await model.ainvoke([HumanMessage(content=prompt)])
+        raw = _strip_markdown_fences(extract_text(response.content).strip())
+        refined_list: List[str] = json.loads(raw)
+
+        results: List[str] = []
+        similarities: List[int] = []
+        for i, brief in enumerate(brief_descriptions):
+            refined = refined_list[i] if i < len(refined_list) else brief
+            sim_pct = round(_compute_similarity(brief, refined) * 100)
+            print(f"  [Similarity] {sim_pct}% — {brief!r} → {refined!r}")
+            results.append(refined)
+            similarities.append(sim_pct)
+        return results, similarities
+
+    except (json.JSONDecodeError, Exception) as e:
+        print(f"[Positive Impact] Error refining brief descriptions: {e}")
+        return list(brief_descriptions), [100] * len(brief_descriptions)
+
+
+async def generate_positive_impacts(
+    quantity: int,
+    data_context: "DataContext",
+) -> List[str]:
+    """
+    Generate positive business impact statements from scratch using LLM +
+    project context. Returns a list of impact strings.
+    """
+    prompt = GENERATE_POSITIVE_IMPACT_SYSTEM_PROMPT.format(
+        domain=data_context.domain,
+        stakeholder=data_context.stakeholder,
+        business_objective=data_context.business_objective,
+        project_summary=data_context.project_summary,
+        quantity=quantity,
+    )
+
+    model = get_model(temperature=0)
+
+    try:
+        response = await model.ainvoke([HumanMessage(content=prompt)])
+        raw = _strip_markdown_fences(extract_text(response.content).strip())
+        return json.loads(raw)
+
+    except (json.JSONDecodeError, Exception) as e:
+        print(f"[Positive Impact] Error generating impacts: {e}")
+        return []
+
+
 async def extract_project_context(
     vision_extracted_text: Optional[str],
     existing_requirements: List[Dict[str, Any]],
-    quantity_req_batch: int = 1,
 ) -> Dict[str, Any]:
     """
-    Extract stakeholder, domain, business objective, business needs, and a concise
+    Extract stakeholder, domain, business objective, and a concise
     project summary in a single LLM call. The summary replaces the raw vision
     document in all downstream prompts. Falls back to defaults if extraction fails.
     """
     prompt = CONTEXT_EXTRACTION_SYSTEM_PROMPT.format(
         vision_text=vision_extracted_text or "No vision document available.",
         requirements=_format_requirements(existing_requirements),
-        quantity_req_batch=quantity_req_batch,
     )
 
     model = get_model(temperature=0)
@@ -163,7 +281,6 @@ async def extract_project_context(
             "domain": result.get("domain", "general software"),
             "summary": result.get("summary", "No vision document available."),
             "business_objective": result.get("business_objective", "No business objective identified."),
-            "business_needs": result.get("business_needs", []),
         }
 
     except (json.JSONDecodeError, Exception) as e:
@@ -173,7 +290,6 @@ async def extract_project_context(
             "domain": "general software",
             "summary": "No vision document available.",
             "business_objective": "No business objective identified.",
-            "business_needs": [],
         }
 
 
@@ -289,9 +405,10 @@ async def elicitation_node(state: WorkflowState, config: Optional[RunnableConfig
     through the generative UI tool. Builds a unified KnowledgeGraph
     with entities, meanings, and relationships.
     """
+
+    # not emmiting intermediate messages
     config = copilotkit_customize_config(config, emit_messages=False)
 
-    print(f"Elicitation node initialized! (mode: {PROCESSING_MODE})")
     context = extract_copilotkit_context(state)
     require_brief_description = context['require_brief_description']
     current_project_id = context['current_project_id']
@@ -306,147 +423,58 @@ async def elicitation_node(state: WorkflowState, config: Optional[RunnableConfig
     # Step 1: Extract stakeholder, domain, project summary, and business needs (single LLM call)
     # After this step, the raw vision document is no longer used in LLM prompts.
     project_context = await extract_project_context(
-        vision_extracted_text, existing_requirements, quantity_req_batch
+        vision_extracted_text, existing_requirements
     )
     project_summary = project_context["summary"]
     domain = project_context["domain"]
     stakeholder = project_context["stakeholder"]
     business_objective = project_context["business_objective"]
-    business_needs = project_context["business_needs"]
     print(f"[Context] Project summary ({len(project_summary)} chars): {project_summary[:120]}...")
-    print(f"[Context] Stakeholder: {stakeholder} | Domain: {domain}")
+    print(f"[Context] Domain: {domain}")
+    print(f"[Context] Stakeholder: {stakeholder}")
     print(f"[Context] Business objective: {business_objective}")
-    print(f"[Context] Business needs ({len(business_needs)}): {business_needs}")
 
-    # Step 2: Extract domain entities from project summary using NLP (spaCy NER + TF-IDF)
-    domain_entities = await extract_domain_entities(project_summary, language="pt")
-    print(f"[Step 2] Domain entities extracted: {len(domain_entities)}")
-
-    if PROCESSING_MODE == "extended":
-        # Step 3: Build Known Knowns mapping in batches (using project summary)
-        known_knowns_raw = await build_known_knowns(
-            domain_entities, project_summary
-        )
-
-        # Elicitation metrics
-        total_entities = len(known_knowns_raw)
-        defined_count = sum(1 for kk in known_knowns_raw if kk.get("meaning", "NOT_DEFINED") != "NOT_DEFINED")
-        undefined_count = total_entities - defined_count
-        elicitation_ratio = defined_count / total_entities if total_entities > 0 else 0.0
-
-        print(f"[Elicitation Metrics] Total entities: {total_entities}")
-        print(f"[Elicitation Metrics] Entities with meaning (Known Knowns): {defined_count}")
-        print(f"[Elicitation Metrics] Entities without meaning: {undefined_count}")
-        print(f"[Elicitation Metrics] Known Knowns ratio: {elicitation_ratio:.2f}")
-
-        # Preview Known Knowns (up to 5)
-        kk_preview = [kk for kk in known_knowns_raw if kk.get("meaning", "NOT_DEFINED") != "NOT_DEFINED"][:5]
-        for kk in kk_preview:
-            print(f"  [Known Known] {kk['entity']}: {kk['meaning'][:80]}...")
-
-        # Step 4: Build Unknown Knowns (persona simulation for undefined entities)
-        undefined_entity_names = [
-            kk["entity"] for kk in known_knowns_raw if kk.get("meaning", "NOT_DEFINED") == "NOT_DEFINED"
-        ]
-        unknown_knowns_raw: List[Dict[str, str]] = []
-
-        if undefined_entity_names:
-            unknown_knowns_raw = await build_unknown_knowns(
-                undefined_entity_names, stakeholder, domain,
-                project_summary, existing_requirements,
-            )
-            print(f"[Unknown Knowns] {len(unknown_knowns_raw)} entities inferred via persona simulation")
-
-            # Preview Unknown Knowns (up to 5)
-            for uk in unknown_knowns_raw[:5]:
-                print(f"  [Unknown Known] {uk['entity']}: {uk['meaning'][:80]}...")
-        else:
-            print("[Unknown Knowns] No undefined entities — skipping persona simulation")
-
-        # Step 5: Build EntityNode list (all entities unified, with meanings)
-        all_nodes: List[EntityNode] = []
-
-        for kk in known_knowns_raw:
-            if kk.get("meaning", "NOT_DEFINED") != "NOT_DEFINED":
-                all_nodes.append(EntityNode(entity=kk["entity"], meaning=kk["meaning"], source="extracted"))
-
-        for uk in unknown_knowns_raw:
-            if uk.get("meaning", "NOT_INFERRED") != "NOT_INFERRED":
-                all_nodes.append(EntityNode(entity=uk["entity"], meaning=uk["meaning"], source="inferred"))
-
-    else:
-        # Quick mode: build simple EntityNodes (no LLM meaning extraction)
-        all_nodes = [
-            EntityNode(entity=e, meaning="", source="extracted")
-            for e in domain_entities
-        ]
-
-    # Extract entity relations via textacy SVO triples (uses raw vision text, no LLM cost)
-    entity_names = {node.entity for node in all_nodes}
-    raw_relations = await extract_entity_relations(
-        vision_extracted_text, entity_names, language="pt"
-    )
-    relations = [
-        EntityRelation(source=r["source"], target=r["target"], relation=r["relation"])
-        for r in raw_relations
-    ]
-    print(f"[Knowledge Graph] Nodes: {len(all_nodes)} | Edges: {len(relations)}")
-
-    # Preview edges (up to 5)
-    for edge in relations[:5]:
-        print(f"  {edge.source} --{edge.relation}--> {edge.target}")
-
-    # Step 7: Assemble KnowledgeGraph
-    kg = KnowledgeGraph(
-        nodes=all_nodes,
-        edges=relations,
-        stakeholder=stakeholder,
-        domain=domain,
+    data_context = DataContext(
+        vision_raw=vision_extracted_text,
         project_summary=project_summary,
+        domain=domain,
+        stakeholder=stakeholder,
         business_objective=business_objective,
-        business_needs=business_needs,
     )
 
-    # Validate with NetworkX (in-memory)
-    G = to_networkx(kg)
-    print(f"[Knowledge Graph] NetworkX DiGraph: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
-
-    # Handle interrupt for brief description if required
+    # Step 2: Obtain positive business impact statements
+    # If user provides brief descriptions → refine via LLM + compute similarity
+    # Otherwise → generate from scratch via LLM using project context
+    positive_impacts: List[str] = []
+    similarity: List[int] = []
     if require_brief_description == True:
-        state["json_brief_description"] = interrupt(
+        payload = interrupt(
             {"type": "hitl_brief_description", "quantity_req_batch": quantity_req_batch},
         )
+        print(f"[Elicitation] payload: {payload}")
 
-    print("Elicitation node completed.")
-    state["step1_elicitation"] = False
-    await copilotkit_emit_state(config, state)
-    await asyncio.sleep(1)
+        brief_descriptions: List[str] = payload.get("brief_descriptions", [])
+        print(f"[Positive Impact] Received {len(brief_descriptions)} brief description(s) from user.")
 
-    # Initialize the model
-    model = get_model()
+        if brief_descriptions:
+            positive_impacts, similarity = await refine_positive_impacts(brief_descriptions, data_context)
+            for pi in positive_impacts:
+                print(f"  [Refined] {pi!r}")
+    else:
+        print("[Positive Impact] Generating impacts from project context...")
+        positive_impacts = await generate_positive_impacts(quantity_req_batch, data_context)
+        similarity = [0] * len(positive_impacts)
+        for pi in positive_impacts:
+            print(f"  [Generated] {pi!r}")
 
-    # Get the conversation context
-    messages = state.get('messages', [])
-    last_message = str(messages[-1].content) if messages else ""
-    print(f"Last message from chat: {last_message}")
-
-    conversation = [SystemMessage(content=ELICITATION_SYSTEM_PROMPT), HumanMessage(content=last_message)]
-
-    try:
-        response = await model.ainvoke(conversation, config)
-
-    except Exception as e:
-        print(f"Elicitation node error: {e}")
-        msg_exception = "I'm sorry, I encountered an error processing your request. How can I help you with requirements engineering today?"
-        response = AIMessage(content=msg_exception)
-
-    messages = messages
+    data_context.positive_impacts = positive_impacts
+    data_context.positive_impacts_similarity = similarity
+    print(f"[Positive Impact] Total: {len(positive_impacts)} statement(s)")
 
     return Command(
         update={
-            "messages": messages,
-            "knowledge_graph": kg_to_state(kg),
-            "existing_requirements": existing_requirements,
+            "messages": state.get("messages", []),
+            "data_context": data_context.model_dump(),
             "step1_elicitation": True,
             "pending_progress": True,
         }

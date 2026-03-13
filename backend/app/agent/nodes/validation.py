@@ -15,7 +15,7 @@ from langgraph.types import Command, interrupt
 from copilotkit.langgraph import copilotkit_customize_config, copilotkit_emit_state, copilotkit_emit_message
 
 from app.agent.state import WorkflowState
-from app.agent.models.knowledge_graph import kg_from_state
+from app.agent.models.data_context import DataContext
 from app.agent.utils.context_utils import extract_copilotkit_context
 
 
@@ -109,8 +109,8 @@ async def validation_node(state: WorkflowState, config: Optional[RunnableConfig]
 
     print("Validation node started.")
 
-    kg = kg_from_state(state["knowledge_graph"])
-    conjectural_requirements = kg.conjectural_requirements
+    data_context = DataContext.model_validate(state.get("data_context", {}))
+    conjectural_requirements = data_context.conjectural_requirements
     messages = state.get("messages", [])
 
     # --- Build requirements list (needed for both first run and resume) ---
@@ -133,9 +133,9 @@ async def validation_node(state: WorkflowState, config: Optional[RunnableConfig]
         print(f"[Validation] Conjectural requirements to validate: {len(conjectural_requirements)}")
 
         prompt = VALIDATION_SYSTEM_PROMPT.format(
-            project_summary=kg.project_summary,
-            domain=kg.domain,
-            stakeholder=kg.stakeholder,
+            project_summary=data_context.project_summary,
+            domain=data_context.domain,
+            stakeholder=data_context.stakeholder,
             conjectural_requirements=_format_conjectural_requirements(conjectural_requirements),
         )
 
@@ -168,15 +168,17 @@ async def validation_node(state: WorkflowState, config: Optional[RunnableConfig]
             "requirements": requirements_list,
         })
         print(f"[Validation] Approval response: {approval_response}")
-        # friendly message of approval result (approved/rejected)
-        response = AIMessage(content="Thanks. Conjectural requirements have been approved/rejected successfully.")
+
+        approval_text = "Thanks. Conjectural requirements have been approved/rejected successfully."
+        response = AIMessage(content=approval_text)
         messages = messages + [response]
-        await copilotkit_emit_message(config, response.content)
+        await copilotkit_emit_message(config, approval_text)
     else:
         print("[Validation] Approval not required — skipping interrupt.")
-        response = AIMessage(content="Conjectural requirements have been validated automatically.")
+        auto_text = "Conjectural requirements have been validated automatically."
+        response = AIMessage(content=auto_text)
         messages = messages + [response]
-        await copilotkit_emit_message(config, response.content)
+        await copilotkit_emit_message(config, auto_text)
 
     state["step4_validation"] = True
     await copilotkit_emit_state(config, state)
