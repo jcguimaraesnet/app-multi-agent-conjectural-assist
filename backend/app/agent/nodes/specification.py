@@ -188,12 +188,10 @@ async def specification_node(state: WorkflowState, config: Optional[RunnableConf
     """
     config = copilotkit_customize_config(config, emit_messages=False)
     print("Specification node started.")
-    await asyncio.sleep(1)
 
     # Extract quantity_req_batch from context (same logic as elicitation node)
     context = extract_copilotkit_context(state)
-    batch_mode = context['batch_mode']
-    quantity_req_batch = 1 if batch_mode == False else context['quantity_req_batch']
+    quantity_req_batch = context['quantity_req_batch']
 
     # --- Step 1: Retrieve the knowledge graph from state ---
     kg = kg_from_state(state["knowledge_graph"])

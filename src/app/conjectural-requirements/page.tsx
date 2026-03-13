@@ -408,9 +408,10 @@ function ConjecturalRequirementsInner() {
     agentId: "conjec-req-agent",
     enabled: (event) => JSON.parse(event.value).type === 'hitl_brief_description',
     render: ({ event, resolve }) => {
+      const quantity_req_batch = JSON.parse(event.value).quantity_req_batch || settings.quantity_req_batch;
       return (
               <InterruptForm
-                inputCount={settings.quantity_req_batch}
+                inputCount={quantity_req_batch}
                 onSubmit={resolve}
               />
       )

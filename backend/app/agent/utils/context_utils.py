@@ -23,13 +23,16 @@ def extract_copilotkit_context(state: WorkflowState) -> dict:
     )
     current_user_settings = json.loads(current_user_settings_item.get("value")) if current_user_settings_item else {}
 
+    batch_mode = current_user_settings.get("batch_mode")
+    quantity_req_batch = 1 if batch_mode == False else current_user_settings.get("quantity_req_batch")
+
     return {
         "current_user_id": current_user.get("id") if current_user else None,
         "current_user_first_name": current_user.get("user_metadata", {}).get("first_name") if current_user else None,
         "current_project_id": current_project_id,
         "require_brief_description": current_user_settings.get("require_brief_description"),
         "require_approve": current_user_settings.get("require_approve"),
-        "batch_mode": current_user_settings.get("batch_mode"),
-        "quantity_req_batch": current_user_settings.get("quantity_req_batch"),
+        "batch_mode": batch_mode,
+        "quantity_req_batch": quantity_req_batch,
         "model": current_user_settings.get("model"),
     }

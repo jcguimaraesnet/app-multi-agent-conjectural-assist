@@ -37,7 +37,6 @@ async def orchestrator_node(state: WorkflowState, config: Optional[RunnableConfi
     print(f"CurrentProjectId = {context['current_project_id']}")
     print(f"require_brief_description = {context['require_brief_description']}")
     print(f"require_approve = {context['require_approve']}")
-    print(f"batch_mode = {context['batch_mode']}")
     print(f"quantity_req_batch = {context['quantity_req_batch']}")
     print(f"model = {context['model']}")
     set_model_provider(context['model'])
@@ -48,7 +47,6 @@ async def orchestrator_node(state: WorkflowState, config: Optional[RunnableConfi
     # await copilotkit_emit_message(config, "Routing your message...")
     state["pending_progress"] = False
     await copilotkit_emit_state(config, state)
-
 
     # run_id = config["metadata"]["run_id"] if "metadata" in config and "run_id" in config["metadata"] else "unknown_run_id"
     # state["run_id"] = run_id

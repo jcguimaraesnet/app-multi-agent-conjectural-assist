@@ -295,8 +295,7 @@ async def elicitation_node(state: WorkflowState, config: Optional[RunnableConfig
     context = extract_copilotkit_context(state)
     require_brief_description = context['require_brief_description']
     current_project_id = context['current_project_id']
-    batch_mode = context['batch_mode']
-    quantity_req_batch = 1 if batch_mode == False else context['quantity_req_batch']
+    quantity_req_batch = context['quantity_req_batch']
 
     # Fetch vision document text and existing requirements from Supabase
     vision_extracted_text, existing_requirements = await fetch_project_context(
@@ -415,7 +414,7 @@ async def elicitation_node(state: WorkflowState, config: Optional[RunnableConfig
     # Handle interrupt for brief description if required
     if require_brief_description == True:
         state["json_brief_description"] = interrupt(
-            {"type": "hitl_brief_description"},
+            {"type": "hitl_brief_description", "quantity_req_batch": quantity_req_batch},
         )
 
     print("Elicitation node completed.")
