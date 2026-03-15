@@ -46,6 +46,7 @@ interface AgentState {
 
 interface RequirementItem {
   requirement_number: number;
+  attempt: number;
   desired_behavior: string;
   positive_impact: string;
   uncertainties: string;
@@ -176,8 +177,11 @@ function SingleCard({
           <div className="w-full max-w-4xl rounded-2xl bg-white dark:bg-surface-dark shadow-2xl border border-border-light dark:border-border-dark" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between border-b border-border-light dark:border-border-dark px-6 py-4">
               <div className="flex items-center gap-3">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                   Conjectural Requirement #{current.requirement_number}
+                  <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-200">
+                    Attempt #{current.attempt}
+                  </span>
                 </h2>
               </div>
               <div className="flex items-center gap-1">

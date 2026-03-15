@@ -115,6 +115,7 @@ async def validation_node(state: WorkflowState, config: Optional[RunnableConfig]
             cr = cd.conjectural_requirements[-1]
             requirements_list.append({
                 "requirement_number": i + 1,
+                "attempt": cr.attempt,
                 "desired_behavior": cr.ferc.desired_behavior,
                 "positive_impact": cr.ferc.positive_impact,
                 "uncertainties": "; ".join(cr.ferc.uncertainties),

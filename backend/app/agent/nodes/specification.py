@@ -136,6 +136,81 @@ You MUST return ONLY a valid JSON object (no markdown, no explanation) with:
 """
 
 
+CONJECTURAL_REFINEMENT_PROMPT = """You are an expert in software requirements specification with uncertainties.
+
+Your task is to generate an **improved version** of a conjectural requirement specification based on a previous attempt and its quality evaluation.
+
+## Project Context
+
+**Project Summary:**
+{project_summary}
+
+**Business Domain:** {domain}
+
+**Primary Stakeholder:** {stakeholder}
+
+**Business Objective:** {business_objective}
+
+## Previous Conjectural Requirement (to be improved)
+
+[FERC]
+- **Desired behavior:** {prev_desired_behavior}
+- **Positive impact:** {prev_positive_impact}
+- **Uncertainties:** {prev_uncertainties}
+
+[QESS]
+- **Solution assumption:** {prev_solution_assumption}
+- **Uncertainty evaluated:** {prev_uncertainty_evaluated}
+- **Observation & analysis:** {prev_observation_analysis}
+
+## LLM-as-Judge Evaluation of the Previous Requirement
+
+{evaluation_summary}
+
+## Instruction
+
+Based on the evaluation above, generate an **improved version** of this conjectural requirement that addresses the weaknesses identified by the evaluator.
+Focus especially on criteria that received low scores (1-3) and follow the justifications provided.
+
+The improved requirement MUST still follow the FERC + QESS structure:
+
+**Writing Format for Conjectural Requirements (FERC):**
+**It is expected that the software system has** [desired behavior]
+**So that** [need or positive impact of the desired attribute]
+**However, we do not know:**
+- **Uncertainty:** [uncertainty associated with this requirement — one or many]
+
+**Solution Assumption Experimentation Framework (QESS):**
+**We expect that** [description of the solution assumption]
+**Will result in updating the uncertainties about** [only one of the uncertainties that will be evaluated]
+**As a result of** [description of the observation and analysis that will result in updating the uncertainties]
+
+You MUST return ONLY a valid JSON object (no markdown, no explanation) with:
+- "ferc": an object with:
+  - "desired_behavior": the [desired behavior] part of the FERC (string)
+  - "positive_impact": the [need or positive impact] part of the FERC (string)
+  - "uncertainties": list of uncertainty strings (array of strings)
+- "qess": an object with:
+  - "solution_assumption": the [description of the solution assumption] (string)
+  - "uncertainty_evaluated": the [one uncertainty that will be evaluated] (string)
+  - "observation_analysis": the [observation and analysis description] (string)
+"""
+
+
+def _format_evaluation(evaluation) -> str:
+    """Format an Evaluation object as readable text for the refinement prompt."""
+    if evaluation is None:
+        return "No evaluation available."
+    lines = []
+    for criterion, score in evaluation.scores.items():
+        justification = evaluation.justifications.get(criterion, "")
+        line = f"- **{criterion}**: {score}/5"
+        if justification:
+            line += f' — "{justification}"'
+        lines.append(line)
+    return "\n".join(lines)
+
+
 def _format_requirements(existing_requirements: List[Dict[str, Any]]) -> str:
     """Format requirements list as readable text for prompts."""
     if not existing_requirements:
@@ -191,19 +266,41 @@ async def specification_node(state: WorkflowState, config: Optional[RunnableConf
 
     print(f"[Specification] Generating {quantity_req_batch} conjectural requirement(s)...")
 
+    spec_attempt = state.get("spec_attempt", 0)
+    print(f"[Specification] Current spec_attempt: {spec_attempt}")
+
     for i, cd in enumerate(data_context.conjectural_data[:quantity_req_batch]):
         req_num = i + 1
         print(f"[Specification] Generating requirement #{req_num}...")
 
-        prompt = CONJECTURAL_SPECIFICATION_PROMPT.format(
-            project_summary=project_summary,
-            domain=domain,
-            stakeholder=stakeholder,
-            business_objective=business_objective,
-            positive_impact=cd.positive_impact,
-            uncertainty=cd.uncertainty,
-            supposition_solution=cd.supposition_solution,
-        )
+        if spec_attempt == 0:
+            # First attempt: generate from scratch using elicitation/analysis data
+            prompt = CONJECTURAL_SPECIFICATION_PROMPT.format(
+                project_summary=project_summary,
+                domain=domain,
+                stakeholder=stakeholder,
+                business_objective=business_objective,
+                positive_impact=cd.positive_impact,
+                uncertainty=cd.uncertainty,
+                supposition_solution=cd.supposition_solution,
+            )
+        else:
+            # Subsequent attempts: refine based on last requirement + its LLM evaluation
+            last_cr = cd.conjectural_requirements[-1]
+            prompt = CONJECTURAL_REFINEMENT_PROMPT.format(
+                project_summary=project_summary,
+                domain=domain,
+                stakeholder=stakeholder,
+                business_objective=business_objective,
+                prev_desired_behavior=last_cr.ferc.desired_behavior,
+                prev_positive_impact=last_cr.ferc.positive_impact,
+                prev_uncertainties="; ".join(last_cr.ferc.uncertainties),
+                prev_solution_assumption=last_cr.qess.solution_assumption,
+                prev_uncertainty_evaluated=last_cr.qess.uncertainty_evaluated,
+                prev_observation_analysis=last_cr.qess.observation_analysis,
+                evaluation_summary=_format_evaluation(last_cr.llm_evaluation),
+            )
+            print(f"[Specification] Using refinement prompt for requirement #{req_num} (attempt {spec_attempt + 1})")
 
         try:
             response = await model.ainvoke([HumanMessage(content=prompt)])

@@ -47,19 +47,11 @@ async def orchestrator_node(state: WorkflowState, config: Optional[RunnableConfi
     state["pending_progress"] = False
     await copilotkit_emit_state(config, state)
 
-    # run_id = config["metadata"]["run_id"] if "metadata" in config and "run_id" in config["metadata"] else "unknown_run_id"
-    # state["run_id"] = run_id
-    # print(f"run id orchestrator: {run_id}")
-    # await copilotkit_emit_state(config, state)
-
     # Extract the last user message for classification
-    print("Run id state before classification:", state.get("run_id", "No run_id in state"))
     messages = state.get('messages', [])
     last_message = str(messages[-1].content) if messages else ""
     print(f"Last message from chat: {last_message}")
     
-    print(f"Last message from chat: {last_message}")
-
     config_internal = copilotkit_customize_config(config, emit_messages=False)
 
     # model = ChatOpenAI(model="gpt-4o")
