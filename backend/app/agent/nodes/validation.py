@@ -231,5 +231,6 @@ async def validation_node(state: WorkflowState, config: Optional[RunnableConfig]
             "step3_specification": True,
             "step4_validation": step4_validation,
             "pending_progress": pending_progress,
+            "data_context": data_context.model_dump(),
         }
     )

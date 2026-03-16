@@ -4,7 +4,10 @@
       "Bash(find /c/repos/ufrj/requirement-conjectural-multiagent/app-multi-agent-conjectural-assist -type f -name *migration* -o -name *schema*)",
       "Bash(find /c/repos/ufrj/requirement-conjectural-multiagent/app-multi-agent-conjectural-assist -type f \\\\\\(-name *.sql -o -path *supabase* \\\\\\) ! -path *node_modules* ! -path *backend* ! -path *.next*)",
       "Bash(xargs grep:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(grep -r useComponent c:/repos/ufrj/requirement-conjectural-multiagent/app-multi-agent-conjectural-assist/node_modules/@copilotkit/ --include=*.mjs --include=*.cjs --include=*.js -l)",
+      "Bash(find c:/repos/ufrj/requirement-conjectural-multiagent/app-multi-agent-conjectural-assist/node_modules -path *copilotkitnext* -type d)",
+      "Bash(ls \"c:/repos/ufrj/requirement-conjectural-multiagent/app-multi-agent-conjectural-assist/node_modules/.pnpm/@copilotkitnext+react@1.53._097b0e027cb61dbec7b95feccd854015/node_modules/@copilotkitnext/react/dist/hooks/use-component\"*)"
     ]
   }
 }

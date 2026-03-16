@@ -13,6 +13,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { CopilotSidebar } from "@copilotkit/react-ui";
 import { useInterrupt } from "@copilotkit/react-core/v2";
 import { useFrontendTool } from "@copilotkit/react-core/v2";
+import { useComponent, useRenderTool } from "@copilotkit/react-core/v2";
 import { useAgentContext } from "@copilotkit/react-core/v2";
 import { useAgent } from "@copilotkit/react-core/v2";
 import { useConfigureSuggestions } from "@copilotkit/react-core/v2";
@@ -481,6 +482,185 @@ function RequirementApprovalForm({ requirements, onResolve }: { requirements: Re
   );
 }
 
+type RequirementsMap = Record<string, RequirementItem[]>;
+
+function DisplayCard({ req }: { req: RequirementItem }) {
+  const [showModal, setShowModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<"ferc" | "qess">("ferc");
+
+  useEffect(() => {
+    if (!showModal) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Tab") { e.preventDefault(); setActiveTab(t => t === "ferc" ? "qess" : "ferc"); }
+      if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); setShowModal(false); }
+    };
+    window.addEventListener("keydown", handleKey, true);
+    return () => window.removeEventListener("keydown", handleKey, true);
+  }, [showModal]);
+
+  return (
+    <>
+      <div
+        onClick={() => setShowModal(true)}
+        className="group rounded-lg border border-orange-200 bg-orange-50 dark:border-orange-700 dark:bg-orange-900/20 p-3 mt-6 mb-2 relative w-62 shrink-0 h-65 overflow-hidden transition-colors cursor-pointer hover:border-orange-300 dark:hover:border-orange-600">
+        <div className="absolute top-0.5 right-2 p-0.5 text-orange-400">
+          <Maximize2 className="w-3.5 h-3.5" />
+        </div>
+        <div className="flex flex-col items-center h-full">
+          <div className="font-bold text-orange-600 dark:text-orange-400 text-lg mt-7 mb-4 text-center">
+            Conjectural Req #{req.requirement_number}
+          </div>
+          <p className="text-lg text-gray-700 dark:text-gray-200 line-clamp-11 text-center">
+            <strong>It is expected that the software system has </strong>
+            {req.desired_behavior}
+          </p>
+        </div>
+      </div>
+
+      {showModal && createPortal(
+        <div className="fixed inset-0 z-9999 flex items-start justify-center bg-black/60 p-4 pt-[15vh]" onClick={() => setShowModal(false)}>
+          <div className="w-full max-w-4xl rounded-2xl bg-white dark:bg-surface-dark shadow-2xl border border-border-light dark:border-border-dark" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between border-b border-border-light dark:border-border-dark px-6 py-4">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                Conjectural Requirement #{req.requirement_number}
+              </h2>
+              <button
+                onClick={() => setShowModal(false)}
+                className="p-2 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex gap-2 px-6 pt-4">
+              <button
+                onClick={() => setActiveTab("ferc")}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  activeTab === "ferc"
+                    ? "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300"
+                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+                }`}
+              >
+                FERC
+              </button>
+              <button
+                onClick={() => setActiveTab("qess")}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  activeTab === "qess"
+                    ? "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300"
+                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+                }`}
+              >
+                QESS
+              </button>
+            </div>
+
+            <div className="px-6 py-6 max-h-[60vh] overflow-y-auto">
+              {activeTab === "ferc" ? (
+                <div className="space-y-6">
+                  <div className="rounded-xl border border-border-light dark:border-border-dark bg-gray-50 dark:bg-gray-900/40 p-5">
+                    <span className="text-base font-semibold text-orange-600 dark:text-orange-400 tracking-wider mb-3">
+                      It is expected that the software system has&nbsp;
+                    </span>
+                    <span className="text-base text-gray-700 dark:text-gray-300 leading-relaxed">
+                      {req.desired_behavior || "N/A"}
+                    </span>
+                  </div>
+                  <div className="rounded-xl border border-border-light dark:border-border-dark bg-gray-50 dark:bg-gray-900/40 p-5">
+                    <span className="text-base font-semibold text-orange-600 dark:text-orange-400 tracking-wider mb-3">
+                      So that&nbsp;
+                    </span>
+                    <span className="text-base text-gray-700 dark:text-gray-300 leading-relaxed">
+                      {req.positive_impact || "N/A"}
+                    </span>
+                  </div>
+                  <div className="rounded-xl border border-border-light dark:border-border-dark bg-gray-50 dark:bg-gray-900/40 p-5">
+                    <p className="text-base font-semibold text-orange-600 dark:text-orange-400 tracking-wider mb-2">
+                      However, we do not know:
+                    </p>
+                    <span className="text-base text-gray-700 dark:text-gray-300 leading-relaxed">
+                      <strong className="text-base font-semibold text-orange-600 dark:text-orange-400 tracking-wider">Uncertainty:</strong> {req.uncertainties || "N/A"}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="rounded-xl border border-border-light dark:border-border-dark bg-gray-50 dark:bg-gray-900/40 p-5">
+                    <span className="text-base font-semibold text-orange-600 dark:text-orange-400 tracking-wider mb-3">
+                      We expect that&nbsp;
+                    </span>
+                    <span className="text-base text-gray-700 dark:text-gray-300 leading-relaxed">
+                      {req.solution_assumption || "N/A"}
+                    </span>
+                  </div>
+                  <div className="rounded-xl border border-border-light dark:border-border-dark bg-gray-50 dark:bg-gray-900/40 p-5">
+                    <span className="text-base font-semibold text-orange-600 dark:text-orange-400 tracking-wider mb-3">
+                      Will result in updating the uncertainties about&nbsp;
+                    </span>
+                    <span className="text-base text-gray-700 dark:text-gray-300 leading-relaxed">
+                      {req.uncertainty_evaluated || "N/A"}
+                    </span>
+                  </div>
+                  <div className="rounded-xl border border-border-light dark:border-border-dark bg-gray-50 dark:bg-gray-900/40 p-5">
+                    <span className="text-base font-semibold text-orange-600 dark:text-orange-400 tracking-wider mb-3">
+                      As a result of&nbsp;
+                    </span>
+                    <span className="text-base text-gray-700 dark:text-gray-300 leading-relaxed">
+                      {req.observation_analysis || "N/A"}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end border-t border-border-light dark:border-border-dark mt-2 px-6 py-2">
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
+    </>
+  );
+}
+
+function ShowRequirements({ json_requirements }: { json_requirements: string }) {
+  const requirementsMap: RequirementsMap = JSON.parse(json_requirements);
+  const entries = Object.entries(requirementsMap);
+  const [visibleCards, setVisibleCards] = useState(0);
+
+  useEffect(() => {
+    if (visibleCards >= entries.length) return;
+    const timer = setTimeout(() => setVisibleCards(v => v + 1), CARD_REVEAL_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [visibleCards, entries.length]);
+
+  return (
+    <div className="mt-4 mb-2">
+      <div className="flex gap-3 overflow-x-auto">
+        {entries.slice(0, visibleCards).map(([key, attempts]) => {
+          const firstAttempt = attempts[0];
+          if (!firstAttempt) return null;
+          return (
+            <div
+              key={key}
+              className="relative shrink-0 animate-[fadeSlideIn_0.35s_ease-out_forwards]"
+            >
+              <DisplayCard req={firstAttempt} />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function CustomInput({ inProgress, onSend }: { inProgress: boolean; onSend: (text: string) => void }) {
   const { agent } = useAgent({ agentId: "conjec-req-agent" });
   const [text, setText] = useState("");
@@ -579,6 +759,28 @@ function ConjecturalRequirementsInner() {
     handler: async ({ message }: { message: string }) => {
       console.log(message);
       return { success: true };
+    },
+  }, []);
+
+  const paramSchema = z.object({ json_requirements: z.string().describe("The JSON string containing requirements data") });
+
+  useFrontendTool({
+    name: "show_requirements",
+    followUp: false,
+    parameters: paramSchema,
+    handler: async ({ json_requirements }) => {
+      // const response = await fetch(`/api/weather?city=${city}&units=${units}`);
+      // const data = await response.json();
+      // return JSON.stringify(data);
+      return JSON.parse(json_requirements);
+    },
+    render: ({args, status, result}) => {
+      console.log("status:", status, " - args:", args, " - result:", result);
+      if (status !== "complete") return <>Loading...</>;
+      return (
+        <ShowRequirements json_requirements={result} />
+      // 
+      );
     },
   }, []);
 
