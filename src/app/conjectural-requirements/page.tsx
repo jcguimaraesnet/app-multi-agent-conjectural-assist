@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useContext, createContext, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'next/navigation';
 import AppLayout from '@/components/layout/AppLayout';
 import PageTitle from '@/components/ui/PageTitle';
-import RequirementsTable from '@/components/requirements/RequirementsTable';
-import ConjecturalRequirementsToolbar from '@/components/conjectural-requirements/ConjecturalRequirementsToolbar';
+import KanbanBoard from '@/components/conjectural-requirements/KanbanBoard';
+import KanbanToolbar from '@/components/conjectural-requirements/KanbanToolbar';
+import type { DisplayField } from '@/components/conjectural-requirements/KanbanToolbar';
 import { useProject } from '@/contexts/ProjectContext';
 import { useRequirements } from '@/contexts/RequirementsContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -23,12 +24,11 @@ import Spinner from "@/components/ui/Spinner";
 import { useAuth } from '@/contexts/AuthContext';
 import Button from '@/components/ui/Button';
 import Textarea from '@/components/ui/Textarea';
-import { RequirementType } from '@/types';
+import type { ConjecturalRequirement, ConjecturalStatus } from '@/types';
 import { X, Maximize2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { z } from "zod";
 
 
-const PAGE_SIZE = 10;
 const TOAST_DURATION_MS = 5000;
 
 interface AgentState {
@@ -696,16 +696,14 @@ function CustomInput({ inProgress, onSend }: { inProgress: boolean; onSend: (tex
 function ConjecturalRequirementsInner() {
   const { agent } = useAgent({ agentId: "conjec-req-agent" });
 
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
   const { user } = useAuth();
   const { settings } = useSettings();
   const { selectedProject, selectProjectById, projects, isLoading: isLoadingProjects } = useProject();
   const {
-    requirements,
     currentProjectId,
-    isLoading,
-    error,
     fetchRequirements,
-    deleteRequirement,
     clearRequirements
   } = useRequirements();
 
@@ -769,29 +767,50 @@ function ConjecturalRequirementsInner() {
     followUp: false,
     parameters: paramSchema,
     handler: async ({ requirement_ids }) => {
-      // const response = await fetch(`/api/weather?city=${city}&units=${units}`);
-      // const data = await response.json();
-      // return JSON.stringify(data);
-      return JSON.parse(requirement_ids);
-    },
-    render: ({args, status, result}) => {
-      console.log("status:", status, " - args:", args, " - result:", result);
-      if (status !== "complete") return <>Loading...</>;
-      return (
-        <span>teste</span>
-        // <ShowRequirements json_requirements={result} />
-      // 
+      const ids: string[] = JSON.parse(requirement_ids);
+
+      // Fetch each requirement by ID in parallel
+      const results = await Promise.allSettled(
+        ids.map(async (id) => {
+          const res = await fetch(`${API_URL}/api/conjectural-requirements/${id}`, {
+            headers: { Authorization: `Bearer ${user?.id || ""}` },
+          });
+          if (!res.ok) return null;
+          return res.json();
+        })
       );
+
+      const newRequirements: ConjecturalRequirement[] = results
+        .filter((r): r is PromiseFulfilledResult<ConjecturalRequirement> =>
+          r.status === "fulfilled" && r.value !== null
+        )
+        .map((r) => r.value);
+
+      // Add to kanban state with animation flag
+      setNewCardIds(new Set(newRequirements.map((r) => r.id)));
+      setKanbanRequirements((prev) => {
+        const existingIds = new Set(prev.map((r) => r.id));
+        const toAdd = newRequirements.filter((r) => !existingIds.has(r.id));
+        return [...toAdd, ...prev];
+      });
+
+      return { success: true, count: newRequirements.length };
     },
-  }, []);
+  }, [API_URL, user?.id]);
 
   const searchParams = useSearchParams();
   const projectIdFromQuery = searchParams.get('projectId');
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [toastProgress, setToastProgress] = useState(100);
+
+  // Kanban board state
+  const [kanbanDisplayField, setKanbanDisplayField] = useState<DisplayField>("desired_behavior");
+  const [kanbanSearchQuery, setKanbanSearchQuery] = useState("");
+  const [kanbanRequirements, setKanbanRequirements] = useState<ConjecturalRequirement[]>([]);
+  const [kanbanLoading, setKanbanLoading] = useState(false);
+  const [kanbanError, setKanbanError] = useState<string | null>(null);
+  const [newCardIds, setNewCardIds] = useState<Set<string>>(new Set());
 
   // Select project from query string when projects are loaded
   useEffect(() => {
@@ -810,9 +829,6 @@ function ConjecturalRequirementsInner() {
       clearRequirements();
     }
   }, [projectNotFound, clearRequirements]);
-
-  // Show loading when: actively fetching, project loading, or project selected but requirements not yet fetched
-  const showLoading = isLoading || (!!projectIdFromQuery && !projectNotFound && (!selectedProject || currentProjectId !== selectedProject.id));
 
   // Fetch requirements when project changes (only if not already cached)
   useEffect(() => {
@@ -834,14 +850,65 @@ function ConjecturalRequirementsInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedProject?.id, projectIdFromQuery, currentProjectId, fetchRequirements]);
 
-  // Reset page when search changes
-  const prevSearchRef = useRef(searchQuery);
-  useEffect(() => {
-    if (prevSearchRef.current !== searchQuery) {
-      setCurrentPage(1);
-      prevSearchRef.current = searchQuery;
+  // Fetch kanban conjectural requirements (ranking = 1 only)
+  const fetchKanbanRequirements = useCallback(async (projectId: string) => {
+    setKanbanLoading(true);
+    setKanbanError(null);
+    try {
+      const res = await fetch(`${API_URL}/api/conjectural-requirements/project/${projectId}`, {
+        headers: { Authorization: `Bearer ${user?.id || ""}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch conjectural requirements");
+      const data: ConjecturalRequirement[] = await res.json();
+      setKanbanRequirements(data);
+    } catch (err) {
+      setKanbanError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setKanbanLoading(false);
     }
-  }, [searchQuery]);
+  }, [API_URL, user?.id]);
+
+  useEffect(() => {
+    if (selectedProject?.id) {
+      fetchKanbanRequirements(selectedProject.id);
+    }
+  }, [selectedProject?.id, fetchKanbanRequirements]);
+
+  // Kanban status change handler
+  const handleKanbanStatusChange = useCallback(async (requirementId: string, newStatus: ConjecturalStatus) => {
+    // Optimistic update
+    setKanbanRequirements((prev) =>
+      prev.map((r) => (r.id === requirementId ? { ...r, status: newStatus } : r))
+    );
+    try {
+      const res = await fetch(`${API_URL}/api/conjectural-requirements/${requirementId}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user?.id || ""}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) throw new Error("Failed to update status");
+    } catch {
+      // Revert on failure
+      if (selectedProject?.id) fetchKanbanRequirements(selectedProject.id);
+    }
+  }, [API_URL, user?.id, selectedProject?.id, fetchKanbanRequirements]);
+
+  // Kanban search filter
+  const filteredKanbanRequirements = useMemo(() => {
+    if (!kanbanSearchQuery) return kanbanRequirements;
+    const q = kanbanSearchQuery.toLowerCase();
+    return kanbanRequirements.filter(
+      (r) =>
+        r.desired_behavior.toLowerCase().includes(q) ||
+        r.positive_impact.toLowerCase().includes(q) ||
+        r.uncertainties.some((u) => u.toLowerCase().includes(q))
+    );
+  }, [kanbanRequirements, kanbanSearchQuery]);
+
+  const handleKanbanClear = () => setKanbanSearchQuery("");
 
   // Toast progress animation
   useEffect(() => {
@@ -870,45 +937,6 @@ function ConjecturalRequirementsInner() {
   const handleDismissSuccess = () => {
     setSuccessMessage(null);
   };
-
-  // Filter requirements: only Conjectural type + search query
-  const activeRequirements = projectNotFound ? [] : requirements;
-  const filteredRequirements = activeRequirements.filter(req => {
-    const isConjectural = req.type === RequirementType.Conjectural;
-    const matchesSearch = searchQuery
-      ? req.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        req.requirement_id.toLowerCase().includes(searchQuery.toLowerCase())
-      : true;
-    return isConjectural && matchesSearch;
-  });
-
-  // Pagination
-  const totalPages = Math.max(1, Math.ceil(filteredRequirements.length / PAGE_SIZE));
-  const paginatedRequirements = filteredRequirements.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
-  );
-
-  const handleClear = () => {
-    setSearchQuery("");
-    setCurrentPage(1);
-  };
-
-  const handleDelete = useCallback(async (requirementId: string) => {
-    if (!confirm('Are you sure you want to delete this conjectural requirement?')) {
-      return;
-    }
-
-    setSuccessMessage(null);
-
-    const success = await deleteRequirement(requirementId);
-
-    if (success) {
-      setSuccessMessage('Conjectural requirement deleted successfully.');
-    } else {
-      alert('Failed to delete conjectural requirement');
-    }
-  }, [deleteRequirement]);
 
   return (
     <>
@@ -946,20 +974,28 @@ function ConjecturalRequirementsInner() {
         </div>
       )}
 
-      <ConjecturalRequirementsToolbar
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        onClear={handleClear}
+      <KanbanToolbar
+        searchQuery={kanbanSearchQuery}
+        setSearchQuery={setKanbanSearchQuery}
+        displayField={kanbanDisplayField}
+        onToggleField={setKanbanDisplayField}
+        onClear={handleKanbanClear}
       />
 
-      <RequirementsTable
-        requirements={paginatedRequirements}
-        isLoading={showLoading}
-        error={error}
-        onDelete={handleDelete}
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
+      <KanbanBoard
+        requirements={filteredKanbanRequirements}
+        displayField={kanbanDisplayField}
+        userId={user?.id || ""}
+        isLoading={kanbanLoading}
+        error={kanbanError}
+        newCardIds={newCardIds}
+        onAnimationComplete={() => setNewCardIds(new Set())}
+        onStatusChange={handleKanbanStatusChange}
+        onRequirementUpdated={(updated) => {
+          setKanbanRequirements((prev) =>
+            prev.map((r) => (r.id === updated.id ? updated : r))
+          );
+        }}
       />
     </>
   );

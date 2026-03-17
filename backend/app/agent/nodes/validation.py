@@ -99,9 +99,9 @@ async def validation_node(state: WorkflowState, config: Optional[RunnableConfig]
         config = RunnableConfig(recursion_limit=25)
 
     print("Validation node started.")
-
-    data_context = DataContext.model_validate(state.get("data_context", {}))
     messages = state.get("messages", [])
+    
+    data_context = DataContext.model_validate(state.get("data_context", {}))
 
     context = extract_copilotkit_context(state)
     require_evaluation = context['require_evaluation']
@@ -221,13 +221,25 @@ async def validation_node(state: WorkflowState, config: Optional[RunnableConfig]
         data_context.rank_conjectural_requirements()
 
         # Persist to database and get generated UUIDs
-        persist_conjectural_data(context["current_project_id"], data_context)
+        saved_ids = persist_conjectural_data(context["current_project_id"], data_context)
 
-        # message final
-        evaluation_text = "Conjectural requirements have been created successfully. See graphic below for details."
-        response = AIMessage(content=evaluation_text)
+        # message 1
+        msg_created_text = "The following conjectural requirements were successfully **created**: " + ", ".join(saved_ids) + "."
+        response = AIMessage(content=msg_created_text)
         messages = messages + [response]
-        await copilotkit_emit_message(config, evaluation_text)
+        await copilotkit_emit_message(config, msg_created_text)
+
+        # message 2
+        # msg_ids_text = "\n".join(f"- {rid}" for rid in saved_ids)
+        # response = AIMessage(content=msg_ids_text)
+        # messages = messages + [response]
+        # await copilotkit_emit_message(config, msg_ids_text)
+
+        # message 3
+        msg_graphic_text = "See graphic below for details about metrics."
+        response = AIMessage(content=msg_graphic_text)
+        messages = messages + [response]
+        await copilotkit_emit_message(config, msg_graphic_text)
 
         # step4_validation is used in progress steps
         step4_validation = True

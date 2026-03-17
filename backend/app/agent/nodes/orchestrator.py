@@ -35,6 +35,8 @@ async def orchestrator_node(state: WorkflowState, config: Optional[RunnableConfi
     print(f"CurrentUser Id = {context['current_user_id']}")
     print(f"CurrentUser FirstName = {context['current_user_first_name']}")
     print(f"CurrentProjectId = {context['current_project_id']}")
+    if not context.get("current_project_id"):
+        raise ValueError("current_project_id is required but was not provided. Please select a project before proceeding.")
     print(f"require_brief_description = {context['require_brief_description']}")
     print(f"require_evaluation = {context['require_evaluation']}")
     print(f"quantity_req_batch = {context['quantity_req_batch']}")

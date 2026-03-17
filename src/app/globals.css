@@ -57,3 +57,37 @@ html.dark {
     transform: translateY(0);
   }
 }
+
+.animate-fade-in {
+  animation: fadeSlideIn 0.5s ease-out, sonarPulse 1.5s ease-in-out 7, glowBorder 10s ease-in-out forwards;
+}
+
+@keyframes sonarPulse {
+  0% {
+    outline: 4px solid rgba(232, 111, 40, 1);
+    outline-offset: 0px;
+  }
+  50% {
+    outline: 4px solid rgba(232, 111, 40, 0.4);
+    outline-offset: 12px;
+  }
+  100% {
+    outline: 4px solid rgba(232, 111, 40, 0);
+    outline-offset: 18px;
+  }
+}
+
+@keyframes glowBorder {
+  0% {
+    box-shadow: 0 0 8px 2px rgba(232, 111, 40, 0.6);
+    border-color: rgba(232, 111, 40, 0.8);
+  }
+  80% {
+    box-shadow: 0 0 8px 2px rgba(232, 111, 40, 0.6);
+    border-color: rgba(232, 111, 40, 0.8);
+  }
+  100% {
+    box-shadow: none;
+    border-color: '';
+  }
+}

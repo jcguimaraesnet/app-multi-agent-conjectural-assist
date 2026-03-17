@@ -111,3 +111,39 @@ export interface User {
   role: string;
   avatarUrl: string;
 }
+
+// Conjectural Requirements (Kanban board)
+export type ConjecturalStatus = 'todo' | 'inprogress' | 'done';
+
+export interface ConjecturalEvaluation {
+  id: string;
+  requirement_id: string;
+  type: 'llm' | 'human';
+  unambiguous: number;
+  completeness: number;
+  atomicity: number;
+  verifiable: number;
+  conforming: number;
+  overall_score: number;
+  justifications: Record<string, string>;
+  created_at: string;
+}
+
+export interface ConjecturalRequirement {
+  id: string;
+  project_id: string;
+  requirement_id: string | null;
+  attempt: number;
+  ranking: number | null;
+  status: ConjecturalStatus;
+  desired_behavior: string;
+  positive_impact: string;
+  uncertainties: string[];
+  solution_assumption: string;
+  uncertainty_evaluated: string;
+  observation_analysis: string;
+  evaluations: ConjecturalEvaluation[];
+  history_snapshot: unknown[] | null;
+  created_at: string;
+  updated_at: string;
+}
