@@ -14,7 +14,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { CopilotSidebar } from "@copilotkit/react-ui";
 import { useInterrupt } from "@copilotkit/react-core/v2";
 import { useFrontendTool } from "@copilotkit/react-core/v2";
-import { useComponent, useRenderTool } from "@copilotkit/react-core/v2";
+import { useComponent, useRenderTool, ToolCallStatus } from "@copilotkit/react-core/v2";
 import { useAgentContext } from "@copilotkit/react-core/v2";
 import { useAgent } from "@copilotkit/react-core/v2";
 import { useConfigureSuggestions } from "@copilotkit/react-core/v2";
@@ -24,9 +24,10 @@ import Spinner from "@/components/ui/Spinner";
 import { useAuth } from '@/contexts/AuthContext';
 import Button from '@/components/ui/Button';
 import Textarea from '@/components/ui/Textarea';
-import type { ConjecturalRequirement, ConjecturalStatus } from '@/types';
+import type { ConjecturalRequirement, ConjecturalEvaluation, ConjecturalStatus } from '@/types';
 import { X, Maximize2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { z } from "zod";
+import EvaluationRadarCard from '@/components/conjectural-requirements/EvaluationRadarCard';
 
 
 const TOAST_DURATION_MS = 5000;
@@ -769,7 +770,7 @@ function ConjecturalRequirementsInner() {
     handler: async ({ requirement_ids }) => {
       const ids: string[] = JSON.parse(requirement_ids);
 
-      // Fetch each requirement by ID in parallel
+      //step 1: Fetch each requirement by ID in parallel
       const results = await Promise.allSettled(
         ids.map(async (id) => {
           const res = await fetch(`${API_URL}/api/conjectural-requirements/${id}`, {
@@ -786,7 +787,7 @@ function ConjecturalRequirementsInner() {
         )
         .map((r) => r.value);
 
-      // Add to kanban state with animation flag
+      //step 2: Add to kanban state with animation flag
       setNewCardIds(new Set(newRequirements.map((r) => r.id)));
       setKanbanRequirements((prev) => {
         const existingIds = new Set(prev.map((r) => r.id));
@@ -794,7 +795,20 @@ function ConjecturalRequirementsInner() {
         return [...toAdd, ...prev];
       });
 
-      return { success: true, count: newRequirements.length };
+      //step 3: mount evaluations object to forward as result parameter on render function
+      const firstReq = newRequirements[0] ?? null;
+      const evaluations = firstReq?.evaluations ?? [];
+
+      return { evaluations, requirementId: firstReq?.requirement_id ?? null };
+    },
+    render: ({ status, result }) => {
+      if (status !== ToolCallStatus.Complete || !result) return null;
+
+      const parsed = typeof result === 'string' ? JSON.parse(result) : result;
+      const evaluations: ConjecturalEvaluation[] = parsed?.evaluations ?? [];
+      const requirementId: string | null = parsed?.requirementId ?? null;
+
+      return <EvaluationRadarCard evaluations={evaluations} requirementId={requirementId} />;
     },
   }, [API_URL, user?.id]);
 

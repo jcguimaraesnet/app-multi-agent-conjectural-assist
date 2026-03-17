@@ -100,7 +100,7 @@ async def validation_node(state: WorkflowState, config: Optional[RunnableConfig]
 
     print("Validation node started.")
     messages = state.get("messages", [])
-    
+
     data_context = DataContext.model_validate(state.get("data_context", {}))
 
     context = extract_copilotkit_context(state)
@@ -236,7 +236,7 @@ async def validation_node(state: WorkflowState, config: Optional[RunnableConfig]
         # await copilotkit_emit_message(config, msg_ids_text)
 
         # message 3
-        msg_graphic_text = "See graphic below for details about metrics."
+        msg_graphic_text = "Below is an example of a chart for the first requirement generated. For more details on other requirements, go to the reports page."
         response = AIMessage(content=msg_graphic_text)
         messages = messages + [response]
         await copilotkit_emit_message(config, msg_graphic_text)

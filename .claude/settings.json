@@ -10,7 +10,11 @@
       "Bash(ls \"c:/repos/ufrj/requirement-conjectural-multiagent/app-multi-agent-conjectural-assist/node_modules/.pnpm/@copilotkitnext+react@1.53._097b0e027cb61dbec7b95feccd854015/node_modules/@copilotkitnext/react/dist/hooks/use-component\"*)",
       "Bash(find c:reposufrjrequirement-conjectural-multiagentapp-multi-agent-conjectural-assist -type f -name config.toml -o -name *.supabase.*)",
       "Bash(find c:reposufrjrequirement-conjectural-multiagentapp-multi-agent-conjectural-assist -maxdepth 2 -type f \\\\\\(-name .env* -o -name *.md \\\\\\))",
-      "Bash(grep -r \"Tabs\\\\|TabGroup\\\\|TabList\\\\|TabPanel\" c:/repos/ufrj/requirement-conjectural-multiagent/app-multi-agent-conjectural-assist/src --include=*.tsx --include=*.ts)"
+      "Bash(grep -r \"Tabs\\\\|TabGroup\\\\|TabList\\\\|TabPanel\" c:/repos/ufrj/requirement-conjectural-multiagent/app-multi-agent-conjectural-assist/src --include=*.tsx --include=*.ts)",
+      "Bash(find /c/repos/ufrj/requirement-conjectural-multiagent/app-multi-agent-conjectural-assist/backend -name *.py)",
+      "Bash(grep -r \"Inequívoco\\\\|Completo\\\\|Singular\\\\|Verificável\\\\|Conforme\" /c/repos/ufrj/requirement-conjectural-multiagent/app-multi-agent-conjectural-assist/backend --include=*.py)",
+      "Bash(grep -r \"echarts\\\\|chart\" /c/repos/ufrj/requirement-conjectural-multiagent/app-multi-agent-conjectural-assist --include=*.json --include=*.ts --include=*.tsx)",
+      "Bash(pnpm add:*)"
     ]
   }
 }
