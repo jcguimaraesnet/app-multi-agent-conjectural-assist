@@ -43,9 +43,9 @@ function buildOption(
       name: 'LLM-as-judge',
       type: 'radar',
       data: [{ value: llmScores, name: 'LLM-as-judge', label: { show: true, formatter: '{c}', fontSize: isLg ? 12 : 10 } }],
-      lineStyle: { color: '#6366f1' },
-      itemStyle: { color: '#6366f1' },
-      areaStyle: { color: 'rgba(99, 102, 241, 0.15)' },
+      lineStyle: { color: '#3730a3', width: 2 },
+      itemStyle: { color: '#3730a3' },
+      areaStyle: { color: 'rgba(55, 48, 163, 0.35)' },
     },
   ];
 
@@ -54,9 +54,9 @@ function buildOption(
       name: 'Human',
       type: 'radar',
       data: [{ value: humanScores, name: 'Human', label: { show: true, formatter: '{c}', fontSize: isLg ? 12 : 10 } }],
-      lineStyle: { color: '#f59e0b' },
-      itemStyle: { color: '#f59e0b' },
-      areaStyle: { color: 'rgba(245, 158, 11, 0.15)' },
+      lineStyle: { color: '#a5b4fc', width: 2 },
+      itemStyle: { color: '#a5b4fc' },
+      areaStyle: { color: 'rgba(165, 180, 252, 0.2)' },
     });
   }
 
@@ -77,6 +77,9 @@ function buildOption(
       axisName: { color: '#d1d5db', fontSize: isLg ? 13 : 11 },
       shape: 'polygon',
       radius: isLg ? '60%' : '55%',
+      splitArea: { areaStyle: { color: 'transparent' } },
+      splitLine: { lineStyle: { color: '#374151' } },
+      axisLine: { lineStyle: { color: '#374151' } },
     },
     series,
   };

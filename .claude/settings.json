@@ -14,7 +14,13 @@
       "Bash(find /c/repos/ufrj/requirement-conjectural-multiagent/app-multi-agent-conjectural-assist/backend -name *.py)",
       "Bash(grep -r \"Inequívoco\\\\|Completo\\\\|Singular\\\\|Verificável\\\\|Conforme\" /c/repos/ufrj/requirement-conjectural-multiagent/app-multi-agent-conjectural-assist/backend --include=*.py)",
       "Bash(grep -r \"echarts\\\\|chart\" /c/repos/ufrj/requirement-conjectural-multiagent/app-multi-agent-conjectural-assist --include=*.json --include=*.ts --include=*.tsx)",
-      "Bash(pnpm add:*)"
+      "Bash(pnpm add:*)",
+      "Bash(find /c/repos/ufrj/requirement-conjectural-multiagent/app-multi-agent-conjectural-assist/src -name *Context* -o -name *context*)",
+      "Bash(grep -E '\\\\.\\(tsx|ts\\)$')",
+      "Bash(find /c/repos/ufrj/requirement-conjectural-multiagent/app-multi-agent-conjectural-assist -type f \\\\\\(-name *.sql -o -name *migration* -o -name *schema* \\\\\\))",
+      "Bash(find /c/repos/ufrj/requirement-conjectural-multiagent/app-multi-agent-conjectural-assist/src -type f -name *.ts -o -name *.tsx)",
+      "Bash(find /c/repos/ufrj/requirement-conjectural-multiagent/app-multi-agent-conjectural-assist -type f \\\\\\(-name *.md -o -name *.txt -o -name *.yaml \\\\\\))",
+      "Bash(find /c/repos/ufrj/requirement-conjectural-multiagent/app-multi-agent-conjectural-assist -maxdepth 3 -type f -name README* -o -name *.md)"
     ]
   }
 }
