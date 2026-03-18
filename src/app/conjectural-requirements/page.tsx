@@ -230,7 +230,7 @@ function ShowRequirements({ json_requirements }: { json_requirements: string }) 
 }
 
 function CustomInput({ inProgress, onSend }: { inProgress: boolean; onSend: (text: string) => void }) {
-  const { agent } = useAgent({ agentId: "conjec-req-agent" });
+  const { agent } = useAgent({ agentId: "conreq-multiagent" });
   const [text, setText] = useState("");
   return (
     <div className="p-2">
@@ -241,10 +241,6 @@ function CustomInput({ inProgress, onSend }: { inProgress: boolean; onSend: (tex
         onKeyDown={(e) => {
           if (e.key === "Enter" && !e.shiftKey && !inProgress && text.trim()) {
             e.preventDefault();
-            agent.setState({
-              ...agent.state,
-              tool_called: false,
-            });
             onSend(text);
             setText("");
           }
@@ -262,7 +258,7 @@ function CustomInput({ inProgress, onSend }: { inProgress: boolean; onSend: (tex
 }
 
 function ConjecturalRequirementsInner() {
-  const { agent } = useAgent({ agentId: "conjec-req-agent" });
+  const { agent } = useAgent({ agentId: "conreq-multiagent" });
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -292,7 +288,7 @@ function ConjecturalRequirementsInner() {
   });
 
   useInterrupt({
-    agentId: "conjec-req-agent",
+    agentId: "conreq-multiagent",
     enabled: (event) => JSON.parse(event.value).type === 'hitl_brief_description',
     render: ({ event, resolve }) => {
       const quantity_req_batch = JSON.parse(event.value).quantity_req_batch || settings.quantity_req_batch;
@@ -306,7 +302,7 @@ function ConjecturalRequirementsInner() {
   });
 
   useInterrupt({
-    agentId: "conjec-req-agent",
+    agentId: "conreq-multiagent",
     enabled: (event) => JSON.parse(event.value).type === "hitl_req_approve",
     render: ({ event, resolve }) => {
             const requirements: RequirementItem[] = JSON.parse(event.value).requirements || [];

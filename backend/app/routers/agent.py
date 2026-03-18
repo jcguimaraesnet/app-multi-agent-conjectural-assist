@@ -51,7 +51,7 @@ class ChatResponse(BaseModel):
 sdk = CopilotKitSDK(
     agents=[
         LangGraphAGUIAgent(
-            name="conjec-req-agent",
+            name="conreq-multiagent",
             description="A requirements engineering assistant that can specify conjectural requirements for a software project.",
             graph=graph,
         )
@@ -116,7 +116,7 @@ async def agent_health():
     """Health check for the agent service."""
     return {
         "status": "healthy",
-        "agent": "conjec-req-agent",
+        "agent": "conreq-multiagent",
         "tools": ["analyze_requirement", "classify_requirement", "suggest_acceptance_criteria"]
     }
 
@@ -125,7 +125,7 @@ async def agent_health():
 async def agent_info():
     """Get information about the available agent and its capabilities."""
     return {
-        "name": "conjec-req-agent",
+        "name": "conreq-multiagent",
         "description": "A requirements engineering assistant for the Conjectural Assist application.",
         "capabilities": [
             {

@@ -18,9 +18,9 @@ const serviceAdapter = new EmptyAdapter();
 //    integration to setup the connection.
 const runtime = new CopilotRuntime({
   agents: {
-    "conjec-req-agent": new LangGraphAgent({
+    "conreq-multiagent": new LangGraphAgent({
       deploymentUrl: process.env.LANGGRAPH_DEPLOYMENT_URL || "http://localhost:8123",
-      graphId: "conjec-req-agent",
+      graphId: "conreq-multiagent",
       langsmithApiKey: process.env.LANGSMITH_API_KEY || "",
     }),
   },
