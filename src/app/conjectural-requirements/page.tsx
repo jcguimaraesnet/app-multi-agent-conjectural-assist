@@ -198,6 +198,8 @@ function DisplayCard({ req }: { req: RequirementItem }) {
   );
 }
 
+const CARD_REVEAL_DELAY_MS = 300;
+
 function ShowRequirements({ json_requirements }: { json_requirements: string }) {
   const requirementsMap: RequirementsMap = JSON.parse(json_requirements);
   const entries = Object.entries(requirementsMap);
