@@ -703,6 +703,7 @@ function ConjecturalRequirementsInner() {
   const { user } = useAuth();
   const { settings } = useSettings();
   const { selectedProject, selectProjectById, projects, isLoading: isLoadingProjects } = useProject();
+  const { startOnborda } = useOnborda();
   const {
     currentProjectId,
     fetchRequirements,
@@ -826,6 +827,14 @@ function ConjecturalRequirementsInner() {
   const [kanbanLoading, setKanbanLoading] = useState(false);
   const [kanbanError, setKanbanError] = useState<string | null>(null);
   const [newCardIds, setNewCardIds] = useState<Set<string>>(new Set());
+
+  // Start chatbot-suggestion-tour when arriving via query string
+  useEffect(() => {
+    if (searchParams.get('tour') === 'chatbot-suggestion') {
+      const timer = setTimeout(() => startOnborda('chatbot-suggestion-tour'), 800);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams, startOnborda]);
 
   // Select project from query string when projects are loaded
   useEffect(() => {
@@ -1017,17 +1026,6 @@ function ConjecturalRequirementsInner() {
 }
 
 export default function ConjecturalRequirementsPage() {
-  const searchParamsOuter = useSearchParams();
-  const { startOnborda } = useOnborda();
-
-  // Start chatbot-suggestion-tour when arriving via query string
-  useEffect(() => {
-    if (searchParamsOuter.get('tour') === 'chatbot-suggestion') {
-      const timer = setTimeout(() => startOnborda('chatbot-suggestion-tour'), 800);
-      return () => clearTimeout(timer);
-    }
-  }, [searchParamsOuter, startOnborda]);
-
   useConfigureSuggestions({
     suggestions: [
         {

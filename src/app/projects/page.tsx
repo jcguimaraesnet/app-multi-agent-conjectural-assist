@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Spinner from '@/components/ui/Spinner';
 import { useOnborda } from 'onborda';
 import AppLayout from '@/components/layout/AppLayout';
 import PageTitle from '@/components/ui/PageTitle';
@@ -25,6 +26,20 @@ const DEFAULT_REQUIREMENT_COUNTS = {
 };
 
 export default function ProjectsPage() {
+  return (
+    <Suspense fallback={
+      <AppLayout>
+        <div className="flex items-center justify-center h-64">
+          <Spinner />
+        </div>
+      </AppLayout>
+    }>
+      <ProjectsPageInner />
+    </Suspense>
+  );
+}
+
+function ProjectsPageInner() {
   const { user } = useAuth();
   const { projects, isLoading, error: contextError, refreshProjects } = useProject();
   const { prefetchRequirements } = useRequirements();
