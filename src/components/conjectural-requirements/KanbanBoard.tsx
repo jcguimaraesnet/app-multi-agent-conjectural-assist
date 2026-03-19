@@ -14,6 +14,8 @@ interface KanbanBoardProps {
   isLoading: boolean;
   error: string | null;
   newCardIds: Set<string>;
+  selectedRequirement: ConjecturalRequirement | null;
+  onSelectRequirement: (req: ConjecturalRequirement | null) => void;
   onAnimationComplete: () => void;
   onStatusChange: (requirementId: string, newStatus: ConjecturalStatus) => void;
   onRequirementUpdated: (updated: ConjecturalRequirement) => void;
@@ -108,12 +110,13 @@ export default function KanbanBoard({
   isLoading,
   error,
   newCardIds,
+  selectedRequirement,
+  onSelectRequirement,
   onAnimationComplete,
   onStatusChange,
   onRequirementUpdated,
 }: KanbanBoardProps) {
   const [dragOverColumn, setDragOverColumn] = useState<ConjecturalStatus | null>(null);
-  const [selectedRequirement, setSelectedRequirement] = useState<ConjecturalRequirement | null>(null);
 
   // Clear animation flags after animation completes
   useEffect(() => {
@@ -155,8 +158,8 @@ export default function KanbanBoard({
 
   const handleSaved = useCallback((updated: ConjecturalRequirement) => {
     onRequirementUpdated(updated);
-    setSelectedRequirement(null);
-  }, [onRequirementUpdated]);
+    onSelectRequirement(null);
+  }, [onRequirementUpdated, onSelectRequirement]);
 
   // Show detail view instead of board when a card is selected
   if (selectedRequirement) {
@@ -164,7 +167,7 @@ export default function KanbanBoard({
       <ConjecturalDetailView
         requirement={selectedRequirement}
         userId={userId}
-        onClose={() => setSelectedRequirement(null)}
+        onClose={() => onSelectRequirement(null)}
         onSaved={handleSaved}
       />
     );
@@ -219,7 +222,7 @@ export default function KanbanBoard({
                   requirement={req}
                   displayField={displayField}
                   isNew={newCardIds.has(req.id)}
-                  onClick={setSelectedRequirement}
+                  onClick={onSelectRequirement}
                 />
               ))
             )}

@@ -391,6 +391,7 @@ function ConjecturalRequirementsInner() {
   const [kanbanLoading, setKanbanLoading] = useState(false);
   const [kanbanError, setKanbanError] = useState<string | null>(null);
   const [newCardIds, setNewCardIds] = useState<Set<string>>(new Set());
+  const [selectedRequirement, setSelectedRequirement] = useState<ConjecturalRequirement | null>(null);
 
   // Start chatbot-suggestion-tour when arriving via query string
   useEffect(() => {
@@ -514,6 +515,23 @@ function ConjecturalRequirementsInner() {
     },
   }, [kanbanRequirements, handleKanbanStatusChange]);
 
+  useFrontendTool({
+    name: "showRequirementDetails",
+    description: "Open the detail view of a conjectural requirement on the Kanban board. The requirement ID must be in REQ-C format (e.g., REQ-C001).",
+    parameters: z.object({
+      requirement_id: z.string().describe("The requirement ID in REQ-C format (e.g., REQ-C001)"),
+    }),
+    followUp: false,
+    handler: async ({ requirement_id }: { requirement_id: string }) => {
+      const req = kanbanRequirements.find((r) => r.requirement_id === requirement_id);
+      if (!req) {
+        return { success: false, error: `Requirement ${requirement_id} not found on the board` };
+      }
+      setSelectedRequirement(req);
+      return { success: true, message: `Showing details for ${requirement_id}` };
+    },
+  }, [kanbanRequirements]);
+
   // Kanban search filter
   const filteredKanbanRequirements = useMemo(() => {
     if (!kanbanSearchQuery) return kanbanRequirements;
@@ -607,6 +625,8 @@ function ConjecturalRequirementsInner() {
         isLoading={kanbanLoading}
         error={kanbanError}
         newCardIds={newCardIds}
+        selectedRequirement={selectedRequirement}
+        onSelectRequirement={setSelectedRequirement}
         onAnimationComplete={() => setNewCardIds(new Set())}
         onStatusChange={handleKanbanStatusChange}
         onRequirementUpdated={(updated) => {
