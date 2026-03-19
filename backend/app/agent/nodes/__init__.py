@@ -10,7 +10,6 @@ from app.agent.nodes.elicitation import elicitation_node
 from app.agent.nodes.analysis import analysis_node
 from app.agent.nodes.specification import specification_node
 from app.agent.nodes.validation import validation_node
-from app.agent.nodes.final import final_node
 
 
 __all__ = [
@@ -20,5 +19,4 @@ __all__ = [
     "analysis_node",
     "specification_node",
     "validation_node",
-    "final_node"
 ]

@@ -6,7 +6,7 @@ The orchestrator node classifies user intent and routes to the appropriate workf
 
 Flow:
   orchestrator → [DECISION]
-                    ├── (conjectural_requirement_generate_response) → elicitation → analysis → specification ⇄ validation → final → END
+                    ├── (conjectural_requirement_generate_response) → elicitation → analysis → specification ⇄ validation → END
                     │                                                                          (loops up to 3 attempts)
                     └── (generic_response) → generic → END
 """
@@ -23,7 +23,6 @@ from app.agent.nodes import (
     specification_node,
     validation_node,
     generic_node,
-    final_node
 )
 
 
@@ -46,7 +45,7 @@ def route_after_validation(state: WorkflowState) -> str:
     Routing function for conditional edges after validation node.
 
     Routes back to specification for another attempt if spec_attempt < spec_attempts,
-    otherwise proceeds to final_node.
+    otherwise proceeds to END.
     """
     from app.agent.utils.context_utils import extract_copilotkit_context
     context = extract_copilotkit_context(state)
@@ -54,7 +53,7 @@ def route_after_validation(state: WorkflowState) -> str:
     spec_attempt = state.get("spec_attempt", 0)
     if spec_attempt < spec_attempts:
         return "specification_node"
-    return "final_node"
+    return END
 
 
 def create_graph():
@@ -67,7 +66,6 @@ def create_graph():
     workflow.add_node("specification_node", specification_node)
     workflow.add_node("validation_node", validation_node)
     workflow.add_node("generic_node", generic_node)
-    workflow.add_node("final_node", final_node)
 
     # Set entry point to orchestrator
     workflow.set_entry_point("orchestrator_node")
@@ -94,11 +92,10 @@ def create_graph():
         route_after_validation,
         {
             "specification_node": "specification_node",
-            "final_node": "final_node",
+            END: END,
         }
     )
 
-    workflow.add_edge("final_node", END)
     workflow.add_edge("generic_node", END)
 
     # Conditionally use a checkpointer based on the environment

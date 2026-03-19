@@ -9,7 +9,8 @@ import json
 from typing import Optional
 
 from langchain_core.runnables.config import RunnableConfig
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langchain_core.tools import tool
 from app.agent.llm_config import get_model, extract_text, DEFAULT_GEMINI_MODEL, DEFAULT_AZURE_OPENAI_JUDGE_MODEL
 from langgraph.types import Command, interrupt
 from copilotkit.langgraph import copilotkit_customize_config, copilotkit_emit_state, copilotkit_emit_message
@@ -18,6 +19,12 @@ from app.agent.state import WorkflowState
 from app.agent.models.data_context import DataContext, Evaluation
 from app.agent.utils.context_utils import extract_copilotkit_context
 from app.services.conjectural_persistence import persist_conjectural_data
+
+
+@tool
+def show_requirements(requirement_ids: str):
+    """Tool function to show requirements on the frontend board."""
+    return {"success": True}
 
 
 VALIDATION_SYSTEM_PROMPT = """You are a rigorous and demanding expert evaluator of conjectural software requirements. \
@@ -244,7 +251,35 @@ async def validation_node(state: WorkflowState, config: Optional[RunnableConfig]
         # step4_validation is used in progress steps
         step4_validation = True
         pending_progress = False
-        # await copilotkit_emit_state(config, state)
+
+        # --- Call show_requirements tool (must be LAST in messages) ---
+        best_requirement_ids = []
+        for entry in data_context.conjectural_data:
+            for cr in entry.conjectural_requirements:
+                if cr.ranking == 1 and cr.db_id:
+                    best_requirement_ids.append(cr.db_id)
+
+        model_with_tools = get_model(provider=context['model'], temperature=0)
+        model_with_tools = model_with_tools.bind_tools([show_requirements, *state.get("tools", [])])
+
+        tool_response = await model_with_tools.ainvoke(
+            [
+                HumanMessage(content=f"You ONLY should CALL show_requirements tool with requirement_ids: {json.dumps(best_requirement_ids)}"),
+            ],
+            config,
+        )
+
+        messages = messages + [tool_response]
+        print("[Validation node] tool_response", tool_response)
+
+        for tc in getattr(tool_response, "tool_calls", []) or []:
+            print("[Validation node] tc=", tc)
+            if tc["name"] == "show_requirements":
+                result = show_requirements.invoke(tc["args"])
+                print("[Validation node] result=", result)
+                messages = messages + [
+                    ToolMessage(content=json.dumps(result), tool_call_id=tc["id"])
+                ]
 
     return Command(
         update={
