@@ -13,6 +13,10 @@ import DashboardConfusionMatrix, { SAMPLE_DATA as CONFUSION_SAMPLE } from '@/com
 import type { ConfusionData } from '@/components/dashboard/DashboardConfusionMatrix';
 import DashboardMetricsChart, { SAMPLE_DATA as METRICS_SAMPLE } from '@/components/dashboard/DashboardMetricsChart';
 import type { MetricsData } from '@/components/dashboard/DashboardMetricsChart';
+import DashboardPassRateChart, { SAMPLE_DATA as PASSRATE_SAMPLE } from '@/components/dashboard/DashboardPassRateChart';
+import type { PassRateData } from '@/components/dashboard/DashboardPassRateChart';
+import DashboardScatterChart, { SAMPLE_DATA as SCATTER_SAMPLE } from '@/components/dashboard/DashboardScatterChart';
+import type { ScatterData } from '@/components/dashboard/DashboardScatterChart';
 import Spinner from '@/components/ui/Spinner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -34,6 +38,8 @@ export default function DashboardPage() {
   const [boxplotData, setBoxplotData] = useState<BoxplotData | null>(null);
   const [confusionData, setConfusionData] = useState<ConfusionData | null>(null);
   const [metricsData, setMetricsData] = useState<MetricsData | null>(null);
+  const [passRateData, setPassRateData] = useState<PassRateData | null>(null);
+  const [scatterData, setScatterData] = useState<ScatterData | null>(null);
 
   const headers = { Authorization: `Bearer ${user?.id || ''}` };
 
@@ -43,19 +49,25 @@ export default function DashboardPage() {
     setBoxplotData(null);
     setConfusionData(null);
     setMetricsData(null);
+    setPassRateData(null);
+    setScatterData(null);
 
     try {
-      const [radar, boxplot, confusion, metrics] = await Promise.all([
+      const [radar, boxplot, confusion, metrics, passRate, scatter] = await Promise.all([
         fetch(`${API_URL}/api/dashboard/radar/${pid}`, { headers }).then((r) => r.json()),
         fetch(`${API_URL}/api/dashboard/boxplot/${pid}`, { headers }).then((r) => r.json()),
         fetch(`${API_URL}/api/dashboard/confusion-matrix/${pid}`, { headers }).then((r) => r.json()),
         fetch(`${API_URL}/api/dashboard/classification-metrics/${pid}`, { headers }).then((r) => r.json()),
+        fetch(`${API_URL}/api/dashboard/pass-rate/${pid}`, { headers }).then((r) => r.json()),
+        fetch(`${API_URL}/api/dashboard/scatter-correlation/${pid}`, { headers }).then((r) => r.json()),
       ]);
 
       setRadarData(radar);
       setBoxplotData(boxplot);
       setConfusionData(confusion);
       setMetricsData(metrics);
+      setPassRateData(passRate);
+      setScatterData(scatter);
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err);
     } finally {
@@ -98,6 +110,18 @@ export default function DashboardPage() {
           {() => noProject
             ? <DashboardMetricsChart data={METRICS_SAMPLE} dark={isDarkMode} />
             : metricsData && <DashboardMetricsChart data={metricsData} dark={isDarkMode} />}
+        </ChartCard>
+
+        <ChartCard dark={isDarkMode} noProject={noProject} loading={loading} loaded={!!passRateData}>
+          {() => noProject
+            ? <DashboardPassRateChart data={PASSRATE_SAMPLE} dark={isDarkMode} />
+            : passRateData && <DashboardPassRateChart data={passRateData} dark={isDarkMode} />}
+        </ChartCard>
+
+        <ChartCard dark={isDarkMode} noProject={noProject} loading={loading} loaded={!!scatterData}>
+          {() => noProject
+            ? <DashboardScatterChart data={SCATTER_SAMPLE} dark={isDarkMode} />
+            : scatterData && <DashboardScatterChart data={scatterData} dark={isDarkMode} />}
         </ChartCard>
       </div>
     </AppLayout>

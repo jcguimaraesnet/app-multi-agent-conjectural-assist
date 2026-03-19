@@ -51,13 +51,13 @@ function buildOption(data: BoxplotData, dark: boolean): echarts.EChartsCoreOptio
     const human = data.attempts.find((a) => a.attempt === att && a.type === 'human');
 
     if (hasHuman) {
-      categories.push(`Att ${att} LLM`);
+      categories.push(`Attempt ${att}\nLLM-as-Judge`);
       boxData.push(
         llm
           ? { value: [llm.min, llm.q1, llm.median, llm.q3, llm.max], itemStyle: { color: LLM_COLORS[att]?.fill ?? '#6366f1', borderColor: LLM_COLORS[att]?.border ?? '#818cf8' } }
           : { value: [0, 0, 0, 0, 0], itemStyle: { color: 'transparent', borderColor: 'transparent' } }
       );
-      categories.push(`Att ${att} Human`);
+      categories.push(`Attempt ${att}\nHuman`);
       boxData.push(
         human
           ? { value: [human.min, human.q1, human.median, human.q3, human.max], itemStyle: { color: HUMAN_COLORS[att]?.fill ?? '#34d399', borderColor: HUMAN_COLORS[att]?.border ?? '#10b981' } }
@@ -84,11 +84,11 @@ function buildOption(data: BoxplotData, dark: boolean): echarts.EChartsCoreOptio
         return `${name}<br/>Max: ${v[4]}<br/>Q3: ${v[3]}<br/>Median: ${v[2]}<br/>Q1: ${v[1]}<br/>Min: ${v[0]}`;
       },
     },
-    grid: { left: 50, right: 20, top: 50, bottom: 40 },
+    grid: { left: 50, right: 20, top: 50, bottom: hasHuman ? 55 : 40 },
     xAxis: {
       type: 'category',
       data: categories,
-      axisLabel: { color: labelColor, fontSize: 10, rotate: hasHuman ? 20 : 0 },
+      axisLabel: { color: labelColor, fontSize: 10, lineHeight: 15 },
       axisLine: { lineStyle: { color: lineColor } },
     },
     yAxis: {

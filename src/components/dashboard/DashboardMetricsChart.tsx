@@ -45,8 +45,8 @@ function buildOption(data: MetricsData, dark: boolean): echarts.EChartsCoreOptio
   return {
     title: { text: 'Classification Metrics by Attempt', left: 'center', textStyle: { fontSize: 13, fontWeight: 600, color: textColor } },
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-    legend: { bottom: 10, textStyle: { color: subTextColor } },
-    grid: { left: 50, right: 20, top: 50, bottom: 50 },
+    legend: { bottom: 4, textStyle: { color: subTextColor } },
+    grid: { left: 50, right: 20, top: 60, bottom: 56 },
     xAxis: {
       type: 'category',
       data: categories,

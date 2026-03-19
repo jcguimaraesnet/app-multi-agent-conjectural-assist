@@ -43,7 +43,13 @@
       "Read(//c/repos/ufrj/requirement-conjectural-multiagent/app-multi-agent-conjectural-assist/**)",
       "Bash(grep -E \"\\\\.\\(tsx?|jsx?\\)$\")",
       "Bash(grep -E \"\\\\.tsx$|\\\\.ts$\")",
-      "Bash(find c:reposufrjrequirement-conjectural-multiagentapp-multi-agent-conjectural-assist -maxdepth 2 -name middleware.ts -o -name next.config.*)"
+      "Bash(find c:reposufrjrequirement-conjectural-multiagentapp-multi-agent-conjectural-assist -maxdepth 2 -name middleware.ts -o -name next.config.*)",
+      "Bash(find c:reposufrjrequirement-conjectural-multiagentapp-multi-agent-conjectural-assist -path *migration* -type f)",
+      "Bash(find c:reposufrjrequirement-conjectural-multiagentapp-multi-agent-conjectural-assist -name *.json -path *supabase* -o -name schema* -type f)",
+      "Bash(find /c/repos/ufrj/requirement-conjectural-multiagent/app-multi-agent-conjectural-assist -type f \\\\\\(-name *.sql -o -name *schema* -o -name *migration* \\\\\\))",
+      "Bash(find c:reposufrjrequirement-conjectural-multiagentapp-multi-agent-conjectural-assistbackendapp -name *.py -type f)",
+      "Bash(find /c/repos/ufrj/requirement-conjectural-multiagent/app-multi-agent-conjectural-assist/backend -type f -name *.py)",
+      "Bash(find c:reposufrjrequirement-conjectural-multiagentapp-multi-agent-conjectural-assist -name *.sql -o -name schema.sql)"
     ],
     "additionalDirectories": [
       "C:\\repos\\ufrj\\requirement-conjectural-multiagent\\app-multi-agent-conjectural-assist\\.claude\\skills",

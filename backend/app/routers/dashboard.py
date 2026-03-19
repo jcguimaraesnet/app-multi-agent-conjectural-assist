@@ -256,3 +256,132 @@ async def classification_metrics_chart(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to compute classification metrics: {e}")
+
+
+def _avg_criteria(ev: Dict[str, Any]) -> float | None:
+    """Return the mean of the 5 criteria scores for a single evaluation."""
+    vals = [ev[c] for c in CRITERIA if ev.get(c) is not None]
+    return round(sum(vals) / len(vals), 2) if vals else None
+
+
+# ── 5. Pass Rate (Pass@k) ───────────────────────────────────────────────────
+
+@router.get("/pass-rate/{project_id}")
+async def pass_rate_chart(
+    project_id: UUID,
+    authorization: Optional[str] = Header(None),
+):
+    """
+    Horizontal stacked-bar data: % of requirements that achieved a good score
+    (avg criteria >= 4) at each attempt, plus failure rate.
+    Returned separately for LLM and Human evaluations.
+    """
+    _get_user_id(authorization)
+    try:
+        evals = _fetch_evaluations(str(project_id))
+        if not evals:
+            return {"llm": None, "human": None}
+
+        # Group by (requirement_id, type) → list of evals sorted by attempt
+        groups: Dict[tuple, List[Dict[str, Any]]] = {}
+        for e in evals:
+            req_id = e.get("requirement_id")
+            eval_type = e.get("type")
+            if req_id and eval_type:
+                groups.setdefault((req_id, eval_type), []).append(e)
+
+        def _compute(eval_type: str):
+            type_groups = {k: v for k, v in groups.items() if k[1] == eval_type}
+            if not type_groups:
+                return None
+
+            total = len(type_groups)
+            buckets = {"pass_at_1": 0, "pass_at_2": 0, "pass_at_3": 0, "fail": 0}
+
+            for _key, group_evals in type_groups.items():
+                sorted_evals = sorted(group_evals, key=lambda x: x.get("attempt", 0))
+                classified = False
+                for ev in sorted_evals:
+                    attempt = ev.get("attempt")
+                    avg = _avg_criteria(ev)
+                    if avg is not None and avg >= 4.0:
+                        if attempt == 1:
+                            buckets["pass_at_1"] += 1
+                        elif attempt == 2:
+                            buckets["pass_at_2"] += 1
+                        else:
+                            buckets["pass_at_3"] += 1
+                        classified = True
+                        break
+                if not classified:
+                    buckets["fail"] += 1
+
+            return {
+                "total": total,
+                **{
+                    k: {"count": v, "percent": round(v / total * 100, 1) if total else 0}
+                    for k, v in buckets.items()
+                },
+            }
+
+        return {"llm": _compute("llm"), "human": _compute("human")}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to compute pass-rate data: {e}")
+
+
+# ── 6. Scatter Correlation (LLM vs Human) ───────────────────────────────────
+
+@router.get("/scatter-correlation/{project_id}")
+async def scatter_correlation_chart(
+    project_id: UUID,
+    authorization: Optional[str] = Header(None),
+):
+    """
+    Scatter plot data: each point is a (requirement, attempt) pair with the
+    average criteria score for both the Human and LLM evaluations.
+    Also returns the global Spearman rank-correlation coefficient.
+    """
+    _get_user_id(authorization)
+    try:
+        evals = _fetch_evaluations(str(project_id))
+        if not evals:
+            return {"points": [], "spearman_rho": None, "has_data": False}
+
+        # Group by (requirement_id, attempt) → {llm: eval, human: eval}
+        pairs: Dict[str, Dict[str, Dict]] = {}
+        for e in evals:
+            key = f"{e.get('requirement_id')}_{e.get('attempt')}"
+            pairs.setdefault(key, {})
+            pairs[key][e["type"]] = e
+
+        points = []
+        for pair in pairs.values():
+            llm_eval = pair.get("llm")
+            human_eval = pair.get("human")
+            if not llm_eval or not human_eval:
+                continue
+            llm_avg = _avg_criteria(llm_eval)
+            human_avg = _avg_criteria(human_eval)
+            if llm_avg is None or human_avg is None:
+                continue
+            points.append({
+                "requirement_id": str(llm_eval.get("requirement_id", "")),
+                "attempt": llm_eval.get("attempt", 1),
+                "human_avg": human_avg,
+                "llm_avg": llm_avg,
+            })
+
+        spearman_rho = None
+        if len(points) >= 3:
+            import math
+            from scipy.stats import spearmanr
+            human_vals = [p["human_avg"] for p in points]
+            llm_vals = [p["llm_avg"] for p in points]
+            rho, _ = spearmanr(human_vals, llm_vals)
+            spearman_rho = None if math.isnan(rho) else round(float(rho), 2)
+
+        return {"points": points, "spearman_rho": spearman_rho, "has_data": len(points) > 0}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to compute scatter correlation data: {e}")

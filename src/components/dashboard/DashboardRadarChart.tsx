@@ -27,11 +27,11 @@ function buildOption(data: RadarData, dark: boolean): echarts.EChartsCoreOption 
 
   if (data.llm) {
     series.push({
-      name: 'LLM-as-judge',
+      name: 'LLM-as-Judge',
       type: 'radar',
       data: [{
         value: KEYS.map((k) => data.llm![k] ?? 0),
-        name: 'LLM-as-judge',
+        name: 'LLM-as-Judge',
         label: { show: true, formatter: '{c}', fontSize: 10, color: labelColor },
       }],
       lineStyle: { color: '#3730a3', width: 2 },
@@ -58,12 +58,13 @@ function buildOption(data: RadarData, dark: boolean): echarts.EChartsCoreOption 
   return {
     title: { text: 'Average Quality Scores', left: 'center', textStyle: { fontSize: 13, fontWeight: 600, color: textColor } },
     tooltip: { trigger: 'item' },
-    legend: { bottom: 10, data: hasHuman ? ['LLM-as-judge', 'Human'] : ['LLM-as-judge'], textStyle: { color: subTextColor } },
+    legend: { bottom: 10, data: hasHuman ? ['LLM-as-Judge', 'Human'] : ['LLM-as-Judge'], textStyle: { color: subTextColor } },
     radar: {
       indicator: LABELS.map((name) => ({ name, max: 5 })),
       axisName: { color: labelColor, fontSize: 11 },
+      axisNameGap: 24,
       shape: 'polygon',
-      radius: '55%',
+      radius: '50%',
       splitArea: { areaStyle: { color: 'transparent' } },
       splitLine: { lineStyle: { color: lineColor } },
       axisLine: { lineStyle: { color: lineColor } },
@@ -87,7 +88,7 @@ export default function DashboardRadarChart({ data, dark = true }: Props) {
   const subTextColor = dark ? '#9ca3af' : '#6b7280';
 
   const overallParts: string[] = [];
-  if (data.llm) overallParts.push(`LLM: ${data.llm.overall_score}`);
+  if (data.llm) overallParts.push(`LLM-as-Judge: ${data.llm.overall_score}`);
   if (data.human) overallParts.push(`Human: ${data.human.overall_score}`);
 
   return (
