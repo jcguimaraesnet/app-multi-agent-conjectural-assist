@@ -17,6 +17,7 @@ class ProjectContext:
     domain: str
     stakeholder: str
     business_objective: str
+    language: str
 
 
 @dataclass
@@ -157,6 +158,7 @@ async def fetch_project_context_fields(project_id: Optional[str]) -> ProjectCont
         domain="general software",
         stakeholder="end user",
         business_objective="No business objective identified.",
+        language="en",
     )
 
     if not project_id:
@@ -166,7 +168,7 @@ async def fetch_project_context_fields(project_id: Optional[str]) -> ProjectCont
 
     try:
         result = await supabase.table("projects") \
-            .select("vision_extracted_text, summary, business_domain, stakeholder, business_objective") \
+            .select("vision_extracted_text, summary, business_domain, stakeholder, business_objective, language") \
             .eq("id", str(project_id)) \
             .single() \
             .execute()
@@ -178,8 +180,9 @@ async def fetch_project_context_fields(project_id: Optional[str]) -> ProjectCont
         ctx.domain = data.get("business_domain") or ctx.domain
         ctx.stakeholder = data.get("stakeholder") or ctx.stakeholder
         ctx.business_objective = data.get("business_objective") or ctx.business_objective
+        ctx.language = data.get("language") or ctx.language
 
-        print(f"[ProjectContext] summary={len(ctx.summary)} chars, domain={ctx.domain}, stakeholder={ctx.stakeholder}")
+        print(f"[ProjectContext] summary={len(ctx.summary)} chars, domain={ctx.domain}, stakeholder={ctx.stakeholder}, language={ctx.language}")
     except Exception as e:
         print(f"Error fetching project context fields: {e}")
 

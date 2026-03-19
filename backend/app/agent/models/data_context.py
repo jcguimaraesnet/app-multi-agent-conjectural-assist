@@ -118,6 +118,10 @@ class DataContext(BaseModel):
         default="",
         description="Main business goal or value proposition the project aims to achieve",
     )
+    language: str = Field(
+        default="en",
+        description="Project language code (e.g. 'en', 'pt-BR')",
+    )
     conjectural_data: List[ConjecturalData] = Field(
         default_factory=list,
         description="Hierarchical data entries linking positive impacts, uncertainties, solution assumptions, and requirements with evaluations",

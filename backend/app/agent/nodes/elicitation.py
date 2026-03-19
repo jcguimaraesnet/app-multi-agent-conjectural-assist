@@ -429,10 +429,12 @@ async def elicitation_node(state: WorkflowState, config: Optional[RunnableConfig
     domain = project_ctx.domain
     stakeholder = project_ctx.stakeholder
     business_objective = project_ctx.business_objective
+    language = project_ctx.language
     print(f"[Context] Project summary ({len(project_summary)} chars): {project_summary[:120]}...")
     print(f"[Context] Domain: {domain}")
     print(f"[Context] Stakeholder: {stakeholder}")
     print(f"[Context] Business objective: {business_objective}")
+    print(f"[Context] Language: {language}")
 
     data_context = DataContext(
         vision_raw=vision_extracted_text,
@@ -440,6 +442,7 @@ async def elicitation_node(state: WorkflowState, config: Optional[RunnableConfig
         domain=domain,
         stakeholder=stakeholder,
         business_objective=business_objective,
+        language=language,
     )
 
     # Step 2: Obtain positive business impact statements
