@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { LayoutDashboard, FolderKanban, BotMessageSquare, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, BotMessageSquare, BarChart3, HelpCircle } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
@@ -33,6 +33,10 @@ export default function Sidebar() {
         <Link className={isActive('/dashboard') ? activeClass : inactiveClass} href="/dashboard">
           <BarChart3 className={isActive('/dashboard') ? "w-5 h-5 text-primary dark:text-orange-400" : "w-5 h-5 group-hover:text-primary transition-colors"} />
           <span className="font-medium">Dashboard</span>
+        </Link>
+        <Link className={isActive('/help') ? activeClass : inactiveClass} href="/help">
+          <HelpCircle className={isActive('/help') ? "w-5 h-5 text-primary dark:text-orange-400" : "w-5 h-5 group-hover:text-primary transition-colors"} />
+          <span className="font-medium">Help</span>
         </Link>
       </nav>
     </aside>

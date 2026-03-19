@@ -40,7 +40,8 @@
       "Bash(grep -r \"animate-fade-in\\\\|keyframes\\\\|@keyframes\" /c/repos/ufrj/requirement-conjectural-multiagent/app-multi-agent-conjectural-assist/src --include=*.css --include=*.tsx --include=*.ts)",
       "Bash(find /c/repos/ufrj/requirement-conjectural-multiagent/app-multi-agent-conjectural-assist/backend/app -type f -name *.py)",
       "Read(//c/Users/jcgui/**)",
-      "Read(//c/repos/ufrj/requirement-conjectural-multiagent/app-multi-agent-conjectural-assist/**)"
+      "Read(//c/repos/ufrj/requirement-conjectural-multiagent/app-multi-agent-conjectural-assist/**)",
+      "Bash(grep -E \"\\\\.\\(tsx?|jsx?\\)$\")"
     ],
     "additionalDirectories": [
       "C:\\repos\\ufrj\\requirement-conjectural-multiagent\\app-multi-agent-conjectural-assist\\.claude\\skills",
