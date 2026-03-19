@@ -3,10 +3,11 @@
 import { useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import PageTitle from "@/components/ui/PageTitle";
-import { Minus, Plus, Mail } from "lucide-react";
+import { Minus, Plus, Mail, FileText } from "lucide-react";
+import { type ReactNode } from "react";
 
 const categories = [
-  "Getting Started",
+  "This Research",
   "Projects",
   "Requirements",
   "AI Agents",
@@ -15,28 +16,51 @@ const categories = [
 
 const faqData = [
   {
-    category: "Getting Started",
-    question: "How do I get started with CONREQ Multi-Agent?",
+    category: "This Research",
+    question: "What is CONREQ Multi-Agent?",
     answer:
-      "Getting started is simple! First, create a new project from the Projects page. Then, add your initial requirements to the project. Once you have requirements in place, you can use the AI agents to help you refine, analyze, and generate conjectural requirements based on your inputs.",
+      "CONREQ Multi-Agent is a master's research project that explores the use of AI agents to specify conjectural software requirements. The system leverages a collaborative multi-agent architecture where specialized AI agents work together to help requirements engineers identify, analyze, and generate requirements under conditions of uncertainty — bridging the gap between incomplete information and well-defined specifications.",
   },
   {
-    category: "Getting Started",
+    category: "This Research",
     question: "What is a conjectural requirement?",
     answer:
-      "A conjectural requirement is a requirement that is generated or suggested by AI agents based on your existing requirements. These are hypotheses about what additional requirements might be needed, helping you explore uncertain or incomplete areas of your specification.",
+      "A conjectural requirement is a type of software requirement characterized by uncertainty. Unlike traditional requirements, which are assumed to be well-defined and stable, conjectural requirements acknowledge that certain aspects of a system may not yet be fully understood. They represent informed hypotheses about what the system might need, serving as a starting point for exploration, validation, and refinement as more knowledge is gained throughout the development process.",
   },
   {
     category: "Projects",
-    question: "How do I create and manage projects?",
+    question: "How do I create a project?",
     answer:
-      "Navigate to the Projects page from the sidebar. Click the 'New Project' button to create a project. You can give it a name and description. Each project serves as a container for organizing your requirements and conjectural analyses.",
+      "To create a project in this application, you need two important documents about a given project: the project vision document (no predefined format required) and optionally a document listing the functional and non-functional requirements (also no predefined format). Both files must be in PDF format, and they will be intelligently captured and understood by the application.",
   },
   {
-    category: "Requirements",
-    question: "How do I add requirements to a project?",
-    answer:
-      "Open a project and navigate to its Requirements page. You can add requirements manually by clicking 'Add Requirement' or use the AI chat assistant to help you draft them. Requirements can be edited, moved between statuses on the Kanban board, and analyzed by the AI agents.",
+    category: "Projects",
+    question: "Are there any sample documents I can use to create a project?",
+    answer: (
+      <>
+        <p className="mb-4">
+          The two documents below were used during the implementation and testing of this solution. Feel free to download and use them as a reference when creating your first project.
+        </p>
+        <div className="flex gap-6">
+          <a
+            href="/sample/huddle-vision.pdf"
+            download
+            className="flex flex-col items-center gap-2 p-4 rounded-lg border border-border-light dark:border-border-dark hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group"
+          >
+            <FileText className="w-10 h-10 text-red-500 group-hover:text-red-600 transition-colors" />
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Project Vision</span>
+          </a>
+          <a
+            href="/sample/hudde-requirements.pdf"
+            download
+            className="flex flex-col items-center gap-2 p-4 rounded-lg border border-border-light dark:border-border-dark hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group"
+          >
+            <FileText className="w-10 h-10 text-red-500 group-hover:text-red-600 transition-colors" />
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Requirements</span>
+          </a>
+        </div>
+      </>
+    ) as ReactNode,
   },
   {
     category: "Requirements",
@@ -141,9 +165,9 @@ export default function HelpPage() {
                     )}
                   </button>
                   {openIndex === index && (
-                    <p className="pb-5 text-gray-600 dark:text-gray-400 leading-relaxed">
-                      {faq.answer}
-                    </p>
+                    <div className="pb-5 text-gray-600 dark:text-gray-400 leading-relaxed">
+                      {typeof faq.answer === "string" ? <p>{faq.answer}</p> : faq.answer}
+                    </div>
                   )}
                 </div>
               ))}
