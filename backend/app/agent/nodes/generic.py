@@ -16,7 +16,7 @@ from copilotkit.langgraph import copilotkit_customize_config, copilotkit_emit_me
 
 from app.agent.state import WorkflowState
 from app.agent.utils.context_utils import extract_copilotkit_context
-from app.agent.utils.project_data import fetch_project_context
+from app.agent.utils.project_data import fetch_project_summary
 
 async def generic_node(state: WorkflowState, config: Optional[RunnableConfig] = None):
     """
@@ -33,8 +33,8 @@ async def generic_node(state: WorkflowState, config: Optional[RunnableConfig] = 
     current_project_id = context['current_project_id']
     model_provider = context['model']
 
-    # Fetch vision document text and existing requirements from Supabase
-    vision_extracted_text, existing_requirements = await fetch_project_context(current_project_id)
+    # Fetch vision document text and requirement counts from Supabase
+    project_summary = await fetch_project_summary(current_project_id)
 
     # Get the conversation context
     messages = state.get('messages', [])
@@ -47,21 +47,17 @@ async def generic_node(state: WorkflowState, config: Optional[RunnableConfig] = 
     if frontend_tools:
         model = model.bind_tools(frontend_tools)
 
-    # Build requirements context from fetched data
-    functional = [r for r in existing_requirements if r.get("type") == "functional"]
-    non_functional = [r for r in existing_requirements if r.get("type") == "non_functional"]
-    conjectural = [r for r in existing_requirements if r.get("type") == "conjectural"]
-    requirements_summary = f"{len(functional)} functional, {len(non_functional)} non-functional, {len(conjectural)} conjectural"
-
-    requirements_list = "\n".join(
-        f"- [{r.get('requirement_id')}] ({r.get('type')}): {r.get('description')}"
-        for r in existing_requirements
-    ) if existing_requirements else "No requirements registered yet."
+    # Build requirements summary from counts
+    requirements_summary = (
+        f"{project_summary.functional_count} functional, "
+        f"{project_summary.non_functional_count} non-functional, "
+        f"{project_summary.conjectural_count} conjectural"
+    )
 
     system_message = SystemMessage(content=GENERIC_RESPONSE_PROMPT.format(
-        vision_extracted_text=vision_extracted_text or "No vision document available.",
+        project_title=project_summary.title or "current project",
+        vision_extracted_text=project_summary.vision_extracted_text or "No vision document available.",
         requirements_summary=requirements_summary,
-        requirements_list=requirements_list,
     ))
 
     conversation = [system_message] + messages
@@ -116,18 +112,23 @@ Do NOT repeat the tool arguments literally. Summarize naturally, e.g. "Done! The
 """
 
 # System prompt for generic conversational responses
-GENERIC_RESPONSE_PROMPT = """You are a helpful assistant for a requirements engineering application.
+GENERIC_RESPONSE_PROMPT = """You are a formal requirements engineering assistant.
 
 ## Rules
-- Answer ONLY and EXACTLY what the user asked. Do not add extra information, suggestions, or follow-up questions unless explicitly requested.
-- Keep your answer short and direct.
-- If the question is unrelated to the software project and its requirements, reply briefly that it is outside your scope.
+- Use a formal, professional tone at all times.
+- Provide complete, thorough answers that fully address the user's question.
+- Always mention the project title ("{project_title}") in your response to contextualize the answer.
+- Answer ONLY what the user asked. Do not add unsolicited suggestions or follow-up questions unless explicitly requested.
+- If the question is unrelated to the software project and its requirements, reply formally that it is outside your scope.
 - Respond in the same language the user is using.
 - Base your answer solely on the project context provided below.
+
+## Project Title
+{project_title}
 
 ## Project Vision Document
 {vision_extracted_text}
 
-## Existing Requirements ({requirements_summary})
-{requirements_list}
+## Existing Requirements
+{requirements_summary}
 """

@@ -22,7 +22,7 @@ from langgraph.types import Command, interrupt
 from app.agent.state import WorkflowState
 from app.agent.tools import generate_task_steps_generative_ui
 from app.agent.utils.context_utils import extract_copilotkit_context
-from app.agent.utils.project_data import fetch_project_context
+from app.agent.utils.project_data import fetch_project_context_fields
 from app.agent.utils.nlp_entity_extractor import extract_domain_entities, extract_entity_relations
 from app.agent.models.knowledge_graph import (
     EntityNode,
@@ -422,21 +422,13 @@ async def elicitation_node(state: WorkflowState, config: Optional[RunnableConfig
     quantity_req_batch = context['quantity_req_batch']
     model_provider = context['model']
 
-    # Fetch vision document text and existing requirements from Supabase
-    vision_extracted_text, existing_requirements = await fetch_project_context(
-        current_project_id,
-        requirement_types=["functional", "non_functional"],
-    )
-
-    # Step 1: Extract stakeholder, domain, project summary, and business needs (single LLM call)
-    # After this step, the raw vision document is no longer used in LLM prompts.
-    project_context = await extract_project_context(
-        vision_extracted_text, existing_requirements, model_provider
-    )
-    project_summary = project_context["summary"]
-    domain = project_context["domain"]
-    stakeholder = project_context["stakeholder"]
-    business_objective = project_context["business_objective"]
+    # Fetch project context fields directly from the projects table
+    project_ctx = await fetch_project_context_fields(current_project_id)
+    vision_extracted_text = project_ctx.vision_extracted_text
+    project_summary = project_ctx.summary
+    domain = project_ctx.domain
+    stakeholder = project_ctx.stakeholder
+    business_objective = project_ctx.business_objective
     print(f"[Context] Project summary ({len(project_summary)} chars): {project_summary[:120]}...")
     print(f"[Context] Domain: {domain}")
     print(f"[Context] Stakeholder: {stakeholder}")
