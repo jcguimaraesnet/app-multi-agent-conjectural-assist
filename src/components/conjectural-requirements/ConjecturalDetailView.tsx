@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { X, Save } from "lucide-react";
 import Textarea from "@/components/ui/Textarea";
 import Button from "@/components/ui/Button";
@@ -32,7 +32,8 @@ interface HistorySnapshotEntry {
 }
 
 interface ConjecturalDetailViewProps {
-  requirement: ConjecturalRequirement;
+  open: boolean;
+  requirement: ConjecturalRequirement | null;
   userId: string;
   onClose: () => void;
   onSaved: (updated: ConjecturalRequirement) => void;
@@ -65,7 +66,6 @@ function EvaluationCard({ label, evaluation }: { label: string; evaluation: Conj
     conforming: "Conforming",
   };
 
-  // Normalize: ConjecturalEvaluation has scores as top-level keys, SnapshotEvaluation has them in .scores
   const getScore = (key: string): number => {
     if ("scores" in evaluation) return evaluation.scores[key] ?? 0;
     return (evaluation as ConjecturalEvaluation)[key as keyof ConjecturalEvaluation] as number ?? 0;
@@ -114,73 +114,142 @@ function EvaluationCard({ label, evaluation }: { label: string; evaluation: Conj
   );
 }
 
-function HistoryAttempt({ entry }: { entry: HistorySnapshotEntry }) {
-  const llmEval = entry.evaluations?.find((e) => e.type === "llm");
-  const humanEval = entry.evaluations?.find((e) => e.type === "human");
+type HistorySubTab = "ferc" | "qess" | "evaluations";
+
+function HistoryPanel({ entries }: { entries: HistorySnapshotEntry[] }) {
+  const [selectedAttempt, setSelectedAttempt] = useState(0);
+  const [subTab, setSubTab] = useState<HistorySubTab>("ferc");
+
+  if (entries.length === 0) {
+    return (
+      <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-12">
+        No history available.
+      </p>
+    );
+  }
+
+  const entry = selectedAttempt < entries.length ? entries[selectedAttempt] : null;
+  const llmEval = entry?.evaluations?.find((e) => e.type === "llm");
+  const humanEval = entry?.evaluations?.find((e) => e.type === "human");
+
+  const slots = [1, 2, 3];
 
   return (
-    <div className="rounded-xl border border-border-light dark:border-border-dark bg-gray-50 dark:bg-gray-900/40 p-5">
-      <div className="flex items-center gap-3 mb-4">
-        <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
-          Attempt #{entry.attempt}
-        </h4>
-        {entry.ranking && (
-          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-            entry.ranking === 1
-              ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
-              : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
-          }`}>
-            Rank #{entry.ranking}
-          </span>
-        )}
+    <div className="space-y-4">
+      {/* Level 2 — Attempt selector */}
+      <div className="ml-0 flex items-center gap-3">
+        <div className="inline-flex items-center gap-4 rounded-xl border border-border-light dark:border-border-dark px-4 py-2">
+        {slots.map((num) => {
+          const entryForSlot = entries.find((e) => e.attempt === num);
+          const exists = !!entryForSlot;
+          const slotIndex = exists ? entries.indexOf(entryForSlot!) : -1;
+          const isSelected = exists && slotIndex === selectedAttempt;
+          const isRank1 = entryForSlot?.ranking === 1;
+
+          return (
+            <button
+              key={num}
+              disabled={!exists}
+              onClick={() => { if (exists) { setSelectedAttempt(slotIndex); setSubTab("ferc"); } }}
+              className={`w-8 h-8 rounded-full text-xs font-semibold transition-all
+                ${!exists
+                  ? "bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-40"
+                  : isSelected
+                    ? `shadow-md ${isRank1 ? "" : "ring-2 ring-offset-2 ring-offset-white dark:ring-offset-gray-900 ring-red-300"}`
+                    : "opacity-70 hover:opacity-100"
+                }
+                ${exists && isRank1
+                  ? "bg-green-500 text-white"
+                  : exists
+                    ? "bg-red-400/80 text-white"
+                    : ""
+                }`}
+            >
+              {num}
+            </button>
+          );
+        })}
+        </div>
+        <span className="text-xs text-gray-400 dark:text-gray-500">attempts</span>
       </div>
 
-      {/* FERC */}
-      <div className="space-y-3 mb-4">
-        <div className="rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-gray-800 p-3">
-          <span className="text-sm font-semibold text-orange-600 dark:text-orange-400">
-            It is expected that the software system has&nbsp;
-          </span>
-          <span className="text-sm text-gray-700 dark:text-gray-300">{entry.ferc.desired_behavior}</span>
-        </div>
-        <div className="rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-gray-800 p-3">
-          <span className="text-sm font-semibold text-orange-600 dark:text-orange-400">So that&nbsp;</span>
-          <span className="text-sm text-gray-700 dark:text-gray-300">{entry.ferc.positive_impact}</span>
-        </div>
-        <div className="rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-gray-800 p-3">
-          <span className="text-sm font-semibold text-orange-600 dark:text-orange-400">However, we do not know:&nbsp;</span>
-          <span className="text-sm text-gray-700 dark:text-gray-300">{entry.ferc.uncertainties.join("; ")}</span>
-        </div>
-      </div>
+      {/* Level 3 — Sub-tabs (FERC / QESS / Evaluations) */}
+      {entry && (
+        <>
+          <div className="inline-flex gap-2 rounded-xl border border-border-light dark:border-border-dark px-1.5 py-1.5">
+            <TabButton label="FERC" active={subTab === "ferc"} onClick={() => setSubTab("ferc")} />
+            <TabButton label="QESS" active={subTab === "qess"} onClick={() => setSubTab("qess")} />
+            <TabButton label="EVALUATIONS" active={subTab === "evaluations"} onClick={() => setSubTab("evaluations")} />
+          </div>
 
-      {/* QESS */}
-      <div className="space-y-3 mb-4">
-        <div className="rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-gray-800 p-3">
-          <span className="text-sm font-semibold text-orange-600 dark:text-orange-400">We expect that&nbsp;</span>
-          <span className="text-sm text-gray-700 dark:text-gray-300">{entry.qess.solution_assumption}</span>
-        </div>
-        <div className="rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-gray-800 p-3">
-          <span className="text-sm font-semibold text-orange-600 dark:text-orange-400">Will result in updating the uncertainties about&nbsp;</span>
-          <span className="text-sm text-gray-700 dark:text-gray-300">{entry.qess.uncertainty_evaluated}</span>
-        </div>
-        <div className="rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-gray-800 p-3">
-          <span className="text-sm font-semibold text-orange-600 dark:text-orange-400">As a result of&nbsp;</span>
-          <span className="text-sm text-gray-700 dark:text-gray-300">{entry.qess.observation_analysis}</span>
-        </div>
-      </div>
+          {/* Sub-tab content */}
+          {subTab === "ferc" && (
+            <div className="space-y-3">
+              <div className="rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-gray-800 p-4">
+                <span className="text-base font-semibold text-orange-600 dark:text-orange-400">
+                  It is expected that the software system has&nbsp;
+                </span>
+                <span className="text-base text-gray-700 dark:text-gray-300">{entry.ferc.desired_behavior}</span>
+              </div>
+              <div className="rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-gray-800 p-4">
+                <span className="text-base font-semibold text-orange-600 dark:text-orange-400">So that&nbsp;</span>
+                <span className="text-base text-gray-700 dark:text-gray-300">{entry.ferc.positive_impact}</span>
+              </div>
+              <div className="rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-gray-800 p-4">
+                <span className="text-base font-semibold text-orange-600 dark:text-orange-400">However, we do not know:&nbsp;</span>
+                <span className="text-base text-gray-700 dark:text-gray-300">{entry.ferc.uncertainties.join("; ")}</span>
+              </div>
+            </div>
+          )}
 
-      {/* Evaluations */}
-      {(llmEval || humanEval) && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {llmEval && <EvaluationCard label="LLM-as-Judge" evaluation={llmEval} />}
-          {humanEval && <EvaluationCard label="Human" evaluation={humanEval} />}
-        </div>
+          {subTab === "qess" && (
+            <div className="space-y-3">
+              <div className="rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-gray-800 p-4">
+                <span className="text-base font-semibold text-orange-600 dark:text-orange-400">We expect that&nbsp;</span>
+                <span className="text-base text-gray-700 dark:text-gray-300">{entry.qess.solution_assumption}</span>
+              </div>
+              <div className="rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-gray-800 p-4">
+                <span className="text-base font-semibold text-orange-600 dark:text-orange-400">Will result in updating the uncertainties about&nbsp;</span>
+                <span className="text-base text-gray-700 dark:text-gray-300">{entry.qess.uncertainty_evaluated}</span>
+              </div>
+              <div className="rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-gray-800 p-4">
+                <span className="text-base font-semibold text-orange-600 dark:text-orange-400">As a result of&nbsp;</span>
+                <span className="text-base text-gray-700 dark:text-gray-300">{entry.qess.observation_analysis}</span>
+              </div>
+            </div>
+          )}
+
+          {subTab === "evaluations" && (
+            <div>
+              {!llmEval && !humanEval ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-8">
+                  No evaluations available for this attempt.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {llmEval && <EvaluationCard label="LLM-as-Judge" evaluation={llmEval} />}
+                  {humanEval ? (
+                    <EvaluationCard label="Human" evaluation={humanEval} />
+                  ) : (
+                    <div className="rounded-lg border border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 p-4 flex flex-col items-center justify-center text-center">
+                      <span className="text-sm font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-3">Human</span>
+                      <p className="text-sm text-gray-400 dark:text-gray-500">
+                        There was no human evaluation.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
 }
 
 export default function ConjecturalDetailView({
+  open,
   requirement,
   userId,
   onClose,
@@ -189,18 +258,41 @@ export default function ConjecturalDetailView({
   const [activeTab, setActiveTab] = useState<Tab>("ferc");
   const [saving, setSaving] = useState(false);
 
-  const historyEntries: HistorySnapshotEntry[] = (requirement.history_snapshot as HistorySnapshotEntry[]) ?? [];
-
   // Editable fields
-  const [desiredBehavior, setDesiredBehavior] = useState(requirement.desired_behavior);
-  const [positiveImpact, setPositiveImpact] = useState(requirement.positive_impact);
-  const [uncertainties, setUncertainties] = useState(requirement.uncertainties.join("\n"));
-  const [solutionAssumption, setSolutionAssumption] = useState(requirement.solution_assumption);
-  const [uncertaintyEvaluated, setUncertaintyEvaluated] = useState(requirement.uncertainty_evaluated);
-  const [observationAnalysis, setObservationAnalysis] = useState(requirement.observation_analysis);
+  const [desiredBehavior, setDesiredBehavior] = useState("");
+  const [positiveImpact, setPositiveImpact] = useState("");
+  const [uncertainties, setUncertainties] = useState("");
+  const [solutionAssumption, setSolutionAssumption] = useState("");
+  const [uncertaintyEvaluated, setUncertaintyEvaluated] = useState("");
+  const [observationAnalysis, setObservationAnalysis] = useState("");
 
+  // Reset fields when requirement changes
+  useEffect(() => {
+    if (requirement) {
+      setDesiredBehavior(requirement.desired_behavior);
+      setPositiveImpact(requirement.positive_impact);
+      setUncertainties(requirement.uncertainties.join("\n"));
+      setSolutionAssumption(requirement.solution_assumption);
+      setUncertaintyEvaluated(requirement.uncertainty_evaluated);
+      setObservationAnalysis(requirement.observation_analysis);
+      setActiveTab("ferc");
+    }
+  }, [requirement]);
+
+  // ESC to close
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, onClose]);
+
+  const historyEntries: HistorySnapshotEntry[] = (requirement?.history_snapshot as HistorySnapshotEntry[]) ?? [];
 
   const handleSave = useCallback(async () => {
+    if (!requirement) return;
     setSaving(true);
     try {
       const res = await fetch(`${API_URL}/api/conjectural-requirements/${requirement.id}`, {
@@ -223,108 +315,120 @@ export default function ConjecturalDetailView({
     } finally {
       setSaving(false);
     }
-  }, [requirement.id, userId, desiredBehavior, positiveImpact, uncertainties, solutionAssumption, uncertaintyEvaluated, observationAnalysis, onSaved]);
+  }, [requirement, userId, desiredBehavior, positiveImpact, uncertainties, solutionAssumption, uncertaintyEvaluated, observationAnalysis, onSaved]);
+
+  if (!open || !requirement) return null;
 
   return (
-    <div className="rounded-xl border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark shadow-sm overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-border-light dark:border-border-dark px-6 py-4">
-        <div className="flex items-center gap-3">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            {requirement.requirement_id ?? "Conjectural Requirement"}
-          </h2>
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 p-4 pt-[15vh]"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="w-full max-w-4xl rounded-2xl bg-white dark:bg-surface-dark shadow-2xl border border-border-light dark:border-border-dark">
+        {/* Header */}
+        <div className="flex items-start justify-between border-b border-border-light dark:border-border-dark px-6 py-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Conjectural Requirement</p>
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">
+              {requirement.requirement_id ?? "Detail"}
+            </h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="primary" size="sm" onClick={handleSave} disabled={saving}>
+              <Save className="w-4 h-4" />
+              {saving ? "Saving..." : "Save"}
+            </Button>
+            <button
+              onClick={onClose}
+              className="p-2 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              aria-label="Close modal"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="primary" size="sm" onClick={handleSave} disabled={saving}>
-            <Save className="w-4 h-4" />
-            {saving ? "Saving..." : "Save"}
-          </Button>
-          <button
-            onClick={onClose}
-            className="p-2 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            aria-label="Close"
-          >
-            <X className="w-5 h-5" />
-          </button>
+
+        {/* Tabs */}
+        <div className="px-6 pt-4">
+          <div className="inline-flex gap-2 rounded-xl border border-border-light dark:border-border-dark px-1.5 py-1.5">
+            <TabButton label="FERC" active={activeTab === "ferc"} onClick={() => setActiveTab("ferc")} />
+            <TabButton label="QESS" active={activeTab === "qess"} onClick={() => setActiveTab("qess")} />
+            <TabButton label="HISTORY" active={activeTab === "history"} onClick={() => setActiveTab("history")} />
+          </div>
         </div>
-      </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 px-6 pt-4">
-        <TabButton label="FERC" active={activeTab === "ferc"} onClick={() => setActiveTab("ferc")} />
-        <TabButton label="QESS" active={activeTab === "qess"} onClick={() => setActiveTab("qess")} />
-        <TabButton label="History" active={activeTab === "history"} onClick={() => setActiveTab("history")} />
-      </div>
-
-      {/* Tab Content */}
-      <div className="px-6 py-6 h-155 overflow-y-auto">
-        {activeTab === "ferc" && (
-          <div className="space-y-5">
-            <EditableField
-              prefix="It is expected that the software system has"
-              value={desiredBehavior}
-              onChange={setDesiredBehavior}
-              label="Desired Behavior"
-            />
-            <EditableField
-              prefix="So that"
-              value={positiveImpact}
-              onChange={setPositiveImpact}
-              label="Positive Impact"
-            />
-            <div>
-              <div className="rounded-xl border border-border-light dark:border-border-dark bg-gray-50 dark:bg-gray-900/40 p-5">
-                <p className="text-base font-semibold text-orange-600 dark:text-orange-400 tracking-wider mb-3">
-                  However, we do not know:
-                </p>
-                <Textarea
-                  value={uncertainties}
-                  onChange={(e) => setUncertainties(e.target.value)}
-                  placeholder="One uncertainty per line..."
-                  rows={3}
-                  className="w-full text-base"
-                />
+        {/* Scrollable content */}
+        <div className="px-6 py-6 h-[45vh] overflow-y-auto styled-scrollbar">
+          {activeTab === "ferc" && (
+            <div className="space-y-5">
+              <EditableField
+                prefix="It is expected that the software system has"
+                value={desiredBehavior}
+                onChange={setDesiredBehavior}
+                label="Desired Behavior"
+              />
+              <EditableField
+                prefix="So that"
+                value={positiveImpact}
+                onChange={setPositiveImpact}
+                label="Positive Impact"
+              />
+              <div>
+                <div className="rounded-xl border border-border-light dark:border-border-dark bg-gray-50 dark:bg-gray-900/40 p-5">
+                  <p className="text-base font-semibold text-orange-600 dark:text-orange-400 tracking-wider mb-3">
+                    However, we do not know:
+                  </p>
+                  <Textarea
+                    value={uncertainties}
+                    onChange={(e) => setUncertainties(e.target.value)}
+                    placeholder="One uncertainty per line..."
+                    rows={3}
+                    className="w-full text-base"
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {activeTab === "qess" && (
-          <div className="space-y-5">
-            <EditableField
-              prefix="We expect that"
-              value={solutionAssumption}
-              onChange={setSolutionAssumption}
-              label="Solution Assumption"
-            />
-            <EditableField
-              prefix="Will result in updating the uncertainties about"
-              value={uncertaintyEvaluated}
-              onChange={setUncertaintyEvaluated}
-              label="Uncertainty Evaluated"
-            />
-            <EditableField
-              prefix="As a result of"
-              value={observationAnalysis}
-              onChange={setObservationAnalysis}
-              label="Observation & Analysis"
-            />
-          </div>
-        )}
+          {activeTab === "qess" && (
+            <div className="space-y-5">
+              <EditableField
+                prefix="We expect that"
+                value={solutionAssumption}
+                onChange={setSolutionAssumption}
+                label="Solution Assumption"
+              />
+              <EditableField
+                prefix="Will result in updating the uncertainties about"
+                value={uncertaintyEvaluated}
+                onChange={setUncertaintyEvaluated}
+                label="Uncertainty Evaluated"
+              />
+              <EditableField
+                prefix="As a result of"
+                value={observationAnalysis}
+                onChange={setObservationAnalysis}
+                label="Observation & Analysis"
+              />
+            </div>
+          )}
 
-        {activeTab === "history" && (
-          <div className="space-y-4">
-            {historyEntries.length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-12">
-                No history available.
-              </p>
-            ) : (
-              historyEntries.map((entry, i) => (
-                <HistoryAttempt key={i} entry={entry} />
-              ))
-            )}
-          </div>
-        )}
+          {activeTab === "history" && (
+            <HistoryPanel entries={historyEntries} />
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex justify-end border-t border-border-light dark:border-border-dark px-6 py-4">
+          <button
+            onClick={onClose}
+            className="inline-flex justify-center rounded-xl border border-gray-300 dark:border-gray-700 px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            Close
+          </button>
+        </div>
       </div>
     </div>
   );

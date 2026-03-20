@@ -161,18 +161,6 @@ export default function KanbanBoard({
     onSelectRequirement(null);
   }, [onRequirementUpdated, onSelectRequirement]);
 
-  // Show detail view instead of board when a card is selected
-  if (selectedRequirement) {
-    return (
-      <ConjecturalDetailView
-        requirement={selectedRequirement}
-        userId={userId}
-        onClose={() => onSelectRequirement(null)}
-        onSaved={handleSaved}
-      />
-    );
-  }
-
   if (error) {
     return (
       <Card className="flex flex-col items-center justify-center py-12">
@@ -229,6 +217,14 @@ export default function KanbanBoard({
           </div>
         </div>
       ))}
+
+      <ConjecturalDetailView
+        open={!!selectedRequirement}
+        requirement={selectedRequirement}
+        userId={userId}
+        onClose={() => onSelectRequirement(null)}
+        onSaved={handleSaved}
+      />
     </div>
   );
 }
