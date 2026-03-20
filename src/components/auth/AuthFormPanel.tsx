@@ -48,7 +48,7 @@ export default function AuthFormPanel({ confirmed }: AuthFormPanelProps) {
       return
     }
 
-    router.push('/')
+    router.push('/home')
     router.refresh()
   }
 

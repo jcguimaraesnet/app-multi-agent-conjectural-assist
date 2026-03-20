@@ -49,7 +49,8 @@ export async function updateSession(request: NextRequest) {
   // Protected routes - redirect to login if not authenticated
   const isAuthRoute = request.nextUrl.pathname.startsWith('/auth')
   const isPublicApiRoute = request.nextUrl.pathname.startsWith('/api/copilotkit')
-  const isProtectedRoute = !isAuthRoute && !isPublicApiRoute
+  const isLandingPage = request.nextUrl.pathname === '/'
+  const isProtectedRoute = !isAuthRoute && !isPublicApiRoute && !isLandingPage
 
   if (!user && isProtectedRoute) {
     return NextResponse.redirect(getRedirectUrl(request, '/auth/login'))
@@ -57,7 +58,7 @@ export async function updateSession(request: NextRequest) {
 
   // Redirect authenticated users away from auth pages (except signout)
   if (user && isAuthRoute && !request.nextUrl.pathname.includes('/signout')) {
-    return NextResponse.redirect(getRedirectUrl(request, '/'))
+    return NextResponse.redirect(getRedirectUrl(request, '/home'))
   }
 
   return supabaseResponse

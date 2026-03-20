@@ -11,8 +11,8 @@ import AuthHashErrorHandler from "@/components/auth/AuthHashErrorHandler";
 import OnboardingWrapper from "@/components/onboarding/OnboardingWrapper";
 
 export const metadata: Metadata = {
-  title: "Conjectural Assist",
-  description: "AI-powered requirements management",
+  title: "CONREQ Multi-Agent | AI-powered Requirements Specification",
+  description: "An approach to generating software requirements specifications with uncertainty using a multi-agent AI system. PESC/UFRJ.",
 };
 
 const themeScript = `

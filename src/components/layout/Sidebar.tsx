@@ -22,8 +22,8 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto no-scrollbar">
-        <Link className={isActive('/') ? activeClass : inactiveClass} href="/">
-          <LayoutDashboard className={isActive('/') ? "w-5 h-5 text-primary dark:text-orange-400" : "w-5 h-5 group-hover:text-primary transition-colors"} />
+        <Link className={isActive('/home') ? activeClass : inactiveClass} href="/home">
+          <LayoutDashboard className={isActive('/home') ? "w-5 h-5 text-primary dark:text-orange-400" : "w-5 h-5 group-hover:text-primary transition-colors"} />
           <span className="font-medium">Home</span>
         </Link>
         <Link id="sidebar-projects" className={isActive('/projects') ? activeClass : inactiveClass} href="/projects">
