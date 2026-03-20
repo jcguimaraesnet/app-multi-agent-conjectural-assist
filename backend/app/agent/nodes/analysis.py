@@ -19,67 +19,15 @@ from copilotkit.langgraph import copilotkit_emit_state, copilotkit_customize_con
 from app.agent.state import WorkflowState
 from app.agent.models.data_context import DataContext
 from app.agent.utils.context_utils import extract_copilotkit_context
-from app.agent.utils.project_data import language_instruction
+from app.agent.prompts.factory import get_prompt
+from app.agent.prompts.analysis_impact_uncertainty_detection_prompt import ANALYSIS_IMPACT_UNCERTAINTY_DETECTION_PROMPT
+from app.agent.prompts.analysis_conjectural_hypothesis_prompt import ANALYSIS_CONJECTURAL_HYPOTHESIS_PROMPT
 from app.agent.models.knowledge_graph import (
     BusinessUncertainty,
     KnowledgeGraph,
     kg_from_state,
     kg_to_state,
 )
-
-
-AMBIGUITY_DETECTION_PROMPT = """From the list below, identify terms that are ambiguous (subjective, vague, not measurable). Examples of ambiguous terms: "fast", "secure", "easy", "efficient", "flexible".
-
-Consider domain, business objective, and stakeholder context when evaluating ambiguity. A term may be unambiguous in one context but ambiguous in another.
-Domain: {domain}
-Business objective: {business_objective}
-Stakeholder: {stakeholder}
-
-Return ONLY a JSON array with the first 1 ambiguous term names found. If none, return [].
-
-Domain entities:
-{entities}
-"""
-
-
-IMPACT_UNCERTAINTY_DETECTION_PROMPT = """You are a software requirements engineering expert specializing in risk and uncertainty analysis.
-
-For each positive business impact statement listed below, identify exactly ONE key uncertainty — an aspect that is unclear, underspecified, or could prevent the desired impact from being realized. Focus on gaps in knowledge, vague scope, missing constraints, untested assumptions, or risks that need validation.
-
-Context:
-- Project summary: {project_summary}
-- Domain: {domain}
-- Business objective: {business_objective}
-- Primary stakeholder: {stakeholder}
-
-Positive business impacts:
-{positive_impacts}
-
-You MUST return ONLY a valid JSON array of strings (no markdown, no explanation) where each string is a concise description of the key uncertainty (up to 200 characters). Return exactly {quantity} strings, one per positive impact, in the same order.
-"""
-
-
-CONJECTURAL_HYPOTHESIS_PROMPT = """You are a software requirements engineering expert specializing in lean experimentation and hypothesis-driven development.
-
-You are given a list of desired positive business impacts and their associated uncertainties. For each pair, propose ONE experiment hypothesis — a verifiable, testable solution assumption that, if validated, would eliminate (or significantly reduce) the uncertainty and help achieve the desired positive impact.
-
-Each hypothesis MUST be:
-- Verifiable: can be tested with a concrete experiment
-- Measurable: has clear success/failure criteria
-- Focused: directly addresses the uncertainty
-- Actionable: describes what to build, test, or measure
-
-Context:
-- Project summary: {project_summary}
-- Domain: {domain}
-- Business objective: {business_objective}
-- Primary stakeholder: {stakeholder}
-
-Positive impacts and uncertainties:
-{impacts_and_uncertainties}
-
-You MUST return ONLY a valid JSON array of strings (no markdown, no explanation) where each string is a concise experiment hypothesis (up to 300 characters). Return exactly {quantity} strings, one per impact-uncertainty pair, in the same order.
-"""
 
 
 def _strip_markdown_fences(raw: str) -> str:
@@ -102,14 +50,14 @@ async def _detect_impact_uncertainties(
 
     impacts_text = "\n".join(f"- {pi}" for pi in impacts)
 
-    prompt = IMPACT_UNCERTAINTY_DETECTION_PROMPT.format(
+    prompt = get_prompt(ANALYSIS_IMPACT_UNCERTAINTY_DETECTION_PROMPT, data_context.language).format(
         positive_impacts=impacts_text,
         project_summary=data_context.project_summary,
         domain=data_context.domain,
         stakeholder=data_context.stakeholder,
         business_objective=data_context.business_objective,
         quantity=len(impacts),
-    ) + language_instruction(data_context.language)
+    )
 
     model = get_model(provider=model_provider, temperature=0)
 
@@ -138,14 +86,14 @@ async def _generate_conjectural_hypotheses(
         for impact, uncertainty in zip(impacts, uncertainties)
     )
 
-    prompt = CONJECTURAL_HYPOTHESIS_PROMPT.format(
+    prompt = get_prompt(ANALYSIS_CONJECTURAL_HYPOTHESIS_PROMPT, data_context.language).format(
         impacts_and_uncertainties=pairs_text,
         project_summary=data_context.project_summary,
         domain=data_context.domain,
         stakeholder=data_context.stakeholder,
         business_objective=data_context.business_objective,
         quantity=len(impacts),
-    ) + language_instruction(data_context.language)
+    )
 
     model = get_model(provider=model_provider, temperature=0)
 

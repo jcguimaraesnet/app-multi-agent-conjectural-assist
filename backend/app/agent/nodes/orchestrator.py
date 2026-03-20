@@ -26,6 +26,7 @@ from langgraph.types import Command
 
 from app.agent.state import WorkflowState, IntentClassification
 from app.agent.utils.context_utils import extract_copilotkit_context
+from app.agent.prompts.orchestrator_intent_classification_prompt import ORCHESTRATOR_INTENT_CLASSIFICATION_PROMPT
 
 
 async def orchestrator_node(state: WorkflowState, config: Optional[RunnableConfig] = None):
@@ -115,7 +116,7 @@ async def classify_intent(user_input: str, config: Optional[RunnableConfig] = No
     # Use structured output for reliable classification
     structured_model = cast(Any, model).with_structured_output(IntentClassification)
     
-    prompt = INTENT_CLASSIFICATION_PROMPT.format(user_input=user_input)
+    prompt = ORCHESTRATOR_INTENT_CLASSIFICATION_PROMPT.format(user_input=user_input)
 
     try:
         result = await structured_model.ainvoke([
@@ -133,40 +134,3 @@ async def classify_intent(user_input: str, config: Optional[RunnableConfig] = No
             reasoning=f"Classification failed, defaulting to generic: {str(e)}"
         )
 
-# System prompt for intent classification
-INTENT_CLASSIFICATION_PROMPT = """You are an intent classifier for a conjectural requirements engineering chatbot called "Conjectural Assist".
-
-Your task is to analyze the user's message and determine their intent:
-
-1. **conjectural_requirement_generate_response**: The user wants to generate conjectural requirements specs for a software project.
-   Examples:
-   - "generate conjectural requirements"
-   - "create conjectural requirements for my project"
-   - "generate conjectural requirements"
-   - "gerar requisitos conjecturais" (Portuguese)
-   - "start conjectural requirements generation"
-   - "I need conjectural requirements for my software"
-   - "help me with conjectural requirements generation"
-
-2. **generic_response**: The user wants to find general information about the current project (information query only)
-   Examples:
-   - "How many requirements there are?"
-   - "Are there any conjectural requirements? How many?"
-   - "Tell me about the project"
-   - "How many functional requirements there are"
-
-Be strict with `conjectural_requirement_generate_response` - the user needs to mention both of the following words:
-
-1 - "conjectural requirement"
-2 - "create" (or synonyms: generate, build, elaborate, etc.)
-
-If in doubt, use `generic_response` as the default.
-
-Analyze the following user message and classify the intent:
-User message: {user_input}
-
-Respond with a JSON object containing:
-- intent: "conjectural_requirement_generate_response" or "generic_response"
-- confidence: a number between 0 and 1
-- reasoning: brief explanation of your classification
-"""

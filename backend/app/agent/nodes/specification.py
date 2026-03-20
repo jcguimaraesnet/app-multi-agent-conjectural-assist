@@ -18,184 +18,14 @@ from copilotkit.langgraph import copilotkit_emit_state, copilotkit_customize_con
 
 from app.agent.state import WorkflowState
 from app.agent.utils.context_utils import extract_copilotkit_context
-from app.agent.utils.project_data import language_instruction
+from app.agent.prompts.factory import get_prompt
 from app.agent.models.data_context import DataContext, ConjecturalRequirement
+from app.agent.prompts.specification_conjectural_specification_prompt import SPECIFICATION_CONJECTURAL_SPECIFICATION_PROMPT
+from app.agent.prompts.specification_conjectural_refinement_prompt import SPECIFICATION_CONJECTURAL_REFINEMENT_PROMPT
 from app.agent.models.knowledge_graph import (
     KnowledgeGraph,
     kg_from_state,
 )
-
-
-CONJECTURAL_SPECIFICATION_PROMPT = """You are an expert in software requirements specification with uncertainties.
-
-This app's main goal is to generate a type of software requirements specification with uncertainties,
-here called a "conjectural requirement."
-
-## Information Sources
-
-**Project Summary:**
-{project_summary}
-
-**Business Domain:** {domain}
-
-**Primary Stakeholder:** {stakeholder}
-
-**Business Objective:** {business_objective}
-
-## Positive Business Impact, Uncertainty, and Solution Hypothesis
-
-Generate exactly ONE conjectural requirement specification for the following input:
-
-- **Positive Impact:** {positive_impact}
-- **Uncertainty:** {uncertainty}
-- **Solution Hypothesis:** {supposition_solution}
-
-## Instruction
-
-Generate exactly ONE conjectural requirement specification following the FERC writing format and the QESS framework described below.
-
-The FERC's "desired behavior" should address the positive impact, the "positive impact" should relate to the business objective, and the "uncertainties" MUST include the associated uncertainty identified above (you may add additional uncertainties if relevant).
-
-The QESS's "solution assumption" should be based on the proposed hypothesis, and the experiment should aim to resolve the associated uncertainty.
-
----
-
-## Template for Conjectural Requirement Specification
-
-**Writing Format for Conjectural Requirements (FERC):**
-**It is expected that the software system has** [desired behavior]
-**So that** [need or positive impact of the desired attribute]
-**However, we do not know:**
-- **Uncertainty:** [uncertainty associated with this requirement — one or many]
-- **Uncertainty:** [uncertainty associated with this requirement — one or many]
-
-**Solution Assumption Experimentation Framework (QESS):**
-**We expect that** [description of the solution assumption]
-**Will result in updating the uncertainties about** [only one of the uncertainties that will be evaluated]
-**As a result of** [description of the observation and analysis that will result in updating the uncertainties]
-
----
-
-## Examples
-
-**Example 1:**
-FERC:
-**It is expected that the software system has** low-cost equipment
-**So that** the product can be sold at a lower price than other products currently on the market with similar functions.
-**However, we do not know:**
-- **Uncertainty:** which equipment (sensors, wearables, cables, connectors, and display) are functional and have the lowest cost.
-QESS:
-**We expect that** using a finger clip to obtain data on oxygenation, temperature, and heart rate of a patient for display on a screen controlled by a low-cost NodeMCU processor
-**Will result in updating the uncertainties about** the low-cost device configuration that will be used for building the software system
-**As a result of** observation of the operation of the finger clip oximeter and the data generated.
-
-**Example 2:**
-FERC:
-**It is expected that the software system has** easy-to-assemble equipment
-**So that** the equipment can be assembled quickly by people without electronics knowledge.
-**However, we do not know:**
-- **Uncertainty:** which cable and connector models facilitate assembly.
-- **Uncertainty:** the acceptable assembly time.
-QESS:
-**We expect that** using a finger clip to obtain data on oxygenation, temperature, and heart rate of a patient for display on a screen controlled by a low-cost NodeMCU processor through a single data cable
-**Will result in updating the uncertainties about** the ease of assembly of the low-cost device that will be used for building the software system
-**As a result of** observation of the operation of the finger clip oximeter with a single data cable and the data generated.
-
-**Example 3:**
-FERC:
-**It is expected that the software system has** reliability
-**So that** signal measurement is performed without interference from external lighting.
-**However, we do not know:**
-- **Uncertainty:** which type of device allows measurement without harmful interference.
-QESS:
-**We expect that** using an elastic wristband with two sensor compartments to obtain data on oxygenation, temperature, and heart rate of a patient for display on a screen controlled by a low-cost NodeMCU processor
-**Will result in updating the uncertainties about** the reliability of vital signs measurement (measurement without external interference) of the low-cost device that will be used for building the software system
-**As a result of** observation of the operation of the oximeter with the elastic wristband and the data generated.
-
-**Example 4:**
-FERC:
-**It is expected that the software system has** stability
-**So that** signal measurement remains consistent in the same patient over a long period, considering body movements.
-**However, we do not know:**
-- **Uncertainty:** which sensor models guarantee measurement stability over long periods, considering body movements.
-QESS:
-**We expect that** using a rigid half-moon shaped wristband with two sensor compartments to obtain data on oxygenation, temperature, and heart rate of a patient for display on a screen controlled by a low-cost NodeMCU processor through a single digital data cable with RJ11 connector
-**Will result in updating the uncertainties about** the stability of the sensors on the patient's arm of the low-cost device that will be used for building the software system
-**As a result of** observation of the operation of the oximeter with the rigid wristband and the data generated.
-
----
-
-You MUST return ONLY a valid JSON object (no markdown, no explanation) with:
-- "ferc": an object with:
-  - "desired_behavior": the [desired behavior] part of the FERC (string)
-  - "positive_impact": the [need or positive impact] part of the FERC (string)
-  - "uncertainties": list of uncertainty strings (array of strings)
-- "qess": an object with:
-  - "solution_assumption": the [description of the solution assumption] (string)
-  - "uncertainty_evaluated": the [one uncertainty that will be evaluated] (string)
-  - "observation_analysis": the [observation and analysis description] (string)
-"""
-
-
-CONJECTURAL_REFINEMENT_PROMPT = """You are an expert in software requirements specification with uncertainties.
-
-Your task is to generate an **improved version** of a conjectural requirement specification based on a previous attempt and its quality evaluation.
-
-## Project Context
-
-**Project Summary:**
-{project_summary}
-
-**Business Domain:** {domain}
-
-**Primary Stakeholder:** {stakeholder}
-
-**Business Objective:** {business_objective}
-
-## Previous Conjectural Requirement (to be improved)
-
-[FERC]
-- **Desired behavior:** {prev_desired_behavior}
-- **Positive impact:** {prev_positive_impact}
-- **Uncertainties:** {prev_uncertainties}
-
-[QESS]
-- **Solution assumption:** {prev_solution_assumption}
-- **Uncertainty evaluated:** {prev_uncertainty_evaluated}
-- **Observation & analysis:** {prev_observation_analysis}
-
-## LLM-as-Judge Evaluation of the Previous Requirement
-
-{evaluation_summary}
-
-## Instruction
-
-Based on the evaluation above, generate an **improved version** of this conjectural requirement that addresses the weaknesses identified by the evaluator.
-Focus especially on criteria that received low scores (1-3) and follow the justifications provided.
-
-The improved requirement MUST still follow the FERC + QESS structure:
-
-**Writing Format for Conjectural Requirements (FERC):**
-**It is expected that the software system has** [desired behavior]
-**So that** [need or positive impact of the desired attribute]
-**However, we do not know:**
-- **Uncertainty:** [uncertainty associated with this requirement — one or many]
-
-**Solution Assumption Experimentation Framework (QESS):**
-**We expect that** [description of the solution assumption]
-**Will result in updating the uncertainties about** [only one of the uncertainties that will be evaluated]
-**As a result of** [description of the observation and analysis that will result in updating the uncertainties]
-
-You MUST return ONLY a valid JSON object (no markdown, no explanation) with:
-- "ferc": an object with:
-  - "desired_behavior": the [desired behavior] part of the FERC (string)
-  - "positive_impact": the [need or positive impact] part of the FERC (string)
-  - "uncertainties": list of uncertainty strings (array of strings)
-- "qess": an object with:
-  - "solution_assumption": the [description of the solution assumption] (string)
-  - "uncertainty_evaluated": the [one uncertainty that will be evaluated] (string)
-  - "observation_analysis": the [observation and analysis description] (string)
-"""
 
 
 def _format_evaluation(evaluation) -> str:
@@ -274,11 +104,9 @@ async def specification_node(state: WorkflowState, config: Optional[RunnableConf
         req_num = i + 1
         print(f"[Specification] Generating requirement #{req_num}...")
 
-        lang_suffix = language_instruction(data_context.language)
-
         if spec_attempt == 0:
             # First attempt: generate from scratch using elicitation/analysis data
-            prompt = CONJECTURAL_SPECIFICATION_PROMPT.format(
+            prompt = get_prompt(SPECIFICATION_CONJECTURAL_SPECIFICATION_PROMPT, data_context.language).format(
                 project_summary=project_summary,
                 domain=domain,
                 stakeholder=stakeholder,
@@ -286,11 +114,11 @@ async def specification_node(state: WorkflowState, config: Optional[RunnableConf
                 positive_impact=cd.positive_impact,
                 uncertainty=cd.uncertainty,
                 supposition_solution=cd.supposition_solution,
-            ) + lang_suffix
+            )
         else:
             # Subsequent attempts: refine based on last requirement + its LLM evaluation
             last_cr = cd.conjectural_requirements[-1]
-            prompt = CONJECTURAL_REFINEMENT_PROMPT.format(
+            prompt = get_prompt(SPECIFICATION_CONJECTURAL_REFINEMENT_PROMPT, data_context.language).format(
                 project_summary=project_summary,
                 domain=domain,
                 stakeholder=stakeholder,
@@ -302,7 +130,7 @@ async def specification_node(state: WorkflowState, config: Optional[RunnableConf
                 prev_uncertainty_evaluated=last_cr.qess.uncertainty_evaluated,
                 prev_observation_analysis=last_cr.qess.observation_analysis,
                 evaluation_summary=_format_evaluation(last_cr.llm_evaluation),
-            ) + lang_suffix
+            )
             print(f"[Specification] Using refinement prompt for requirement #{req_num} (attempt {spec_attempt + 1})")
 
         try:

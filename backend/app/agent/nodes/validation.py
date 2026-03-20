@@ -18,7 +18,8 @@ from copilotkit.langgraph import copilotkit_customize_config, copilotkit_emit_st
 from app.agent.state import WorkflowState
 from app.agent.models.data_context import DataContext, Evaluation
 from app.agent.utils.context_utils import extract_copilotkit_context
-from app.agent.utils.project_data import language_instruction
+from app.agent.prompts.factory import get_prompt
+from app.agent.prompts.validation_system_prompt import VALIDATION_SYSTEM_PROMPT
 from app.services.conjectural_persistence import persist_conjectural_data
 
 
@@ -26,71 +27,6 @@ from app.services.conjectural_persistence import persist_conjectural_data
 def show_requirements(requirement_ids: str):
     """Tool function to show requirements on the frontend board."""
     return {"success": True}
-
-
-VALIDATION_SYSTEM_PROMPT = """You are a rigorous and demanding expert evaluator of conjectural software requirements. \
-Your role is to critically assess the quality of each requirement with high standards. \
-Do not be lenient — a score of 5 (Very Good) should only be given when the criterion is fully and unambiguously satisfied.
-
-A conjectural requirement consists of two parts:
-- **FERC** (Writing Format for Conjectural Requirements): describes the desired system behavior, its positive impact, and the associated uncertainties.
-- **QESS** (Solution Assumption Experimentation Framework): describes a solution assumption, the single uncertainty it will evaluate, and how the evaluation will be performed.
-
-Evaluate the following conjectural requirement on a Likert scale from **1 to 5** for each of the five quality criteria below:
-
-1. **Unambiguous** — Is the requirement written in a way that can only be interpreted in one way? Are there vague terms, ambiguous pronouns, or imprecise language?
-2. **Completeness** — Does the requirement contain all necessary information (desired behavior, positive impact, uncertainties, solution assumption, observation method)? Are there missing details?
-3. **Atomicity** — Does the requirement describe exactly one behavior or concern? Could it be split into multiple independent requirements?
-4. **Verifiable** — Can the requirement be objectively tested or verified? Is there a clear criterion for determining whether it has been satisfied?
-5. **Conforming** — Does the requirement correctly follow the FERC/QESS structure and conventions? Is the QESS coherent with the FERC uncertainties?
-
-**Likert scale:**
-- 1 = Very Poor
-- 2 = Poor
-- 3 = Regular
-- 4 = Good
-- 5 = Very Good
-
-**Rules:**
-- For any score from 1 to 4, you MUST provide a justification explaining why the criterion was not fully met.
-- For a score of 5, justification is optional (leave as empty string if not needed).
-- Be strict and objective. Favor lower scores when in doubt.
-
-**Project context:**
-- Summary: {project_summary}
-- Domain: {domain}
-- Primary stakeholder: {stakeholder}
-
-**Conjectural Requirement #{requirement_number}:**
-
-[FERC]
-- Desired behavior: {desired_behavior}
-- Positive impact: {positive_impact}
-- Uncertainties: {uncertainties}
-
-[QESS]
-- Solution assumption: {solution_assumption}
-- Uncertainty evaluated: {uncertainty_evaluated}
-- Observation & analysis: {observation_analysis}
-
-**Respond with ONLY a valid JSON object** in the following format (no markdown, no extra text):
-{{
-  "scores": {{
-    "unambiguous": <1-5>,
-    "completeness": <1-5>,
-    "atomicity": <1-5>,
-    "verifiable": <1-5>,
-    "conforming": <1-5>
-  }},
-  "justifications": {{
-    "unambiguous": "<justification or empty string>",
-    "completeness": "<justification or empty string>",
-    "atomicity": "<justification or empty string>",
-    "verifiable": "<justification or empty string>",
-    "conforming": "<justification or empty string>"
-  }}
-}}
-"""
 
 
 async def validation_node(state: WorkflowState, config: Optional[RunnableConfig] = None):
@@ -187,7 +123,7 @@ async def validation_node(state: WorkflowState, config: Optional[RunnableConfig]
         cr = cd.conjectural_requirements[-1]
         print(f"[Validation] LLM evaluating requirement #{req_num} (attempt {cr.attempt})...")
 
-        prompt = VALIDATION_SYSTEM_PROMPT.format(
+        prompt = get_prompt(VALIDATION_SYSTEM_PROMPT, data_context.language).format(
             project_summary=data_context.project_summary,
             domain=data_context.domain,
             stakeholder=data_context.stakeholder,
@@ -198,7 +134,7 @@ async def validation_node(state: WorkflowState, config: Optional[RunnableConfig]
             solution_assumption=cr.qess.solution_assumption,
             uncertainty_evaluated=cr.qess.uncertainty_evaluated,
             observation_analysis=cr.qess.observation_analysis,
-        ) + language_instruction(data_context.language)
+        )
 
         try:
             response = await model.ainvoke([HumanMessage(content=prompt)])
