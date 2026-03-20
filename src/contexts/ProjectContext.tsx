@@ -15,6 +15,7 @@ interface ProjectContextType {
   selectProject: (project: Project | null) => void;
   selectProjectById: (projectId: string) => void;
   refreshProjects: () => Promise<void>;
+  removeProject: (projectId: string) => void;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
@@ -144,6 +145,14 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     await fetchProjects(true);
   }, [fetchProjects]);
 
+  const removeProject = useCallback((projectId: string) => {
+    setProjects(prev => {
+      const updated = prev.filter(p => p.id !== projectId);
+      cachedProjects = updated;
+      return updated;
+    });
+  }, []);
+
   return (
     <ProjectContext.Provider
       value={{
@@ -154,6 +163,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         selectProject,
         selectProjectById,
         refreshProjects,
+        removeProject,
       }}
     >
       {children}

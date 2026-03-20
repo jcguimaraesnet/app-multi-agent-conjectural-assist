@@ -41,7 +41,7 @@ export default function ProjectsPage() {
 
 function ProjectsPageInner() {
   const { user } = useAuth();
-  const { projects, isLoading, error: contextError, refreshProjects } = useProject();
+  const { projects, isLoading, error: contextError, refreshProjects, removeProject } = useProject();
   const { prefetchRequirements } = useRequirements();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -85,6 +85,13 @@ function ProjectsPageInner() {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery]);
+
+  // Go back a page if current page becomes empty after deletion
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   // Start tour when arriving via query string
   useEffect(() => {
@@ -133,8 +140,8 @@ function ProjectsPageInner() {
         throw new Error(errorData.detail || 'Failed to delete project');
       }
       
-      // Refresh the projects list from context
-      await refreshProjects();
+      // Remove the project locally from the list
+      removeProject(projectId);
       setSuccessMessage('Project deleted successfully.');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete project';
@@ -144,7 +151,7 @@ function ProjectsPageInner() {
     } finally {
       setIsDeleting(null);
     }
-  }, [user?.id, refreshProjects]);
+  }, [user?.id, removeProject]);
 
   useEffect(() => {
     if (!successMessage) {
