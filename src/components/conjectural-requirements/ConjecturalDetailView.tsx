@@ -150,7 +150,7 @@ function HistoryPanel({ entries }: { entries: HistorySnapshotEntry[] }) {
             <button
               key={num}
               disabled={!exists}
-              onClick={() => { if (exists) { setSelectedAttempt(slotIndex); setSubTab("ferc"); } }}
+              onClick={() => { if (exists) { setSelectedAttempt(slotIndex); } }}
               className={`w-8 h-8 rounded-full text-xs font-semibold transition-all
                 ${!exists
                   ? "bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-40"
