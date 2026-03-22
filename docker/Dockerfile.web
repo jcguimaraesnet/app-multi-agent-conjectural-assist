@@ -8,6 +8,7 @@ RUN npm install -g pnpm
 
 # Copia apenas arquivos de dependência primeiro (cache)
 COPY package.json pnpm-lock.yaml ./
+COPY patches ./patches
 RUN pnpm install
 
 # Copia o restante do frontend
