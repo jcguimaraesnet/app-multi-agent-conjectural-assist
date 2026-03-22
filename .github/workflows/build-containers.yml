@@ -7,6 +7,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: azure-container
 
     steps:
       - name: Checkout
@@ -26,7 +27,18 @@ jobs:
 
       - name: Build e push WEB
         run: |
-          docker build -t acrconreq.azurecr.io/web:latest -f docker/Dockerfile.web .
+          echo "API URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}"
+          echo "API URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}"
+          echo "API URL: ${{ vars.NEXT_PUBLIC_API_URL }}"
+          echo "API URL: ${{ vars.LANGGRAPH_DEPLOYMENT_URL }}"
+          docker build -t acrconreq.azurecr.io/web:latest -f docker/Dockerfile.web \
+          --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }} \
+          --build-arg LANGSMITH_API_KEY=${{ secrets.LANGSMITH_API_KEY }} \
+          --build-arg NEXT_PUBLIC_SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL }} \
+          --build-arg NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL }} \
+          --build-arg NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }} \
+          --build-arg LANGGRAPH_DEPLOYMENT_URL=${{ vars.LANGGRAPH_DEPLOYMENT_URL }} \
+          .
           docker push acrconreq.azurecr.io/web:latest
 
       - name: Build e push AGENT
