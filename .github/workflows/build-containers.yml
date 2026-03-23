@@ -22,8 +22,8 @@ jobs:
 
       - name: Build e push API
         run: |
-          docker build -t acrconreq.azurecr.io/api:latest -f docker/Dockerfile.api .
-          docker push acrconreq.azurecr.io/api:latest
+          docker build -t acrconreq.azurecr.io/api:${{ github.sha }} -f docker/Dockerfile.api .
+          docker push acrconreq.azurecr.io/api:${{ github.sha }}
 
       - name: Build e push WEB
         run: |
@@ -31,7 +31,7 @@ jobs:
           echo "API URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}"
           echo "API URL: ${{ vars.NEXT_PUBLIC_API_URL }}"
           echo "API URL: ${{ vars.LANGGRAPH_DEPLOYMENT_URL }}"
-          docker build -t acrconreq.azurecr.io/web:latest -f docker/Dockerfile.web \
+          docker build -t acrconreq.azurecr.io/web:${{ github.sha }} -f docker/Dockerfile.web \
           --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }} \
           --build-arg LANGSMITH_API_KEY=${{ secrets.LANGSMITH_API_KEY }} \
           --build-arg NEXT_PUBLIC_SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL }} \
@@ -39,29 +39,12 @@ jobs:
           --build-arg NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }} \
           --build-arg LANGGRAPH_DEPLOYMENT_URL=${{ vars.LANGGRAPH_DEPLOYMENT_URL }} \
           .
-          docker push acrconreq.azurecr.io/web:latest
+          docker push acrconreq.azurecr.io/web:${{ github.sha }}
 
       - name: Build e push AGENT
         run: |
-          docker build -t acrconreq.azurecr.io/agent:latest -f docker/Dockerfile.agent .
-          docker push acrconreq.azurecr.io/agent:latest
-
-      # =========================
-      # 🔍 DEBUG DA SECRET
-      # =========================
-      - name: Validar JSON da AZURE_CREDENTIALS
-        env:
-          AZURE_CREDS: ${{ secrets.AZURE_CREDENTIALS }}
-        run: |
-          echo "Lendo as chaves presentes na secret..."
-          # Isso vai listar apenas os nomes das propriedades (ex: ["clientId", "clientSecret"...])
-          echo "$AZURE_CREDS" | jq 'keys'
-
-          echo "Validando se as 4 chaves exatas existem (case sensitive)..."
-          # O parâmetro -e faz o comando falhar se retornar falso
-          echo "$AZURE_CREDS" | jq -e 'has("clientId") and has("clientSecret") and has("subscriptionId") and has("tenantId")' > /dev/null
-
-          echo "Sucesso! O JSON é perfeitamente válido e contém as chaves corretas."
+          docker build -t acrconreq.azurecr.io/agent:${{ github.sha }} -f docker/Dockerfile.agent .
+          docker push acrconreq.azurecr.io/agent:${{ github.sha }}
 
   # =========================
   # 🚀 DEPLOY
@@ -108,7 +91,7 @@ jobs:
             --name app-conreq \
             --resource-group rg-masters-research \
             --environment env-conreq \
-            --image acrconreq.azurecr.io/web:latest \
+            --image acrconreq.azurecr.io/web:${{ github.sha }} \
             --target-port 3000 \
             --ingress external \
             --registry-server acrconreq.azurecr.io \
@@ -130,7 +113,7 @@ jobs:
             --name api-conreq \
             --resource-group rg-masters-research \
             --environment env-conreq \
-            --image acrconreq.azurecr.io/api:latest \
+            --image acrconreq.azurecr.io/api:${{ github.sha }} \
             --target-port 8000 \
             --ingress external \
             --registry-server acrconreq.azurecr.io \
@@ -157,7 +140,7 @@ jobs:
             --name agent-conreq \
             --resource-group rg-masters-research \
             --environment env-conreq \
-            --image acrconreq.azurecr.io/agent:latest \
+            --image acrconreq.azurecr.io/agent:${{ github.sha }} \
             --target-port 8123 \
             --ingress external \
             --registry-server acrconreq.azurecr.io \
