@@ -2,9 +2,17 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
+# 1. Adicionado o tzdata junto com o curl
 RUN apt-get update && apt-get install -y \
   curl \
+  tzdata \
   && rm -rf /var/lib/apt/lists/*
+
+# 2. Configura o fuso horário correto
+ENV TZ=America/Sao_Paulo
+
+# 3. Configura o Linux para preferir IPv4 (A vacina da lentidão)
+RUN echo "precedence ::ffff:0:0/96  100" >> /etc/gai.conf
 
 RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="/usr/local/bin" sh
 
@@ -19,5 +27,5 @@ COPY backend/ .
 
 EXPOSE 8123
 
-# 🔴 Ajuste importante aqui conforme seu agent real
+# Ajuste importante aqui conforme seu agent real
 CMD ["langgraph", "dev", "--port", "8123", "--host", "0.0.0.0", "--no-browser", "--allow-blocking"]
