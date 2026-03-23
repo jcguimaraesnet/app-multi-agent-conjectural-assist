@@ -94,10 +94,7 @@ jobs:
       - name: Login Azure via CLI
         run: |
           echo "Realizando login no Azure via Service Principal..."
-          az login --service-principal \
-            --username ${{ secrets.AZURE_CLIENT_ID_CONTAINER }} \
-            --password ${{ secrets.AZURE_CLIENT_SECRET_CONTAINER }} \
-            --tenant ${{ secrets.AZURE_TENANT_ID_CONTAINER }}
+          az login --service-principal --username ${{ secrets.AZURE_CLIENT_ID_CONTAINER }} --password=${{ secrets.AZURE_CLIENT_SECRET_CONTAINER }} --tenant ${{ secrets.AZURE_TENANT_ID_CONTAINER }}
 
           echo "Definindo a assinatura padrão..."
           az account set --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID_CONTAINER }}
