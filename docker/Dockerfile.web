@@ -3,15 +3,17 @@ FROM node:20-bullseye AS builder
 
 WORKDIR /app
 
-# Instala pnpm
 RUN npm install -g pnpm
 
-# Copia apenas arquivos de dependência primeiro (cache)
 COPY package.json pnpm-lock.yaml ./
 COPY patches ./patches
-RUN pnpm install
 
-# Copia o restante do frontend
+# Força o pnpm a criar pastas físicas em vez de atalhos
+RUN echo "node-linker=hoisted" > .npmrc
+
+# O frozen-lockfile obriga o pnpm a respeitar os patches à risca
+RUN pnpm install --frozen-lockfile
+
 COPY . .
 
 # ===== ENV VARS (BUILD TIME) =====
@@ -29,29 +31,31 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV LANGGRAPH_DEPLOYMENT_URL=$LANGGRAPH_DEPLOYMENT_URL
 ENV LANGSMITH_API_KEY=$LANGSMITH_API_KEY
 
-# Build do Next.js
 RUN pnpm build:turbopack
 
-# ===== RUN =====
-FROM node:20-bullseye
+
+# ===== RUN (PRODUÇÃO OTIMIZADA E BLINDADA) =====
+FROM node:20-bullseye-slim
 
 WORKDIR /app
 
-# Variáveis obrigatórias para o standalone funcionar corretamente no Docker
+# 1. Instala o banco de dados de fuso horário para o horário de Brasília funcionar
+RUN apt-get update && apt-get install -y tzdata && rm -rf /var/lib/apt/lists/*
+ENV TZ=America/Sao_Paulo
+
+# 2. Variáveis originais do Next.js
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# 1. Copia a pasta public (imagens, ícones, etc)
+# 3. Vacina do IPv4 para o Node.js não dar timeout (Erro: other side closed) na Azure
+ENV NODE_OPTIONS="--dns-result-order=ipv4first"
+
+# Copia os artefatos do builder
 COPY --from=builder /app/public ./public
-
-# 2. Copia a pasta standalone gerada pelo Next.js (contém o server.js e dependências mínimas)
 COPY --from=builder /app/.next/standalone ./
-
-# 3. Copia a pasta static gerada pelo Next.js (arquivos JS/CSS do cliente que o standalone não inclui na raiz)
 COPY --from=builder /app/.next/static ./.next/static
 
 EXPOSE 3000
 
-# Executa o servidor Node otimizado diretamente (sem pnpm ou npm)
 CMD ["node", "server.js"]
