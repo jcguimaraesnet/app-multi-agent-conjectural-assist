@@ -68,10 +68,45 @@ export default function AddProjectPopup({ open, onClose, onProjectCreated, onGen
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   const [creationError, setCreationError] = useState<string | null>(null);
   const [requirementsCount, setRequirementsCount] = useState(0);
+  const [creationMessageIndex, setCreationMessageIndex] = useState(0);
 
   // Refs for interval cleanup (used for progress simulation)
   const visionIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const requirementsIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const creationMessageIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const creationMessages = [
+    "Extracting information...",
+    "Identifying business domain...",
+    "Identifying business objective...",
+    "Identifying stakeholders...",
+    "Storing information...",
+  ];
+
+  // Cycle through creation progress messages every 10 seconds
+  useEffect(() => {
+    if (isCreatingProject) {
+      setCreationMessageIndex(0);
+      creationMessageIntervalRef.current = setInterval(() => {
+        setCreationMessageIndex((prev) =>
+          prev < creationMessages.length - 1 ? prev + 1 : prev
+        );
+      }, 10000);
+    } else {
+      if (creationMessageIntervalRef.current) {
+        clearInterval(creationMessageIntervalRef.current);
+        creationMessageIntervalRef.current = null;
+      }
+      setCreationMessageIndex(0);
+    }
+    return () => {
+      if (creationMessageIntervalRef.current) {
+        clearInterval(creationMessageIntervalRef.current);
+        creationMessageIntervalRef.current = null;
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCreatingProject]);
 
   // Close on ESC key
   useEffect(() => {
@@ -95,7 +130,11 @@ export default function AddProjectPopup({ open, onClose, onProjectCreated, onGen
         clearInterval(requirementsIntervalRef.current);
         requirementsIntervalRef.current = null;
       }
-      
+      if (creationMessageIntervalRef.current) {
+        clearInterval(creationMessageIntervalRef.current);
+        creationMessageIntervalRef.current = null;
+      }
+
       setStep(1);
       setTitle("");
       setDescription("");
@@ -114,6 +153,7 @@ export default function AddProjectPopup({ open, onClose, onProjectCreated, onGen
       setIsCreatingProject(false);
       setCreationError(null);
       setRequirementsCount(0);
+      setCreationMessageIndex(0);
     }
   }, [open]);
 
@@ -723,6 +763,15 @@ export default function AddProjectPopup({ open, onClose, onProjectCreated, onGen
                     Skip Step
                   </button>
                 )}
+                {isCreatingProject && (
+                  <span
+                    key={creationMessageIndex}
+                    className="text-sm text-primary font-medium flex items-center gap-2 animate-fade-slide-in"
+                  >
+                    <Loader2 size={14} className="animate-spin shrink-0" />
+                    {creationMessages[creationMessageIndex]}
+                  </span>
+                )}
                 <button
                   type="button"
                   className="rounded-lg px-6 py-2 bg-primary text-white font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
@@ -734,7 +783,6 @@ export default function AddProjectPopup({ open, onClose, onProjectCreated, onGen
                     isCreatingProject
                   }
                 >
-                  {isCreatingProject && <Loader2 size={16} className="animate-spin" />}
                   {step === 4 ? (isCreatingProject ? "Creating..." : "Create Project") : "Next"}
                 </button>
               </div>
