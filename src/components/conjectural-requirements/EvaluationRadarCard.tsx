@@ -124,6 +124,7 @@ export default function EvaluationRadarCard({ evaluations, requirementId }: Eval
       <div
         onClick={() => setShowModal(true)}
         style={{
+          margin: '25px 0px 45px 0px',
           width: '100%',
           maxWidth: 360,
           border: '1px solid #374151',
