@@ -75,13 +75,32 @@ jobs:
       contents: read
 
     steps:
-      # Login Azure
-      - name: Login Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID_CONTAINER }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID_CONTAINER }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID_CONTAINER }}
+      - name: Debug das Variáveis OIDC
+        run: |
+          echo "Tamanho do Client ID (Secrets): ${#CLIENT_ID}"
+          echo "Tamanho do Client Secret (Secrets): ${#CLIENT_SEC}"
+          echo "Tamanho do Tenant ID (Secrets): ${#TENANT_ID}"
+          echo "Tamanho do Sub ID (Secrets): ${#SUB_ID}"
+
+        env:
+          CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID_CONTAINER }}
+          CLIENT_SEC: ${{ secrets.AZURE_CLIENT_SECRET_CONTAINER }}
+          TENANT_ID: ${{ secrets.AZURE_TENANT_ID_CONTAINER }}
+          SUB_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID_CONTAINER }}
+
+      # =========================
+      # 🔑 LOGIN AZURE (MANUAL CLI)
+      # =========================
+      - name: Login Azure via CLI
+        run: |
+          echo "Realizando login no Azure via Service Principal..."
+          az login --service-principal \
+            --username ${{ secrets.AZURE_CLIENT_ID_CONTAINER }} \
+            --password ${{ secrets.AZURE_CLIENT_SECRET_CONTAINER }} \
+            --tenant ${{ secrets.AZURE_TENANT_ID_CONTAINER }}
+
+          echo "Definindo a assinatura padrão..."
+          az account set --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID_CONTAINER }}
 
       # =========================
       # 🟦 DEPLOY WEB
