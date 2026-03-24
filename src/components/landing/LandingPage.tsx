@@ -11,11 +11,9 @@ import {
   Github,
   Handshake,
   Play,
-  Cpu,
-  Layers,
-  MessageSquare,
-  ClipboardList,
-  Workflow,
+  MonitorSmartphone,
+  ServerCog,
+  MessageSquareText,
   Wrench,
   Brain,
   Scale,
@@ -172,24 +170,24 @@ export default function LandingPage() {
           {/* Components */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-12">
             <ComponentCard
-              icon={<Brain className="w-6 h-6" />}
-              title="Conjectural Agent"
-              description="Generates initial requirements based on project descriptions, embracing uncertainty through conjectural reasoning and explicit assumption tracking."
+              icon={<Network className="w-6 h-6" />}
+              title="Multi-Agents"
+              description="Composed of four specialized agents that handle distinct tasks, all orchestrated by a coordinator to keep decisions and outputs aligned."
             />
             <ComponentCard
-              icon={<ClipboardList className="w-6 h-6" />}
-              title="Specification Agent"
-              description="Transforms conjectural requirements into formal, structured specifications following established standards and templates."
+              icon={<MonitorSmartphone className="w-6 h-6" />}
+              title="Frontend"
+              description="A responsive web interface where users create projects, inspect requirement artifacts, and follow execution progress with interactive visual feedback."
             />
             <ComponentCard
-              icon={<MessageSquare className="w-6 h-6" />}
-              title="Review Agent"
-              description="Critically evaluates generated requirements for completeness, consistency, and feasibility, providing actionable feedback."
+              icon={<ServerCog className="w-6 h-6" />}
+              title="Backend"
+              description="A service layer that manages orchestration state, document processing, model integrations, and persistence for reliable multi-agent workflows."
             />
             <ComponentCard
-              icon={<Cpu className="w-6 h-6" />}
-              title="Orchestration Layer"
-              description="Coordinates agent interactions, manages workflow state, and ensures structured dialogue between all components."
+              icon={<MessageSquareText className="w-6 h-6" />}
+              title="Chatbot Component"
+              description="An intelligent chat interface that communicates with agents in real time and updates the UI dynamically as tools are called and results arrive."
             />
           </div>
 
