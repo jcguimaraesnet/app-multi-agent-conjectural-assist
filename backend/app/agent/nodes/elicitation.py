@@ -39,6 +39,7 @@ from app.services.embedding_service import (
     generate_embeddings,
     fetch_existing_embeddings,
     select_most_diverse,
+    select_most_diverse_among,
     is_similar_to_existing,
 )
 
@@ -165,12 +166,29 @@ async def generate_positive_impacts(
     candidate_count = quantity * 3
     print(f"[Positive Impact] Generating {candidate_count} candidates (quantity={quantity} x 3)...")
 
+    # Build exclusion list from existing impacts (top 10 most diverse among themselves)
+    exclusion_list_text = ""
+    if project_id:
+        existing_rows = await fetch_existing_embeddings(project_id)
+        existing_with_text = [r for r in existing_rows if r.get("embedding") and r.get("positive_impact")]
+        if existing_with_text:
+            texts = [r["positive_impact"] for r in existing_with_text]
+            embs = [r["embedding"] for r in existing_with_text]
+            max_exclusion = min(10, len(texts))
+            diverse_indices = select_most_diverse_among(texts, embs, max_exclusion)
+            exclusion_items = [texts[i] for i in diverse_indices]
+            print(f"[Positive Impact] Exclusion list ({len(exclusion_items)} items):")
+            for item in exclusion_items:
+                print(f"  - {item}")
+            exclusion_list_text = "\n".join(f"- {item}" for item in exclusion_items)
+
     prompt = get_prompt(ELICITATION_GENERATE_POSITIVE_IMPACT_PROMPT, data_context.language).format(
         domain=data_context.domain,
         stakeholder=data_context.stakeholder,
         business_objective=data_context.business_objective,
         project_summary=data_context.project_summary,
         quantity=candidate_count,
+        exclusion_list=exclusion_list_text,
     )
 
     model = get_model(provider=model_provider, temperature=0)
@@ -202,6 +220,21 @@ async def generate_positive_impacts(
 
     # Select the most diverse candidates
     selected_indices = select_most_diverse(candidates, candidate_embeddings, existing_embeddings, quantity)
+
+    # Log all candidates with their max similarity against existing embeddings
+    if existing_embeddings:
+        from app.services.embedding_service import _cosine_similarity
+        print(f"[Positive Impact] All candidates and their max similarity to existing embeddings:")
+        for i, (text, c_emb) in enumerate(zip(candidates, candidate_embeddings)):
+            max_sim = max(_cosine_similarity(c_emb, e_emb) for e_emb in existing_embeddings)
+            marker = " <-- SELECTED" if i in selected_indices else ""
+            print(f"  [{i}] (max_sim={max_sim:.4f}) {text}{marker}")
+    else:
+        print(f"[Positive Impact] All candidates (no existing embeddings for comparison):")
+        for i, text in enumerate(candidates):
+            marker = " <-- SELECTED" if i in selected_indices else ""
+            print(f"  [{i}] {text}{marker}")
+
     return [candidates[i] for i in selected_indices]
 
 

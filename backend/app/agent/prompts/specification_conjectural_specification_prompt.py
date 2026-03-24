@@ -40,7 +40,7 @@ based on the information below.
 ## Specific instructions for each field
 
 [desired behavior] -> Refers to a text describing a desired system behavior to achieve the [positive impact]
-[positive impact] -> Refers to a refined text based on the **initial idea of positive impact** desired in the business
+[positive impact] -> Refers to a refined text based on the **initial idea of positive impact** desired in the business (important rule for this field: do not use compound sentences, that is, avoid using connectives such as "and", "but", "however", "gerund" etc. to connect or expand ideas in this field. This field must contain a single, direct idea of positive impact, therefore, if the initial idea of positive impact contains more than one idea, choose the most relevant one and reformulate it so that it is a single, direct idea of positive impact desired in the business)
 [uncertainty] -> Refers to a refined text based on the **initial idea of uncertainty** to achieve the [positive impact] in the business
 
 [solution assumption] -> Refers to a refined text based on the **initial idea of solution hypothesis** to resolve the [uncertainty]
@@ -150,7 +150,7 @@ tomando como base as informações abaixo.
 ## Instruções específicas sobre cada campo
 
 [comportamento desejado] -> Se refere a um texto que descreve um comportamento desejado no sistema para alcançar o [impacto positivo]
-[impacto positivo] -> Se refere a um texto refinado da **ideia inicial de impacto positivo** desejado no negócio
+[impacto positivo] -> Se refere a um texto refinado da **ideia inicial de impacto positivo** desejado no negócio (regra importante deste campo: Esse campo deve conter uma ideia única e direta, portanto não use período composto. Não use conectivos como "e", "mas", "porém", "gerúndio" etc. para conectar ou expandir ideias. O texto elaborado deve ter concordância com a frase inicial desse campo "De modo que ")
 [incerteza] -> Se refere a um texto refinado da **ideia inicial de incerteza** para alcançar o [impacto positivo] no negócio
 
 [suposição de solução] -> Se refere a um texto refinado da **ideia inicial de hipótese de solução** para resolver a [incerteza]

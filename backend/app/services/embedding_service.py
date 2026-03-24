@@ -140,6 +140,62 @@ def select_most_diverse(
     return selected
 
 
+def select_most_diverse_among(
+    texts: List[str],
+    embeddings: List[List[float]],
+    count: int,
+) -> List[int]:
+    """Select the `count` most diverse items among themselves using greedy max-min.
+
+    1. Start with the pair of embeddings most distant from each other.
+    2. Iteratively add the embedding with the greatest minimum distance
+       to the already-selected set.
+
+    Returns indices into the input lists.
+    """
+    n = len(texts)
+    if n <= count:
+        return list(range(n))
+
+    # Precompute pairwise similarity matrix
+    sim_matrix = np.zeros((n, n))
+    for i in range(n):
+        for j in range(i + 1, n):
+            sim = _cosine_similarity(embeddings[i], embeddings[j])
+            sim_matrix[i][j] = sim
+            sim_matrix[j][i] = sim
+
+    # Step 1: Find the pair with minimum similarity (most distant)
+    min_sim = float("inf")
+    seed_a, seed_b = 0, 1
+    for i in range(n):
+        for j in range(i + 1, n):
+            if sim_matrix[i][j] < min_sim:
+                min_sim = sim_matrix[i][j]
+                seed_a, seed_b = i, j
+
+    selected = [seed_a, seed_b]
+
+    # Step 2: Greedily add the most diverse remaining item
+    while len(selected) < count:
+        best_idx = -1
+        best_min_dist = -1.0
+        for i in range(n):
+            if i in selected:
+                continue
+            # Min distance to any already-selected item (distance = 1 - similarity)
+            min_dist = min(1.0 - sim_matrix[i][s] for s in selected)
+            if min_dist > best_min_dist:
+                best_min_dist = min_dist
+                best_idx = i
+        selected.append(best_idx)
+
+    for idx in selected:
+        print(f"  [Embedding] Diverse selection [{idx}]: {texts[idx][:80]}")
+
+    return selected
+
+
 def is_similar_to_existing(
     candidate_embedding: List[float],
     existing_embeddings: List[List[float]],
