@@ -57,6 +57,7 @@ async def _detect_impact_uncertainties(
         stakeholder=data_context.stakeholder,
         business_objective=data_context.business_objective,
         quantity=len(impacts),
+        language=data_context.language,
     )
 
     model = get_model(provider=model_provider, temperature=0)
@@ -93,6 +94,7 @@ async def _generate_conjectural_hypotheses(
         stakeholder=data_context.stakeholder,
         business_objective=data_context.business_objective,
         quantity=len(impacts),
+        language=data_context.language,
     )
 
     model = get_model(provider=model_provider, temperature=0)

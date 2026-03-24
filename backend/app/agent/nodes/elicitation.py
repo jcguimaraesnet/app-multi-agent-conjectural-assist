@@ -105,6 +105,7 @@ async def refine_positive_impacts(
         project_summary=data_context.project_summary,
         brief_descriptions=descriptions_text,
         quantity=len(brief_descriptions),
+        language=data_context.language,
     )
 
     model = get_model(provider=model_provider, temperature=0)
@@ -189,6 +190,7 @@ async def generate_positive_impacts(
         project_summary=data_context.project_summary,
         quantity=candidate_count,
         exclusion_list=exclusion_list_text,
+        language=data_context.language,
     )
 
     model = get_model(provider=model_provider, temperature=0)

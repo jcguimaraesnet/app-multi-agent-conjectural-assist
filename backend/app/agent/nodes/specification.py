@@ -114,6 +114,7 @@ async def specification_node(state: WorkflowState, config: Optional[RunnableConf
                 positive_impact=cd.positive_impact,
                 uncertainty=cd.uncertainty,
                 supposition_solution=cd.supposition_solution,
+                language=data_context.language,
             )
         else:
             # Subsequent attempts: refine based on last requirement + its LLM evaluation
@@ -130,6 +131,7 @@ async def specification_node(state: WorkflowState, config: Optional[RunnableConf
                 prev_uncertainty_evaluated=last_cr.qess.uncertainty_evaluated,
                 prev_observation_analysis=last_cr.qess.observation_analysis,
                 evaluation_summary=_format_evaluation(last_cr.llm_evaluation),
+                language=data_context.language,
             )
             print(f"[Specification] Using refinement prompt for requirement #{req_num} (attempt {spec_attempt + 1})")
 

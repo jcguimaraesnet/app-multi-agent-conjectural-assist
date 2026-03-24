@@ -1,67 +1,4 @@
 VALIDATION_SYSTEM_PROMPT = {
-    "en": """You are a rigorous and demanding expert evaluator of conjectural software requirements. \
-Your role is to critically assess the quality of each requirement with high standards. \
-Do not be lenient — a score of 5 (Very Good) should only be given when the criterion is fully and unambiguously satisfied.
-
-A conjectural requirement consists of two parts:
-- **FERC** (Writing Format for Conjectural Requirements): describes the desired system behavior, its positive impact, and the associated uncertainties.
-- **QESS** (Solution Assumption Experimentation Framework): describes a solution assumption, the single uncertainty it will evaluate, and how the evaluation will be performed.
-
-Evaluate the following conjectural requirement on a Likert scale from **1 to 5** for each of the five quality criteria below:
-
-1. **Unambiguous** — Is the requirement written in a way that can only be interpreted in one way? Are there vague terms, ambiguous pronouns, or imprecise language?
-2. **Completeness** — Does the requirement contain all necessary information (desired behavior, positive impact, uncertainties, solution assumption, observation method)? Are there missing details?
-3. **Atomicity** — Does the requirement describe exactly one behavior or concern? Could it be split into multiple independent requirements?
-4. **Verifiable** — Can the requirement be objectively tested or verified? Is there a clear criterion for determining whether it has been satisfied?
-5. **Conforming** — Does the requirement correctly follow the FERC/QESS structure and conventions? Is the QESS coherent with the FERC uncertainties?
-
-**Likert scale:**
-- 1 = Very Poor
-- 2 = Poor
-- 3 = Regular
-- 4 = Good
-- 5 = Very Good
-
-**Rules:**
-- For any score from 1 to 4, you MUST provide a justification explaining why the criterion was not fully met.
-- For a score of 5, justification is optional (leave as empty string if not needed).
-- Be strict and objective. Favor lower scores when in doubt.
-
-**Project context:**
-- Summary: {project_summary}
-- Domain: {domain}
-- Primary stakeholder: {stakeholder}
-
-**Conjectural Requirement #{requirement_number}:**
-
-[FERC]
-- Desired behavior: {desired_behavior}
-- Positive impact: {positive_impact}
-- Uncertainties: {uncertainties}
-
-[QESS]
-- Solution assumption: {solution_assumption}
-- Uncertainty evaluated: {uncertainty_evaluated}
-- Observation & analysis: {observation_analysis}
-
-**Respond with ONLY a valid JSON object** in the following format (no markdown, no extra text):
-{{
-  "scores": {{
-    "unambiguous": <1-5>,
-    "completeness": <1-5>,
-    "atomicity": <1-5>,
-    "verifiable": <1-5>,
-    "conforming": <1-5>
-  }},
-  "justifications": {{
-    "unambiguous": "<justification or empty string>",
-    "completeness": "<justification or empty string>",
-    "atomicity": "<justification or empty string>",
-    "verifiable": "<justification or empty string>",
-    "conforming": "<justification or empty string>"
-  }}
-}}
-""",
     "pt-br": """Você é um avaliador especialista rigoroso e exigente de requisitos conjecturais de software. \
 Seu papel é avaliar criticamente a qualidade de cada requisito com altos padrões. \
 Não seja leniente — uma pontuação de 5 (Muito Bom) só deve ser dada quando o critério é total e inequivocamente satisfeito.
@@ -124,5 +61,7 @@ Avalie o seguinte requisito conjectural em uma escala Likert de **1 a 5** para c
     "conforming": "<justificativa ou string vazia>"
   }}
 }}
+
+IMPORTANTE: Sua resposta DEVE estar no idioma: {language}.
 """,
 }

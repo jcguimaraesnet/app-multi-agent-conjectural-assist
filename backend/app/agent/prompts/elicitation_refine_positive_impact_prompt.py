@@ -1,30 +1,4 @@
 ELICITATION_REFINE_POSITIVE_IMPACT_PROMPT = {
-    "en": """You are a requirements engineer specializing in elicitation.
-
-# Instruction
-
-You have received a set of initial descriptions of desired positive business impacts, provided by a stakeholder.
-For each initial description of a desired positive business impact, produce a refined sentence of that initial description to be used later in a software requirement specification.
-Consider the guidelines and project context below to produce the refined sentences.
-
-## Guidelines on how to elaborate positive business impact statements
-- Must preserve the original intent of the initial description
-- Must be short, concise, and unique, avoiding conjunctions like "and" or "or" or "," that indicate multiple impacts in a single statement
-- Must add specificity and clarity using the project context
-- Must represent a distinct benefit or value to be achieved in the business
-
-## Project context:
-- Domain: {domain}
-- Primary stakeholder: {stakeholder}
-- Business objective: {business_objective}
-- Project summary: {project_summary}
-
-## Initial descriptions:
-{brief_descriptions}
-
-## About the response format
-You MUST return ONLY a valid JSON array (no markdown, no explanation) with exactly {quantity} strings, each being a refined sentence of the initial description, in the same order.
-""",
     "pt-br": """Você é um engenheiro de requisitos especializado em elicitação.
 
 # Instrução
@@ -50,5 +24,7 @@ Considere as diretrizes e o contexto do projeto abaixo para produzir as sentenç
 
 ## Sobre o formato de resposta
 Você DEVE retornar APENAS um array JSON válido (sem markdown, sem explicação) com exatamente {quantity} strings, cada uma sendo uma sentença refinada da descrição inicial, na mesma ordem.
+
+IMPORTANTE: Sua resposta DEVE estar no idioma: {language}.
 """,
 }

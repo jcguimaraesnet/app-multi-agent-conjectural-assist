@@ -1,17 +1,13 @@
 """
-Prompt factory — returns the correct language version of a prompt.
+Prompt factory — returns the prompt template for use.
 
-Each prompt file exports a dict[str, str] keyed by language code (e.g. "en", "pt-br").
-The factory resolves the best match for the project's configured language,
-falling back to English ("en") when no match is found.
+Each prompt file exports a dict[str, str] with a single "pt-br" key.
+The factory returns that template regardless of the project language,
+since each prompt already includes a {language} placeholder to instruct
+the LLM to respond in the correct language.
 """
 
 
 def get_prompt(prompts: dict[str, str], language: str) -> str:
-    """Return the prompt template for the given language, defaulting to English."""
-    lang = language.lower()
-    if lang in prompts:
-        return prompts[lang]
-    # Fallback: try base language (e.g. "en-us" → "en")
-    base = lang.split("-")[0]
-    return prompts.get(base, prompts["en"])
+    """Return the prompt template (always pt-br, with {language} for output locale)."""
+    return prompts["pt-br"]

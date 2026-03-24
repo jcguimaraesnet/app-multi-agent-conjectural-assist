@@ -134,6 +134,7 @@ async def validation_node(state: WorkflowState, config: Optional[RunnableConfig]
             solution_assumption=cr.qess.solution_assumption,
             uncertainty_evaluated=cr.qess.uncertainty_evaluated,
             observation_analysis=cr.qess.observation_analysis,
+            language=data_context.language,
         )
 
         try:
