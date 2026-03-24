@@ -134,9 +134,8 @@ export default function StepProgress({ state }: StepProgressProps) {
           {currentStep.label} in progress
         </span>
         <span
-          className="text-sm text-orange-500 dark:text-orange-400 loading-dots"
-          aria-label="Processing"
-        >
+          className="text-2xl text-orange-500 dark:text-orange-400 loading-dots"
+          aria-label="Processing">
           <span className="dot">.</span>
           <span className="dot">.</span>
           <span className="dot">.</span>
