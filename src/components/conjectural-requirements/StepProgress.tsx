@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Settings, Check } from "lucide-react";
+import { Settings, Check, Bot  } from "lucide-react";
 
 interface StepState {
   step1_elicitation: boolean;
@@ -124,17 +124,22 @@ export default function StepProgress({ state }: StepProgressProps) {
 
   return (
     <OverlayCard>
-      <Settings
-        className="h-12 w-12 text-orange-500 dark:text-orange-400 animate-spin"
-        style={{ animationDuration: "3s" }}
+      <Bot
+        className="h-12 w-12 inline-block text-orange-500 dark:text-orange-400 animate-pulse"
+        style={{ animationDuration: "1.2s" }}
       />
 
       <div className="flex items-center gap-3">
         <span className="text-lg font-semibold text-gray-700 dark:text-gray-200">
-          {currentStep.label}
+          {currentStep.label} in progress
         </span>
-        <span className="text-sm text-orange-500 dark:text-orange-400 animate-pulse">
-          processing...
+        <span
+          className="text-sm text-orange-500 dark:text-orange-400 loading-dots"
+          aria-label="Processing"
+        >
+          <span className="dot">.</span>
+          <span className="dot">.</span>
+          <span className="dot">.</span>
         </span>
       </div>
 
