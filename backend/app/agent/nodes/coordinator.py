@@ -1,0 +1,115 @@
+"""
+Coordinator Node - Central hub for the conjectural requirement pipeline.
+
+This node acts as the hub in a hub-and-spoke architecture, controlling the
+sequential flow through Elicitation → Analysis → Specification → Validation,
+managing step flags, pending_progress, and the specification/validation loop.
+
+Flow:
+  Coordinator ←→ Elicitation
+              ←→ Analysis
+              ←→ Specification
+              ←→ Validation
+              → END
+"""
+
+from typing import Optional
+
+from langchain_core.runnables.config import RunnableConfig
+from langgraph.types import Command
+from langgraph.graph import END
+from copilotkit.langgraph import copilotkit_emit_state, copilotkit_customize_config
+
+from app.agent.state import WorkflowState
+
+
+async def coordinator_node(state: WorkflowState, config: Optional[RunnableConfig] = None):
+    """
+    Central coordinator that routes to worker nodes based on the current phase.
+
+    Reads coordinator_phase from state and:
+    - Sets step flags and pending_progress centrally
+    - Routes to the appropriate worker node via Command(goto=...)
+    - Controls the specification/validation loop via spec_attempt
+    """
+    config = copilotkit_customize_config(config, emit_messages=False)
+
+    phase = state.get("coordinator_phase", "elicitation")
+    print(f"[Coordinator] Current phase: {phase}")
+
+    if phase == "elicitation":
+        state["pending_progress"] = True
+        await copilotkit_emit_state(config, state)
+        return Command(
+            goto="elicitation_node",
+            update={
+                "pending_progress": True,
+            }
+        )
+
+    elif phase == "analysis":
+        state["step1_elicitation"] = True
+        state["pending_progress"] = True
+        await copilotkit_emit_state(config, state)
+        return Command(
+            goto="analysis_node",
+            update={
+                "step1_elicitation": True,
+                "pending_progress": True,
+            }
+        )
+
+    elif phase == "specification":
+        state["step1_elicitation"] = True
+        state["step2_analysis"] = True
+        state["pending_progress"] = True
+        await copilotkit_emit_state(config, state)
+        return Command(
+            goto="specification_node",
+            update={
+                "step1_elicitation": True,
+                "step2_analysis": True,
+                "pending_progress": True,
+            }
+        )
+
+    elif phase == "validation":
+        new_spec_attempt = state.get("spec_attempt", 0) + 1
+        state["step1_elicitation"] = True
+        state["step2_analysis"] = True
+        state["step3_specification"] = True
+        state["pending_progress"] = True
+        state["spec_attempt"] = new_spec_attempt
+        await copilotkit_emit_state(config, state)
+        return Command(
+            goto="validation_node",
+            update={
+                "step1_elicitation": True,
+                "step2_analysis": True,
+                "step3_specification": True,
+                "pending_progress": True,
+                "spec_attempt": new_spec_attempt,
+            }
+        )
+
+    elif phase == "done":
+        state["step1_elicitation"] = True
+        state["step2_analysis"] = True
+        state["step3_specification"] = True
+        state["step4_validation"] = True
+        state["pending_progress"] = False
+        await copilotkit_emit_state(config, state)
+        return Command(
+            goto=END,
+            update={
+                "step1_elicitation": True,
+                "step2_analysis": True,
+                "step3_specification": True,
+                "step4_validation": True,
+                "pending_progress": False,
+            }
+        )
+
+    else:
+        print(f"[Coordinator] Unknown phase: {phase}, defaulting to END")
+        return Command(goto=END)

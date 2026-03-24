@@ -93,6 +93,9 @@ class WorkflowState(CopilotKitState):
     step3_specification: bool
     step4_validation: bool
 
+    # Coordinator phase tracking
+    coordinator_phase: Optional[str]  # "elicitation" | "analysis" | "specification" | "validation" | "done"
+
     # Specification attempt counter (incremented each cycle through specification → validation)
     spec_attempt: int
 

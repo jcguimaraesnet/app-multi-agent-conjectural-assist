@@ -157,10 +157,6 @@ async def validation_node(state: WorkflowState, config: Optional[RunnableConfig]
         await copilotkit_emit_state(config, state)
 
 
-    step4_validation = False
-    pending_progress = True
-    # se attempt = 3
-
     spec_attempts = context.get("spec_attempts", 3)
     if state.get("spec_attempt", 0) >= spec_attempts:
         data_context.rank_conjectural_requirements()
@@ -174,21 +170,11 @@ async def validation_node(state: WorkflowState, config: Optional[RunnableConfig]
         messages = messages + [response]
         await copilotkit_emit_message(config, msg_created_text)
 
-        # message 2
-        # msg_ids_text = "\n".join(f"- {rid}" for rid in saved_ids)
-        # response = AIMessage(content=msg_ids_text)
-        # messages = messages + [response]
-        # await copilotkit_emit_message(config, msg_ids_text)
-
         # message 3
         msg_graphic_text = "Below is an example of a chart for the first requirement generated. For more details on other requirements, go to the reports page."
         response = AIMessage(content=msg_graphic_text)
         messages = messages + [response]
         await copilotkit_emit_message(config, msg_graphic_text)
-
-        # step4_validation is used in progress steps
-        step4_validation = True
-        pending_progress = False
 
         # --- Call show_requirements tool (must be LAST in messages) ---
         best_requirement_ids = []
@@ -209,14 +195,18 @@ async def validation_node(state: WorkflowState, config: Optional[RunnableConfig]
 
         messages = messages + [tool_response]
 
-    return Command(
-        update={
-            "messages": messages,
-            "step1_elicitation": True,
-            "step2_analysis": True,
-            "step3_specification": True,
-            "step4_validation": step4_validation,
-            "pending_progress": pending_progress,
-            "data_context": data_context.model_dump(),
-        }
-    )
+        return Command(
+            update={
+                "messages": messages,
+                "data_context": data_context.model_dump(),
+                "coordinator_phase": "done",
+            }
+        )
+    else:
+        return Command(
+            update={
+                "messages": messages,
+                "data_context": data_context.model_dump(),
+                "coordinator_phase": "specification",
+            }
+        )

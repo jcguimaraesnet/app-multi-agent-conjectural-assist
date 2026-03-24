@@ -162,10 +162,6 @@ async def specification_node(state: WorkflowState, config: Optional[RunnableConf
         update={
             "messages": messages,
             "data_context": data_context.model_dump(),
-            "step1_elicitation": True,
-            "step2_analysis": True,
-            "step3_specification": True,
-            "pending_progress": True,
-            "spec_attempt": state.get("spec_attempt", 0) + 1,
+            "coordinator_phase": "validation",
         }
     )

@@ -184,9 +184,7 @@ async def analysis_node(state: WorkflowState, config: Optional[RunnableConfig] =
         update={
             "messages": state.get("messages", []),
             "data_context": data_context.model_dump(),
-            "step1_elicitation": True,
-            "step2_analysis": True,
-            "pending_progress": True,
+            "coordinator_phase": "specification",
             "spec_attempt": 0,
         }
     )

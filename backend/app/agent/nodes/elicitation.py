@@ -364,7 +364,13 @@ async def elicitation_node(state: WorkflowState, config: Optional[RunnableConfig
     require_brief_description = context['require_brief_description']
     current_project_id = context['current_project_id']
     quantity_req_batch = context['quantity_req_batch']
+    spec_attempts = context["spec_attempts"]
     model_provider = context['model']
+    print(f"[Elicitation] require_brief_description = {context['require_brief_description']}")
+    print(f"[Elicitation] require_evaluation = {context['require_evaluation']}")
+    print(f"[Elicitation] quantity_req_batch = {context['quantity_req_batch']}")
+    print(f"[Elicitation] spec_attempts = {spec_attempts}")
+    print(f"[Elicitation] model = {model_provider}")
 
     # Fetch project context fields directly from the projects table
     project_ctx = await fetch_project_context_fields(current_project_id)
@@ -424,7 +430,6 @@ async def elicitation_node(state: WorkflowState, config: Optional[RunnableConfig
         update={
             "messages": state.get("messages", []),
             "data_context": data_context.model_dump(),
-            "step1_elicitation": True,
-            "pending_progress": True,
+            "coordinator_phase": "analysis",
         }
     )

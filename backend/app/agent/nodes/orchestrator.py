@@ -33,15 +33,12 @@ async def orchestrator_node(state: WorkflowState, config: Optional[RunnableConfi
 
     context = extract_copilotkit_context(state)
 
-    print(f"CurrentUser Id = {context['current_user_id']}")
-    print(f"CurrentUser FirstName = {context['current_user_first_name']}")
-    print(f"CurrentProjectId = {context['current_project_id']}")
+    print(f"[Orchestrator] CurrentUser Id = {context['current_user_id']}")
+    print(f"[Orchestrator] CurrentUser FirstName = {context['current_user_first_name']}")
+    print(f"[Orchestrator] CurrentProjectId = {context['current_project_id']}")
     if not context.get("current_project_id"):
         raise ValueError("current_project_id is required but was not provided. Please select a project before proceeding.")
-    print(f"require_brief_description = {context['require_brief_description']}")
-    print(f"require_evaluation = {context['require_evaluation']}")
-    print(f"quantity_req_batch = {context['quantity_req_batch']}")
-    print(f"model = {context['model']}")
+    print(f"[Orchestrator] model = {context['model']}")
 
     if config is None:
         config = RunnableConfig(recursion_limit=25)
@@ -53,7 +50,7 @@ async def orchestrator_node(state: WorkflowState, config: Optional[RunnableConfi
     # Extract the last user message for classification
     messages = state.get('messages', [])
     last_message = str(messages[-1].content) if messages else ""
-    print(f"Last message from chat: {last_message}")
+    print(f"[Orchestrator] Last message from chat: {last_message}")
     
     config_internal = copilotkit_customize_config(config, emit_messages=False)
 
@@ -63,7 +60,7 @@ async def orchestrator_node(state: WorkflowState, config: Optional[RunnableConfi
 
     # Classify the intent
     classification = await classify_intent(last_message, config_internal, context['model'])
-    print(f"Intent classification result: {classification}")
+    print(f"[Orchestrator] Intent classification result: {classification}")
 
     # Route based on intent
     if classification.intent == "conjectural_requirement_generate_response":
@@ -71,6 +68,7 @@ async def orchestrator_node(state: WorkflowState, config: Optional[RunnableConfi
             update={
                 "messages": messages,
                 "intent": classification.intent,
+                "coordinator_phase": "elicitation",
                 "step1_elicitation": False,
                 "step2_analysis": False,
                 "step3_specification": False,
