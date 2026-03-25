@@ -18,7 +18,7 @@ export default function SettingsPanel() {
   };
 
   const incrementQuantity = () => {
-    const newValue = Math.min(settings.quantity_req_batch + 1, 10);
+    const newValue = Math.min(settings.quantity_req_batch + 1, 5);
     updateSetting('quantity_req_batch', newValue);
   };
 
@@ -115,7 +115,7 @@ export default function SettingsPanel() {
                 Quantity of requirements for batch generation
               </h3>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Number of requirements to generate in batch mode (between 2 and 10)
+                Number of requirements to generate in batch mode (between 2 and 5)
               </p>
             </div>
             {/* Number Stepper Skeleton */}
@@ -251,7 +251,7 @@ export default function SettingsPanel() {
               Quantity of requirements per batch
             </h3>
             <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
-              Number of requirements to generate in batch mode (between 2 and 10)
+              Number of requirements to generate in batch mode (between 2 and 5)
             </p>
           </div>
           <div className="flex items-center">
