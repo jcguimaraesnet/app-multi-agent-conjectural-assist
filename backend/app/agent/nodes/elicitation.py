@@ -395,6 +395,8 @@ async def elicitation_node(state: WorkflowState, config: Optional[RunnableConfig
         language=language,
     )
 
+    messages = state.get("messages", [])
+
     # Step 2: Obtain positive business impact statements
     # If user provides brief descriptions → refine via LLM + compute similarity
     # Otherwise → generate from scratch via LLM using project context
@@ -405,6 +407,10 @@ async def elicitation_node(state: WorkflowState, config: Optional[RunnableConfig
             {"type": "hitl_brief_description", "quantity_req_batch": quantity_req_batch},
         )
         print(f"[Elicitation] payload: {payload}")
+
+        interrupt_message = "📝 **User input** received successfully. Please wait while it is processed."
+        messages = messages + [AIMessage(content=interrupt_message)]
+        await copilotkit_emit_message(config, interrupt_message)
 
         brief_descriptions: List[str] = payload.get("brief_descriptions", [])
         print(f"[Positive Impact] Received {len(brief_descriptions)} brief description(s) from user.")
@@ -428,7 +434,7 @@ async def elicitation_node(state: WorkflowState, config: Optional[RunnableConfig
 
     return Command(
         update={
-            "messages": state.get("messages", []),
+            "messages": messages,
             "data_context": data_context.model_dump(),
             "coordinator_phase": "analysis",
         }

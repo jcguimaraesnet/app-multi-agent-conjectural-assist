@@ -46,6 +46,29 @@ def route_after_orchestrator(state: WorkflowState) -> str:
     return "generic_node"
 
 
+def route_after_coordinator(state: WorkflowState) -> str:
+    """
+    Routing function for conditional edges after coordinator node.
+
+    Routes to the appropriate worker node based on coordinator_phase:
+    - elicitation: routes to elicitation_node
+    - analysis: routes to analysis_node
+    - specification: routes to specification_node
+    - validation: routes to validation_node
+    - done: routes to END
+    """
+    phase = state.get("coordinator_phase", "elicitation")
+    if phase == "elicitation":
+        return "elicitation_node"
+    elif phase == "analysis":
+        return "analysis_node"
+    elif phase == "specification":
+        return "specification_node"
+    elif phase == "validation":
+        return "validation_node"
+    return END
+
+
 def create_graph():
     workflow = StateGraph(WorkflowState)
 
@@ -72,8 +95,20 @@ def create_graph():
         }
     )
 
+    # Conditional routing from coordinator based on coordinator_phase
+    workflow.add_conditional_edges(
+        "coordinator_node",
+        route_after_coordinator,
+        {
+            "elicitation_node": "elicitation_node",
+            "analysis_node": "analysis_node",
+            "specification_node": "specification_node",
+            "validation_node": "validation_node",
+            END: END,
+        }
+    )
+
     # Worker nodes return to coordinator via edges
-    # (Coordinator routes to workers dynamically via Command(goto=...))
     workflow.add_edge("elicitation_node", "coordinator_node")
     workflow.add_edge("analysis_node", "coordinator_node")
     workflow.add_edge("specification_node", "coordinator_node")

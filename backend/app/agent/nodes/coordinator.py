@@ -17,7 +17,6 @@ from typing import Optional
 
 from langchain_core.runnables.config import RunnableConfig
 from langgraph.types import Command
-from langgraph.graph import END
 from copilotkit.langgraph import copilotkit_emit_state, copilotkit_customize_config
 
 from app.agent.state import WorkflowState
@@ -29,7 +28,7 @@ async def coordinator_node(state: WorkflowState, config: Optional[RunnableConfig
 
     Reads coordinator_phase from state and:
     - Sets step flags and pending_progress centrally
-    - Routes to the appropriate worker node via Command(goto=...)
+    - Routing is handled by route_after_coordinator in graph.py via conditional edges
     - Controls the specification/validation loop via spec_attempt
     """
     config = copilotkit_customize_config(config, emit_messages=False)
@@ -41,7 +40,6 @@ async def coordinator_node(state: WorkflowState, config: Optional[RunnableConfig
         state["pending_progress"] = True
         await copilotkit_emit_state(config, state)
         return Command(
-            goto="elicitation_node",
             update={
                 "pending_progress": True,
             }
@@ -52,7 +50,6 @@ async def coordinator_node(state: WorkflowState, config: Optional[RunnableConfig
         state["pending_progress"] = True
         await copilotkit_emit_state(config, state)
         return Command(
-            goto="analysis_node",
             update={
                 "step1_elicitation": True,
                 "pending_progress": True,
@@ -65,7 +62,6 @@ async def coordinator_node(state: WorkflowState, config: Optional[RunnableConfig
         state["pending_progress"] = True
         await copilotkit_emit_state(config, state)
         return Command(
-            goto="specification_node",
             update={
                 "step1_elicitation": True,
                 "step2_analysis": True,
@@ -82,7 +78,6 @@ async def coordinator_node(state: WorkflowState, config: Optional[RunnableConfig
         state["spec_attempt"] = new_spec_attempt
         await copilotkit_emit_state(config, state)
         return Command(
-            goto="validation_node",
             update={
                 "step1_elicitation": True,
                 "step2_analysis": True,
@@ -100,7 +95,6 @@ async def coordinator_node(state: WorkflowState, config: Optional[RunnableConfig
         state["pending_progress"] = False
         await copilotkit_emit_state(config, state)
         return Command(
-            goto=END,
             update={
                 "step1_elicitation": True,
                 "step2_analysis": True,
@@ -111,5 +105,11 @@ async def coordinator_node(state: WorkflowState, config: Optional[RunnableConfig
         )
 
     else:
-        print(f"[Coordinator] Unknown phase: {phase}, defaulting to END")
-        return Command(goto=END)
+        print(f"[Coordinator] Unknown phase: {phase}, defaulting to done")
+        return Command(
+            update={
+                "coordinator_phase": "done",
+                "step4_validation": True,
+                "pending_progress": False,
+            }
+        )

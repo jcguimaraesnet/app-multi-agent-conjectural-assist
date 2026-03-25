@@ -75,6 +75,10 @@ async def validation_node(state: WorkflowState, config: Optional[RunnableConfig]
             "requirements": requirements_list,
         })
 
+        interrupt_message = "✅ **User evaluations** received successfully. Please wait while it is processed."
+        messages = messages + [AIMessage(content=interrupt_message)]
+        await copilotkit_emit_message(config, interrupt_message)
+
         # Parse and store human evaluation data
         try:
             eval_data = json.loads(human_evaluation_response) if isinstance(human_evaluation_response, str) else human_evaluation_response
@@ -165,13 +169,13 @@ async def validation_node(state: WorkflowState, config: Optional[RunnableConfig]
         saved_ids = persist_conjectural_data(context["current_project_id"], data_context, context.get("current_user_id"))
 
         # message 1
-        msg_created_text = "The following conjectural requirements were successfully **created**: " + ", ".join(saved_ids) + "."
+        msg_created_text = "📑 The following **conjectural requirements** were successfully created: " + ", ".join(saved_ids) + "."
         response = AIMessage(content=msg_created_text)
         messages = messages + [response]
         await copilotkit_emit_message(config, msg_created_text)
 
         # message 3
-        msg_graphic_text = "Below is an example of a chart for the first requirement generated. For more details on other requirements, go to the reports page."
+        msg_graphic_text = "📊 Below is an example of a **chart** for the first requirement generated. For more details on other requirements, go to the reports page."
         response = AIMessage(content=msg_graphic_text)
         messages = messages + [response]
         await copilotkit_emit_message(config, msg_graphic_text)
