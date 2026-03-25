@@ -40,6 +40,22 @@ export default function SettingsPanel() {
   if (isLoading) {
     return (
       <Card noPadding>
+        {/* Skeleton: Setting 1 - Model */}
+        <div className="px-6 py-5 border-b border-border-light dark:border-border-dark">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+                LLM configuration
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Select the AI model family used for conjectural requirement generation
+              </p>
+            </div>
+            {/* Select Skeleton */}
+            <div className="w-36 h-9 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
+          </div>
+        </div>
+
         {/* Skeleton: Master Human-in-the-Loop */}
         <div className="px-6 py-5 border-b border-border-light dark:border-border-dark">
           <div className="flex items-center justify-between">
@@ -129,28 +145,37 @@ export default function SettingsPanel() {
           </div>
         </div>
 
-        {/* Skeleton: Setting 5 - Model */}
-        <div className="px-6 py-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-medium text-gray-900 dark:text-white">
-                Model configuration
-              </h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Select the AI model family used for conjectural requirement generation
-              </p>
-            </div>
-            {/* Select Skeleton */}
-            <div className="w-36 h-9 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
-          </div>
-        </div>
       </Card>
     );
   }
 
   return (
     <Card noPadding>
-      
+
+      {/* Setting 1: Model */}
+      <div id="setting-model" className="px-6 py-5 border-b border-border-light dark:border-border-dark">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+              LLM configuration
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Select the AI model family used for conjectural requirement generation
+            </p>
+          </div>
+          <select
+            value={settings.model}
+            onChange={(e) => updateSetting('model', e.target.value)}
+            className="px-3 py-2 text-xs font-medium rounded-lg border border-border-light dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50"
+          >
+            <option value="gemini">Gemini 3 Family</option>
+            <option value="gpt">GPT 5 Family</option>
+            <option value="gpt_azure">GPT 5 Family (Azure)</option>
+            <option value="llama_azure">Llama 70B (Azure)</option>
+          </select>
+        </div>
+      </div>
+
       {/* Master: Human-in-the-Loop */}
       <div id="setting-human-in-the-loop" className="px-6 py-5 border-b border-border-light dark:border-border-dark">
         <div className="flex items-center justify-between">
@@ -320,30 +345,6 @@ export default function SettingsPanel() {
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Setting 6: Model */}
-      <div id="setting-model" className="px-6 py-5 border-b border-border-light dark:border-border-dark">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-medium text-gray-900 dark:text-white">
-              Model configuration
-            </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Select the AI model family used for conjectural requirement generation
-            </p>
-          </div>
-          <select
-            value={settings.model}
-            onChange={(e) => updateSetting('model', e.target.value)}
-            className="px-3 py-2 text-xs font-medium rounded-lg border border-border-light dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50"
-          >
-            <option value="gemini">Gemini 3 Family</option>
-            <option value="gpt">GPT 5 Family</option>
-            <option value="gpt_azure">GPT 5 Family (Azure)</option>
-            <option value="llama_azure">Llama 70B (Azure)</option>
-          </select>
         </div>
       </div>
 
