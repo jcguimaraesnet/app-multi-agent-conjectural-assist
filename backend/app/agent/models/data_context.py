@@ -70,9 +70,30 @@ class ConjecturalRequirement(BaseModel):
     )
 
 
+class QuestionAnswer(BaseModel):
+    """A question-answer pair."""
+
+    question: str = Field(
+        default="",
+        description="Question text",
+    )
+    answer: str = Field(
+        default="",
+        description="Answer text",
+    )
+
+
 class ConjecturalData(BaseModel):
     """Hierarchical data for a single conjectural requirement pipeline entry."""
 
+    raw_desired_behavior: str = Field(
+        default="",
+        description="Desired behavior statement",
+    )
+    raw_desired_behavior_questions_answers: List[QuestionAnswer] = Field(
+        default_factory=list,
+        description="List of question-answer pairs for the desired behavior",
+    )
     raw_positive_impact: str = Field(
         default="",
         description="Positive business impact statement",

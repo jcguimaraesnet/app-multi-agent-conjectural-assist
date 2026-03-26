@@ -8,6 +8,7 @@ metric, and stores the results back in the knowledge graph and state.
 
 import asyncio
 import json
+import re
 from typing import Optional, List, Dict, Any
 
 from langchain_core.runnables.config import RunnableConfig
@@ -17,9 +18,10 @@ from langgraph.types import Command
 from copilotkit.langgraph import copilotkit_emit_state, copilotkit_customize_config
 
 from app.agent.state import WorkflowState
-from app.agent.models.data_context import DataContext
+from app.agent.models.data_context import DataContext, QuestionAnswer
 from app.agent.utils.context_utils import extract_copilotkit_context
 from app.agent.prompts.factory import get_prompt
+from app.agent.prompts.analysis_contextual_questions_prompt import ANALYSIS_CONTEXTUAL_QUESTIONS_PROMPT
 from app.agent.prompts.analysis_impact_uncertainty_detection_prompt import ANALYSIS_IMPACT_UNCERTAINTY_DETECTION_PROMPT
 from app.agent.prompts.analysis_conjectural_hypothesis_prompt import ANALYSIS_CONJECTURAL_HYPOTHESIS_PROMPT
 from app.agent.models.knowledge_graph import (
@@ -37,6 +39,43 @@ def _strip_markdown_fences(raw: str) -> str:
         if raw.endswith("```"):
             raw = raw[:-3].strip()
     return raw
+
+
+async def _generate_contextual_questions(
+    data_context: DataContext,
+    model_provider: str,
+) -> List[List[str]]:
+    """Call the LLM to generate 3 contextual questions per positive business impact. Returns list of lists of question strings (index-aligned)."""
+    impacts = [cd.raw_positive_impact for cd in data_context.conjectural_data]
+    if not impacts:
+        return []
+
+    impacts_text = "\n".join(f"- {pi}" for pi in impacts)
+
+    prompt = get_prompt(ANALYSIS_CONTEXTUAL_QUESTIONS_PROMPT, data_context.language).format(
+        positive_impacts=impacts_text,
+        project_summary=data_context.project_summary,
+        domain=data_context.domain,
+        business_objective=data_context.business_objective,
+        quantity=len(impacts),
+        language=data_context.language,
+    )
+
+    model = get_model(provider=model_provider, temperature=0)
+
+    try:
+        response = await model.ainvoke([HumanMessage(content=prompt)])
+        raw_content = _strip_markdown_fences(extract_text(response.content).strip())
+        try:
+            return json.loads(raw_content)
+        except json.JSONDecodeError:
+            # Attempt to fix unescaped double quotes inside strings by replacing them with single quotes
+            fixed = re.sub(r'(?<=\w)"(?=\w)', "'", raw_content)
+            return json.loads(fixed)
+
+    except (json.JSONDecodeError, Exception) as e:
+        print(f"[Analysis] Error generating contextual questions: {e}")
+        return [["Unable to generate question."] * 3] * len(impacts)
 
 
 async def _detect_impact_uncertainties(
@@ -162,17 +201,26 @@ async def analysis_node(state: WorkflowState, config: Optional[RunnableConfig] =
     context = extract_copilotkit_context(state)
     model_provider = context['model']
 
-    # Recover elicitation context from state
+    # Step 1: Recover elicitation context from state
     data_context = DataContext.model_validate(state.get("data_context", {}))
     print(f"[Analysis] Elicitation context loaded — {len(data_context.conjectural_data)} positive impact(s)")
 
-    # Step A: Detect one uncertainty per positive impact
+    # Step 2: Generate contextual questions per positive impact
+    questions_list = await _generate_contextual_questions(data_context, model_provider)
+    for idx, (cd, questions) in enumerate(zip(data_context.conjectural_data, questions_list), start=1):
+        cd.raw_desired_behavior_questions_answers = [
+            QuestionAnswer(question=q) for q in questions
+        ]
+        for q in questions:
+            print(f"  [Questions] Impact [{idx}]: {q}")
+
+    # Step 3: Detect one uncertainty per positive impact
     uncertainties_list = await _detect_impact_uncertainties(data_context, model_provider)
     for cd, uncertainty in zip(data_context.conjectural_data, uncertainties_list):
         cd.raw_uncertainty = uncertainty
         print(f"  [Uncertainty] {cd.raw_positive_impact!r} → {uncertainty!r}")
 
-    # Step B: Generate a verifiable experiment hypothesis per impact+uncertainty pair
+    # Step 4: Generate a verifiable experiment hypothesis per impact+uncertainty pair
     hypotheses_list = await _generate_conjectural_hypotheses(data_context, model_provider)
     for cd, hypothesis in zip(data_context.conjectural_data, hypotheses_list):
         cd.raw_supposition_solution = hypothesis
