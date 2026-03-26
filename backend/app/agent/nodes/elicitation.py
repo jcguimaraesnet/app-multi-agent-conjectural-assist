@@ -427,7 +427,7 @@ async def elicitation_node(state: WorkflowState, config: Optional[RunnableConfig
             print(f"  [Positive Impact Generated] {pi}")
 
     data_context.conjectural_data = [
-        ConjecturalData(positive_impact=pi, positive_impact_similarity=sim)
+        ConjecturalData(raw_positive_impact=pi, raw_positive_impact_similarity=sim)
         for pi, sim in zip(positive_impacts, similarity)
     ]
     print(f"[Positive Impact] Total: {len(positive_impacts)} statement(s)")

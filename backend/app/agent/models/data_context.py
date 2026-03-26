@@ -73,19 +73,19 @@ class ConjecturalRequirement(BaseModel):
 class ConjecturalData(BaseModel):
     """Hierarchical data for a single conjectural requirement pipeline entry."""
 
-    positive_impact: str = Field(
+    raw_positive_impact: str = Field(
         default="",
         description="Positive business impact statement",
     )
-    positive_impact_similarity: int = Field(
+    raw_positive_impact_similarity: int = Field(
         default=0,
         description="Similarity percentage (0-100) between user brief description and refined impact (0 when auto-generated)",
     )
-    uncertainty: str = Field(
+    raw_uncertainty: str = Field(
         default="",
         description="Uncertainty detected for this positive impact",
     )
-    supposition_solution: str = Field(
+    raw_supposition_solution: str = Field(
         default="",
         description="Solution assumption experiment for this impact+uncertainty pair",
     )

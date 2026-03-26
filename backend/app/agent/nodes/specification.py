@@ -90,7 +90,7 @@ async def specification_node(state: WorkflowState, config: Optional[RunnableConf
     print(f"[Specification] Business objective: {business_objective}")
     print(f"[Specification] Conjectural descriptions ({len(data_context.conjectural_data)}):")
     for cd in data_context.conjectural_data:
-        print(f"  [Impact] {cd.positive_impact[:60]} → [Uncertainty] {cd.uncertainty[:60]} → [Hypothesis] {cd.supposition_solution[:80]}")
+        print(f"  [Impact] {cd.raw_positive_impact[:60]} → [Uncertainty] {cd.raw_uncertainty[:60]} → [Hypothesis] {cd.raw_supposition_solution[:80]}")
 
     # --- Step 3: Call LLM to generate conjectural requirements (one per ConjecturalData) ---
     model = get_model(provider=model_provider, temperature=1)
@@ -111,9 +111,9 @@ async def specification_node(state: WorkflowState, config: Optional[RunnableConf
                 domain=domain,
                 stakeholder=stakeholder,
                 business_objective=business_objective,
-                positive_impact=cd.positive_impact,
-                uncertainty=cd.uncertainty,
-                supposition_solution=cd.supposition_solution,
+                positive_impact=cd.raw_positive_impact,
+                uncertainty=cd.raw_uncertainty,
+                supposition_solution=cd.raw_supposition_solution,
                 language=data_context.language,
             )
         else:

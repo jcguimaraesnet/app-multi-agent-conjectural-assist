@@ -44,7 +44,7 @@ async def _detect_impact_uncertainties(
     model_provider: str,
 ) -> List[str]:
     """Call the LLM to identify one uncertainty per positive business impact. Returns list of uncertainty strings (index-aligned)."""
-    impacts = [cd.positive_impact for cd in data_context.conjectural_data]
+    impacts = [cd.raw_positive_impact for cd in data_context.conjectural_data]
     if not impacts:
         return []
 
@@ -77,8 +77,8 @@ async def _generate_conjectural_hypotheses(
     model_provider: str,
 ) -> List[str]:
     """Call the LLM to generate a verifiable experiment hypothesis per impact+uncertainty pair. Returns list of hypothesis strings (index-aligned)."""
-    impacts = [cd.positive_impact for cd in data_context.conjectural_data]
-    uncertainties = [cd.uncertainty for cd in data_context.conjectural_data]
+    impacts = [cd.raw_positive_impact for cd in data_context.conjectural_data]
+    uncertainties = [cd.raw_uncertainty for cd in data_context.conjectural_data]
     if not impacts or not uncertainties:
         return []
 
@@ -169,14 +169,14 @@ async def analysis_node(state: WorkflowState, config: Optional[RunnableConfig] =
     # Step A: Detect one uncertainty per positive impact
     uncertainties_list = await _detect_impact_uncertainties(data_context, model_provider)
     for cd, uncertainty in zip(data_context.conjectural_data, uncertainties_list):
-        cd.uncertainty = uncertainty
-        print(f"  [Uncertainty] {cd.positive_impact!r} → {uncertainty!r}")
+        cd.raw_uncertainty = uncertainty
+        print(f"  [Uncertainty] {cd.raw_positive_impact!r} → {uncertainty!r}")
 
     # Step B: Generate a verifiable experiment hypothesis per impact+uncertainty pair
     hypotheses_list = await _generate_conjectural_hypotheses(data_context, model_provider)
     for cd, hypothesis in zip(data_context.conjectural_data, hypotheses_list):
-        cd.supposition_solution = hypothesis
-        print(f"  [Hypothesis] {cd.positive_impact!r} → {hypothesis!r}")
+        cd.raw_supposition_solution = hypothesis
+        print(f"  [Hypothesis] {cd.raw_positive_impact!r} → {hypothesis!r}")
 
     print(f"[Analysis] Completed — {len(data_context.conjectural_data)} conjectural data entries")
 
