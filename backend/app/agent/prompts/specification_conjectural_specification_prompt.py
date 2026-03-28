@@ -21,7 +21,7 @@ tomando como base as informações abaixo.
 
 ## Informações específicas para guiar a geração da especificação do requisito conjectural
 
-- **Ideia inicial de impacto positivo:** {positive_impact}
+- **Ideia inicial de necessidade de negócio:** {business_need}
 - **Ideia inicial de incerteza:** {uncertainty}
 - **Ideia inicial de hipótese de solução:** {supposition_solution}
 
@@ -29,7 +29,7 @@ tomando como base as informações abaixo.
 
 **FERC (Formato de Escrita para Requisitos Conjecturais):**
 **É esperado que o sistema de software possua** [comportamento desejado]
-**De modo que** [impacto positivo]
+**De modo que** [necessidade de negócio]
 **Porém, não sabemos** [incerteza]
 
 **QESS (Framework de Experimentação de Suposição de Solução):**
@@ -39,9 +39,9 @@ tomando como base as informações abaixo.
 
 ## Instruções específicas sobre cada campo
 
-[comportamento desejado] -> Se refere a um texto que descreve um comportamento desejado no sistema para alcançar o [impacto positivo]
-[impacto positivo] -> Se refere a um texto refinado da **ideia inicial de impacto positivo** desejado no negócio (regra importante deste campo: Esse campo deve conter uma ideia única e direta, portanto não use período composto. Não use conectivos como "e", "mas", "porém", "gerúndio" etc. para conectar ou expandir ideias. O texto elaborado deve ter concordância com a frase inicial desse campo "De modo que ")
-[incerteza] -> Se refere a um texto refinado da **ideia inicial de incerteza** para alcançar o [impacto positivo] no negócio
+[comportamento desejado] -> Se refere a um texto que descreve um comportamento desejado no sistema para alcançar o [necessidade de negócio]
+[necessidade de negócio] -> Se refere a um texto refinado da **ideia inicial de impacto positivo** desejado no negócio (regra importante deste campo: Esse campo deve conter uma ideia única e direta, portanto não use período composto. Não use conectivos como "e", "mas", "porém", "gerúndio" etc. para conectar ou expandir ideias. O texto elaborado deve ter concordância com a frase inicial desse campo "De modo que ")
+[incerteza] -> Se refere a um texto refinado da **ideia inicial de incerteza** para alcançar o [necessidade de negócio] no negócio
 
 [suposição de solução] -> Se refere a um texto refinado da **ideia inicial de hipótese de solução** para resolver a [incerteza]
 [incerteza] -> Mesmo texto elaborado para o campo [incerteza] do FERC
@@ -102,7 +102,7 @@ QESS:
 Você DEVE retornar APENAS um objeto JSON válido (sem markdown, sem explicação) com:
 - "ferc": um objeto com:
   - "desired_behavior": [comportamento desejado] (string)
-  - "positive_impact": [impacto positivo] (string)
+  - "business_need": [necessidade de negócio] (string)
   - "uncertainty": [incerteza] (string)
 - "qess": um objeto com:
   - "solution_assumption": [suposição de solução] (string)

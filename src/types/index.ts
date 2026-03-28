@@ -141,7 +141,7 @@ export interface ConjecturalRequirement {
   ranking: number | null;
   status: ConjecturalStatus;
   desired_behavior: string;
-  positive_impact: string;
+  business_need: string;
   uncertainty: string;
   solution_assumption: string;
   uncertainty_evaluated: string;

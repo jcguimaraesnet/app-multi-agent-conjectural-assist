@@ -8,7 +8,7 @@ export interface RequirementItem {
   requirement_number: number;
   attempt: number;
   desired_behavior: string;
-  positive_impact: string;
+  business_need: string;
   uncertainty: string;
   solution_assumption: string;
   uncertainty_evaluated: string;
@@ -213,7 +213,7 @@ function SingleCard({
                       So that&nbsp;
                     </span>
                     <span className="text-base text-gray-700 dark:text-gray-300 leading-relaxed">
-                      {current.positive_impact || "N/A"}
+                      {current.business_need || "N/A"}
                     </span>
                   </div>
                   <div className="rounded-xl border border-border-light dark:border-border-dark bg-gray-50 dark:bg-gray-900/40 p-5">

@@ -80,7 +80,7 @@ async def _task_generate(
     print(f"[Specification] Business objective: {business_objective}")
     print(f"[Specification] Conjectural descriptions ({len(data_context.conjectural_data)}):")
     for cd in data_context.conjectural_data:
-        print(f"  [Impact] {cd.raw_positive_impact[:60]} → [Uncertainty] {cd.raw_uncertainty[:60]} → [Hypothesis] {cd.raw_supposition_solution[:80]}")
+        print(f"  [Business Need] {cd.raw_business_need[:60]} → [Uncertainty] {cd.raw_uncertainty[:60]} → [Hypothesis] {cd.raw_supposition_solution[:80]}")
 
     model = get_model(provider=model_provider, temperature=1)
 
@@ -99,7 +99,7 @@ async def _task_generate(
                 domain=domain,
                 stakeholder=stakeholder,
                 business_objective=business_objective,
-                positive_impact=cd.raw_positive_impact,
+                business_need=cd.raw_business_need,
                 uncertainty=cd.raw_uncertainty,
                 supposition_solution=cd.raw_supposition_solution,
                 language=data_context.language,
@@ -112,7 +112,7 @@ async def _task_generate(
                 stakeholder=stakeholder,
                 business_objective=business_objective,
                 prev_desired_behavior=last_cr.ferc.desired_behavior,
-                prev_positive_impact=last_cr.ferc.positive_impact,
+                prev_business_need=last_cr.ferc.business_need,
                 prev_uncertainties=last_cr.ferc.uncertainty,
                 prev_solution_assumption=last_cr.qess.solution_assumption,
                 prev_uncertainty_evaluated=last_cr.qess.uncertainty_evaluated,
@@ -132,7 +132,7 @@ async def _task_generate(
 
             print(f"  --- Conjectural Requirement #{req_num} (attempt {cr.attempt}) ---")
             print(f"  [FERC] Desired behavior: {cr.ferc.desired_behavior}")
-            print(f"  [FERC] Positive impact: {cr.ferc.positive_impact}")
+            print(f"  [FERC] Business need: {cr.ferc.business_need}")
             print(f"  [FERC] Uncertainty: {cr.ferc.uncertainty}")
             print(f"  [QESS] Solution assumption: {cr.qess.solution_assumption}")
             print(f"  [QESS] Uncertainty evaluated: {cr.qess.uncertainty_evaluated}")

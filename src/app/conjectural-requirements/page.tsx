@@ -19,7 +19,7 @@ import { useAgentContext } from "@copilotkit/react-core/v2";
 import { useAgent } from "@copilotkit/react-core/v2";
 import { useConfigureSuggestions } from "@copilotkit/react-core/v2";
 import StepProgress from '@/components/conjectural-requirements/StepProgress';
-import InterruptFormPositiveImpactDescription from '@/components/conjectural-requirements/InterruptFormPositiveImpactDescription';
+import InterruptFormBusinessNeedDescription from '@/components/conjectural-requirements/InterruptFormBusinessNeedDescription';
 import InterruptFormEvaluation from '@/components/conjectural-requirements/InterruptFormEvaluation';
 import type { RequirementItem } from '@/components/conjectural-requirements/InterruptFormEvaluation';
 import Spinner from "@/components/ui/Spinner";
@@ -141,7 +141,7 @@ function DisplayCard({ req }: { req: RequirementItem }) {
                       So that&nbsp;
                     </span>
                     <span className="text-base text-gray-700 dark:text-gray-300 leading-relaxed">
-                      {req.positive_impact || "N/A"}
+                      {req.business_need || "N/A"}
                     </span>
                   </div>
                   <div className="rounded-xl border border-border-light dark:border-border-dark bg-gray-50 dark:bg-gray-900/40 p-5">
@@ -296,7 +296,7 @@ function ConjecturalRequirementsInner() {
     render: ({ event, resolve }) => {
       const quantity_req_batch = JSON.parse(event.value).quantity_req_batch || settings.quantity_req_batch;
       return (
-              <InterruptFormPositiveImpactDescription
+              <InterruptFormBusinessNeedDescription
                 inputCount={quantity_req_batch}
                 onSubmit={resolve}
               />
@@ -553,7 +553,7 @@ function ConjecturalRequirementsInner() {
     return kanbanRequirements.filter(
       (r) =>
         r.desired_behavior.toLowerCase().includes(q) ||
-        r.positive_impact.toLowerCase().includes(q) ||
+        r.business_need.toLowerCase().includes(q) ||
         r.uncertainty.toLowerCase().includes(q)
     );
   }, [kanbanRequirements, kanbanSearchQuery]);

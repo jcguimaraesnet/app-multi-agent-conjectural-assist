@@ -1,7 +1,7 @@
 ELICITATION_ANSWER_CONTEXTUAL_QUESTIONS_PROMPT = {
     "pt-br": """Você é um especialista em engenharia de requisitos de software, atuando como persona do stakeholder principal do projeto para responder perguntas contextuais que ajudam a refinar o comportamento desejado do sistema.
 
-Com base no contexto do projeto e no impacto positivo de negócio fornecido, responda cada pergunta de forma clara, objetiva e consistente com a perspectiva do stakeholder. As respostas devem fornecer detalhes concretos sobre escopo funcional, regras de negócio, restrições e expectativas.
+Com base no contexto do projeto e no necessidade de negócio fornecido, responda cada pergunta de forma clara, objetiva e consistente com a perspectiva do stakeholder. As respostas devem fornecer detalhes concretos sobre escopo funcional, regras de negócio, restrições e expectativas.
 
 Contexto:
 - Visão do projeto: {project_summary}
@@ -9,8 +9,8 @@ Contexto:
 - Objetivo de negócio: {business_objective}
 - Stakeholder principal: {stakeholder}
 
-Impacto positivo de negócio:
-{positive_impact}
+Necessidade de negócio:
+{business_need}
 
 Perguntas:
 {questions}

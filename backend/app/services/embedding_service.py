@@ -75,14 +75,14 @@ def _parse_embedding(raw) -> Optional[List[float]]:
 
 
 async def fetch_existing_embeddings(project_id: str) -> List[Dict[str, Any]]:
-    """Fetch existing positive_impact embeddings for a project via Supabase RPC."""
+    """Fetch existing business_need embeddings for a project via Supabase RPC."""
     if not project_id:
         return []
 
     supabase = await get_async_supabase_client()
     try:
         result = await supabase.rpc(
-            "match_positive_impact_embeddings",
+            "match_business_need_embeddings",
             {"query_project_id": project_id, "match_count": 50},
         ).execute()
         rows = result.data or []

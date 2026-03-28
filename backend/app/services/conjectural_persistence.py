@@ -38,7 +38,7 @@ def _build_history_snapshot(cd: ConjecturalData) -> list[dict]:
             "ranking": cr.ranking,
             "ferc": {
                 "desired_behavior": cr.ferc.desired_behavior,
-                "positive_impact": cr.ferc.positive_impact,
+                "business_need": cr.ferc.business_need,
                 "uncertainty": cr.ferc.uncertainty,
             },
             "qess": {
@@ -73,7 +73,7 @@ def _build_requirement_snapshot(cr: ConjecturalRequirement) -> dict:
         "ranking": cr.ranking,
         "ferc": {
             "desired_behavior": cr.ferc.desired_behavior,
-            "positive_impact": cr.ferc.positive_impact,
+            "business_need": cr.ferc.business_need,
             "uncertainty": cr.ferc.uncertainty,
         },
         "qess": {
@@ -91,7 +91,7 @@ def _build_requirement_row(project_id: str, cr: ConjecturalRequirement, cod_requ
         "cod_requirement": cod_requirement,
         "status": "todo",
         "desired_behavior": cr.ferc.desired_behavior,
-        "positive_impact": cr.ferc.positive_impact,
+        "business_need": cr.ferc.business_need,
         "uncertainty": cr.ferc.uncertainty,
         "solution_assumption": cr.qess.solution_assumption,
         "uncertainty_evaluated": cr.qess.uncertainty_evaluated,
@@ -157,12 +157,12 @@ def persist_conjectural_data(project_id: str, data_context: DataContext, user_id
         row = _build_requirement_row(project_id, winner, req_id, user_id)
         row["history_snapshot"] = history_snapshot
 
-        # Generate and store embedding for the positive_impact
+        # Generate and store embedding for the business_need
         try:
-            embeddings = generate_embeddings_sync([winner.ferc.positive_impact])
+            embeddings = generate_embeddings_sync([winner.ferc.business_need])
             if embeddings:
-                row["positive_impact_embedding"] = embeddings[0]
-                print(f"[Persistence] Generated embedding for {req_id} positive_impact")
+                row["business_need_embedding"] = embeddings[0]
+                print(f"[Persistence] Generated embedding for {req_id} business_need")
         except Exception as e:
             print(f"[Persistence] Error generating embedding for {req_id}: {e}")
 

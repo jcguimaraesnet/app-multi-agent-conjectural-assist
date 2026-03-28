@@ -22,7 +22,7 @@ from app.agent.models.data_context import DataContext, QuestionAnswer
 from app.agent.utils.context_utils import extract_copilotkit_context
 from app.agent.prompts.factory import get_prompt
 from app.agent.prompts.analysis_contextual_questions_prompt import ANALYSIS_CONTEXTUAL_QUESTIONS_PROMPT
-from app.agent.prompts.analysis_impact_uncertainty_detection_prompt import ANALYSIS_IMPACT_UNCERTAINTY_DETECTION_PROMPT
+from app.agent.prompts.analysis_business_need_uncertainty_detection_prompt import ANALYSIS_IMPACT_UNCERTAINTY_DETECTION_PROMPT
 from app.agent.prompts.analysis_conjectural_hypothesis_prompt import ANALYSIS_CONJECTURAL_HYPOTHESIS_PROMPT
 from app.agent.prompts.analysis_synthesize_desired_behavior_prompt import ANALYSIS_SYNTHESIZE_DESIRED_BEHAVIOR_PROMPT
 from app.agent.prompts.analysis_whatif_questions_prompt import ANALYSIS_WHATIF_QUESTIONS_PROMPT
@@ -48,15 +48,15 @@ async def _generate_contextual_questions(
     data_context: DataContext,
     model_provider: str,
 ) -> List[List[str]]:
-    """Call the LLM to generate 3 contextual questions per positive business impact. Returns list of lists of question strings (index-aligned)."""
-    impacts = [cd.raw_positive_impact for cd in data_context.conjectural_data]
+    """Call the LLM to generate 3 contextual questions per business need. Returns list of lists of question strings (index-aligned)."""
+    impacts = [cd.raw_business_need for cd in data_context.conjectural_data]
     if not impacts:
         return []
 
     impacts_text = "\n".join(f"- {pi}" for pi in impacts)
 
     prompt = get_prompt(ANALYSIS_CONTEXTUAL_QUESTIONS_PROMPT, data_context.language).format(
-        positive_impacts=impacts_text,
+        business_needs=impacts_text,
         project_summary=data_context.project_summary,
         domain=data_context.domain,
         business_objective=data_context.business_objective,
@@ -85,15 +85,15 @@ async def _detect_impact_uncertainties(
     data_context: DataContext,
     model_provider: str,
 ) -> List[str]:
-    """Call the LLM to identify one uncertainty per positive business impact. Returns list of uncertainty strings (index-aligned)."""
-    impacts = [cd.raw_positive_impact for cd in data_context.conjectural_data]
+    """Call the LLM to identify one uncertainty per business need. Returns list of uncertainty strings (index-aligned)."""
+    impacts = [cd.raw_business_need for cd in data_context.conjectural_data]
     if not impacts:
         return []
 
     impacts_text = "\n".join(f"- {pi}" for pi in impacts)
 
     prompt = get_prompt(ANALYSIS_IMPACT_UNCERTAINTY_DETECTION_PROMPT, data_context.language).format(
-        positive_impacts=impacts_text,
+        business_needs=impacts_text,
         project_summary=data_context.project_summary,
         domain=data_context.domain,
         stakeholder=data_context.stakeholder,
@@ -118,8 +118,8 @@ async def _generate_conjectural_hypotheses(
     data_context: DataContext,
     model_provider: str,
 ) -> List[str]:
-    """Call the LLM to generate a verifiable experiment hypothesis per impact+uncertainty pair. Returns list of hypothesis strings (index-aligned)."""
-    impacts = [cd.raw_positive_impact for cd in data_context.conjectural_data]
+    """Call the LLM to generate a verifiable experiment hypothesis per business need+uncertainty pair. Returns list of hypothesis strings (index-aligned)."""
+    impacts = [cd.raw_business_need for cd in data_context.conjectural_data]
     uncertainties = [cd.raw_uncertainty for cd in data_context.conjectural_data]
     if not impacts or not uncertainties:
         return []
@@ -163,7 +163,7 @@ async def _synthesize_desired_behavior(
     )
 
     prompt = get_prompt(ANALYSIS_SYNTHESIZE_DESIRED_BEHAVIOR_PROMPT, data_context.language).format(
-        positive_impact=cd.raw_positive_impact,
+        business_need=cd.raw_business_need,
         questions_answers=qa_text,
         project_summary=data_context.project_summary,
         domain=data_context.domain,
@@ -283,8 +283,8 @@ async def _task_generate_questions(
     data_context: DataContext,
     model_provider: str,
 ) -> dict:
-    """Task: Generate contextual questions per positive impact, then pause for Elicitation to answer."""
-    print(f"[Analysis] Elicitation context loaded — {len(data_context.conjectural_data)} positive impact(s)")
+    """Task: Generate contextual questions per business need, then pause for Elicitation to answer."""
+    print(f"[Analysis] Elicitation context loaded — {len(data_context.conjectural_data)} business need(s)")
 
     questions_list = await _generate_contextual_questions(data_context, model_provider)
     for idx, (cd, questions) in enumerate(zip(data_context.conjectural_data, questions_list), start=1):
@@ -292,7 +292,7 @@ async def _task_generate_questions(
             QuestionAnswer(question=q) for q in questions
         ]
         for q in questions:
-            print(f"  [Questions] Impact [{idx}]: {q}")
+            print(f"  [Questions] Business Need [{idx}]: {q}")
 
     print("[Analysis] Questions generated — routing to Elicitation for answers")
     return {
@@ -347,7 +347,7 @@ async def _task_identify_uncertainty_and_continue(
     hypotheses_list = await _generate_conjectural_hypotheses(data_context, model_provider)
     for cd, hypothesis in zip(data_context.conjectural_data, hypotheses_list):
         cd.raw_supposition_solution = hypothesis
-        print(f"  [Hypothesis] {cd.raw_positive_impact!r} → {hypothesis!r}")
+        print(f"  [Hypothesis] {cd.raw_business_need!r} → {hypothesis!r}")
 
     print(f"[Analysis] Completed — {len(data_context.conjectural_data)} conjectural data entries")
     return {

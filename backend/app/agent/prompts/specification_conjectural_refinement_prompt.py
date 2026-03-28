@@ -25,7 +25,7 @@ Foque especialmente nos critérios que receberam pontuações baixas (1-3), anal
 
 **FERC (Formato de Escrita para Requisitos Conjecturais):**
 **É esperado que o sistema de software possua** {prev_desired_behavior}
-**De modo que** {prev_positive_impact}
+**De modo que** {prev_business_need}
 **Porém, não sabemos** {prev_uncertainties}
 
 **QESS (Framework de Experimentação de Suposição de Solução):**
@@ -41,7 +41,7 @@ Foque especialmente nos critérios que receberam pontuações baixas (1-3), anal
 
 **FERC (Formato de Escrita para Requisitos Conjecturais):**
 **É esperado que o sistema de software possua** [comportamento desejado]
-**De modo que** [impacto positivo]
+**De modo que** [necessidade de negócio]
 **Porém, não sabemos** [incerteza]
 
 **QESS (Framework de Experimentação de Suposição de Solução):**
@@ -51,9 +51,9 @@ Foque especialmente nos critérios que receberam pontuações baixas (1-3), anal
 
 ## Instruções específicas sobre cada campo
 
-[comportamento desejado] -> Se refere a um texto que descreve um comportamento desejado no sistema para alcançar o [impacto positivo] no negócio
-[impacto positivo] -> Se refere a um texto que descreve um impacto positivo desejado no negócio
-[incerteza] -> Se refere a um texto que descreve uma incerteza para alcançar o [impacto positivo] no negócio
+[comportamento desejado] -> Se refere a um texto que descreve um comportamento desejado no sistema para alcançar o [necessidade de negócio] no negócio
+[necessidade de negócio] -> Se refere a um texto que descreve um impacto positivo desejado no negócio
+[incerteza] -> Se refere a um texto que descreve uma incerteza para alcançar o [necessidade de negócio] no negócio
 
 [suposição de solução] -> Se refere a um texto que descreve uma hipótese de solução baseada em processo experimental para resolver a [incerteza]
 [incerteza] -> Mesmo texto elaborado para o campo [incerteza] do FERC
@@ -66,7 +66,7 @@ MUITO IMPORTANTE: O texto de cada campo é um complemento RESTANTE de uma frase 
 Você DEVE retornar APENAS um objeto JSON válido (sem markdown, sem explicação) com:
 - "ferc": um objeto com:
   - "desired_behavior": [comportamento desejado] (string)
-  - "positive_impact": [impacto positivo] (string)
+  - "business_need": [necessidade de negócio] (string)
   - "uncertainty": [incerteza] (string)
 - "qess": um objeto com:
   - "solution_assumption": [descrição da suposição de solução] (string)

@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 class FERC(BaseModel):
     """Writing Format for Conjectural Requirements."""
     desired_behavior: str = Field(description="The desired system behavior")
-    positive_impact: str = Field(description="The need or positive impact of the desired attribute")
+    business_need: str = Field(description="The business need behind the desired attribute")
     uncertainty: str = Field(description="Uncertainty associated with this requirement")
 
 
@@ -94,13 +94,13 @@ class ConjecturalData(BaseModel):
         default_factory=list,
         description="List of question-answer pairs for the desired behavior",
     )
-    raw_positive_impact: str = Field(
+    raw_business_need: str = Field(
         default="",
-        description="Positive business impact statement",
+        description="Business need statement",
     )
-    raw_positive_impact_similarity: int = Field(
+    raw_business_need_similarity: int = Field(
         default=0,
-        description="Similarity percentage (0-100) between user brief description and refined impact (0 when auto-generated)",
+        description="Similarity percentage (0-100) between user brief description and refined business need (0 when auto-generated)",
     )
     raw_uncertainty_questions_answers: List[QuestionAnswer] = Field(
         default_factory=list,
@@ -108,11 +108,11 @@ class ConjecturalData(BaseModel):
     )
     raw_uncertainty: str = Field(
         default="",
-        description="Uncertainty detected for this positive impact",
+        description="Uncertainty detected for this business need",
     )
     raw_supposition_solution: str = Field(
         default="",
-        description="Solution assumption experiment for this impact+uncertainty pair",
+        description="Solution assumption experiment for this business need+uncertainty pair",
     )
     conjectural_requirements: List[ConjecturalRequirement] = Field(
         default_factory=list,
@@ -149,7 +149,7 @@ class DataContext(BaseModel):
     )
     conjectural_data: List[ConjecturalData] = Field(
         default_factory=list,
-        description="Hierarchical data entries linking positive impacts, uncertainties, solution assumptions, and requirements with evaluations",
+        description="Hierarchical data entries linking business needs, uncertainties, solution assumptions, and requirements with evaluations",
     )
 
     def rank_conjectural_requirements(self) -> None:

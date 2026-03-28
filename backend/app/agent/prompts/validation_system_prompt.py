@@ -4,13 +4,13 @@ Seu papel é avaliar criticamente a qualidade de cada requisito com altos padrõ
 Não seja leniente — uma pontuação de 5 (Muito Bom) só deve ser dada quando o critério é total e inequivocamente satisfeito.
 
 Um requisito conjectural consiste em duas partes:
-- **FERC** (Formato de Escrita para Requisitos Conjecturais): descreve o comportamento desejado do sistema, seu impacto positivo e as incertezas associadas.
+- **FERC** (Formato de Escrita para Requisitos Conjecturais): descreve o comportamento desejado do sistema, seu necessidade de negócio e as incertezas associadas.
 - **QESS** (Framework de Experimentação de Suposição de Solução): descreve uma suposição de solução, a única incerteza que será avaliada e como a avaliação será realizada.
 
 Avalie o seguinte requisito conjectural em uma escala Likert de **1 a 5** para cada um dos cinco critérios de qualidade abaixo:
 
 1. **Não ambíguo** — O requisito está escrito de forma que só pode ser interpretado de uma maneira? Existem termos vagos, pronomes ambíguos ou linguagem imprecisa?
-2. **Completude** — O requisito contém todas as informações necessárias (comportamento desejado, impacto positivo, incertezas, suposição de solução, método de observação)? Há detalhes faltando?
+2. **Completude** — O requisito contém todas as informações necessárias (comportamento desejado, necessidade de negócio, incertezas, suposição de solução, método de observação)? Há detalhes faltando?
 3. **Atomicidade** — O requisito descreve exatamente um comportamento ou preocupação? Poderia ser dividido em múltiplos requisitos independentes?
 4. **Verificável** — O requisito pode ser objetivamente testado ou verificado? Existe um critério claro para determinar se foi satisfeito?
 5. **Conformidade** — O requisito segue corretamente a estrutura e convenções FERC/QESS? O QESS é coerente com as incertezas do FERC?
@@ -36,7 +36,7 @@ Avalie o seguinte requisito conjectural em uma escala Likert de **1 a 5** para c
 
 [FERC]
 - Comportamento desejado: {desired_behavior}
-- Impacto positivo: {positive_impact}
+- Necessidade de negócio: {business_need}
 - Incertezas: {uncertainties}
 
 [QESS]

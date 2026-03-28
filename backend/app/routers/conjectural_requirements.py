@@ -15,7 +15,7 @@ from app.services.supabase_client import get_supabase_client
 class ConjecturalRequirementUpdate(BaseModel):
     """Editable fields of a conjectural requirement."""
     desired_behavior: Optional[str] = None
-    positive_impact: Optional[str] = None
+    business_need: Optional[str] = None
     uncertainty: Optional[str] = None
     solution_assumption: Optional[str] = None
     uncertainty_evaluated: Optional[str] = None

@@ -33,8 +33,8 @@ from app.agent.models.knowledge_graph import (
 )
 from app.agent.models.data_context import DataContext, ConjecturalData, QuestionAnswer
 from app.agent.prompts.factory import get_prompt
-from app.agent.prompts.elicitation_refine_positive_impact_prompt import ELICITATION_REFINE_POSITIVE_IMPACT_PROMPT
-from app.agent.prompts.elicitation_generate_positive_impact_prompt import ELICITATION_GENERATE_POSITIVE_IMPACT_PROMPT
+from app.agent.prompts.elicitation_refine_business_need_prompt import ELICITATION_REFINE_BUSINESS_NEED_PROMPT
+from app.agent.prompts.elicitation_generate_business_need_prompt import ELICITATION_GENERATE_BUSINESS_NEED_PROMPT
 from app.agent.prompts.elicitation_answer_contextual_questions_prompt import ELICITATION_ANSWER_CONTEXTUAL_QUESTIONS_PROMPT
 from app.agent.prompts.elicitation_answer_whatif_questions_prompt import ELICITATION_ANSWER_WHATIF_QUESTIONS_PROMPT
 from app.services.embedding_service import (
@@ -78,19 +78,19 @@ def _compute_similarity(text_a: str, text_b: str) -> float:
     return SequenceMatcher(None, text_a.lower(), text_b.lower()).ratio()
 
 
-async def refine_positive_impacts(
+async def refine_business_needs(
     brief_descriptions: List[str],
     data_context: "DataContext",
     model_provider: str,
     project_id: Optional[str] = None,
 ) -> tuple[List[str], List[int]]:
     """
-    Refine user-provided brief descriptions into elaborated positive business
-    impact statements using LLM + project context.
+    Refine user-provided brief descriptions into elaborated business need
+    statements using LLM + project context.
 
-    After refinement, checks each impact against existing embeddings in the DB.
-    If a refined impact is too similar to an existing one, falls back to
-    generate_positive_impacts (3 candidates, pick most diverse).
+    After refinement, checks each business need against existing embeddings in the DB.
+    If a refined business need is too similar to an existing one, falls back to
+    generate_business_needs (3 candidates, pick most diverse).
 
     Returns (refined_list, similarity_percentages).
     """
@@ -100,7 +100,7 @@ async def refine_positive_impacts(
     descriptions_text = "\n".join(
         f"{i + 1}. {desc}" for i, desc in enumerate(brief_descriptions)
     )
-    prompt = get_prompt(ELICITATION_REFINE_POSITIVE_IMPACT_PROMPT, data_context.language).format(
+    prompt = get_prompt(ELICITATION_REFINE_BUSINESS_NEED_PROMPT, data_context.language).format(
         domain=data_context.domain,
         stakeholder=data_context.stakeholder,
         business_objective=data_context.business_objective,
@@ -132,17 +132,17 @@ async def refine_positive_impacts(
             existing_embs = [row["embedding"] for row in existing_rows if row.get("embedding")]
 
             if existing_embs:
-                print(f"[Positive Impact] Checking {len(results)} refined impact(s) against {len(existing_embs)} existing embedding(s)...")
+                print(f"[Business Need] Checking {len(results)} refined business need(s) against {len(existing_embs)} existing embedding(s)...")
                 try:
                     refined_embeddings = await generate_embeddings(results)
                 except Exception as e:
-                    print(f"[Positive Impact] Error generating embeddings for similarity check: {e}")
+                    print(f"[Business Need] Error generating embeddings for similarity check: {e}")
                     return results, similarities
 
                 for i, (refined_emb, refined_text) in enumerate(zip(refined_embeddings, list(results))):
                     if is_similar_to_existing(refined_emb, existing_embs):
-                        print(f"  [Positive Impact] Refined impact #{i+1} is too similar to existing. Falling back to generation...")
-                        fallback = await generate_positive_impacts(1, data_context, model_provider, project_id)
+                        print(f"  [Business Need] Refined business need #{i+1} is too similar to existing. Falling back to generation...")
+                        fallback = await generate_business_needs(1, data_context, model_provider, project_id)
                         if fallback:
                             results[i] = fallback[0]
                             similarities[i] = 0  # auto-generated, not user-refined
@@ -150,42 +150,42 @@ async def refine_positive_impacts(
         return results, similarities
 
     except (json.JSONDecodeError, Exception) as e:
-        print(f"[Positive Impact] Error refining brief descriptions: {e}")
+        print(f"[Business Need] Error refining brief descriptions: {e}")
         return list(brief_descriptions), [100] * len(brief_descriptions)
 
 
-async def generate_positive_impacts(
+async def generate_business_needs(
     quantity: int,
     data_context: "DataContext",
     model_provider: str,
     project_id: Optional[str] = None,
 ) -> List[str]:
     """
-    Generate positive business impact statements from scratch using LLM +
+    Generate business need statements from scratch using LLM +
     project context. Generates quantity*3 candidates, then selects the
     `quantity` most diverse via embedding similarity against existing
-    requirements in the database. Returns a list of impact strings.
+    requirements in the database. Returns a list of business need strings.
     """
     candidate_count = quantity * 3
-    print(f"[Positive Impact] Generating {candidate_count} candidates (quantity={quantity} x 3)...")
+    print(f"[Business Need] Generating {candidate_count} candidates (quantity={quantity} x 3)...")
 
-    # Build exclusion list from existing impacts (top 10 most diverse among themselves)
+    # Build exclusion list from existing business needs (top 10 most diverse among themselves)
     exclusion_list_text = ""
     if project_id:
         existing_rows = await fetch_existing_embeddings(project_id)
-        existing_with_text = [r for r in existing_rows if r.get("embedding") and r.get("positive_impact")]
+        existing_with_text = [r for r in existing_rows if r.get("embedding") and r.get("business_need")]
         if existing_with_text:
-            texts = [r["positive_impact"] for r in existing_with_text]
+            texts = [r["business_need"] for r in existing_with_text]
             embs = [r["embedding"] for r in existing_with_text]
             max_exclusion = min(10, len(texts))
             diverse_indices = select_most_diverse_among(texts, embs, max_exclusion)
             exclusion_items = [texts[i] for i in diverse_indices]
-            print(f"[Positive Impact] Exclusion list ({len(exclusion_items)} items):")
+            print(f"[Business Need] Exclusion list ({len(exclusion_items)} items):")
             for item in exclusion_items:
                 print(f"  - {item}")
             exclusion_list_text = "\n".join(f"- {item}" for item in exclusion_items)
 
-    prompt = get_prompt(ELICITATION_GENERATE_POSITIVE_IMPACT_PROMPT, data_context.language).format(
+    prompt = get_prompt(ELICITATION_GENERATE_BUSINESS_NEED_PROMPT, data_context.language).format(
         domain=data_context.domain,
         stakeholder=data_context.stakeholder,
         business_objective=data_context.business_objective,
@@ -202,25 +202,25 @@ async def generate_positive_impacts(
         raw = _strip_markdown_fences(extract_text(response.content).strip())
         candidates: List[str] = json.loads(raw)
     except (json.JSONDecodeError, Exception) as e:
-        print(f"[Positive Impact] Error generating impacts: {e}")
+        print(f"[Business Need] Error generating business needs: {e}")
         return []
 
     if not candidates:
         return []
 
-    print(f"[Positive Impact] Got {len(candidates)} candidates. Selecting {quantity} most diverse...")
+    print(f"[Business Need] Got {len(candidates)} candidates. Selecting {quantity} most diverse...")
 
     # Generate embeddings for all candidates
     try:
         candidate_embeddings = await generate_embeddings(candidates)
     except Exception as e:
-        print(f"[Positive Impact] Error generating embeddings, falling back to first {quantity}: {e}")
+        print(f"[Business Need] Error generating embeddings, falling back to first {quantity}: {e}")
         return candidates[:quantity]
 
     # Fetch existing embeddings from the database
     existing_rows = await fetch_existing_embeddings(project_id) if project_id else []
     existing_embeddings = [row["embedding"] for row in existing_rows if row.get("embedding")]
-    print(f"[Positive Impact] Found {len(existing_embeddings)} existing embedding(s) in DB for comparison")
+    print(f"[Business Need] Found {len(existing_embeddings)} existing embedding(s) in DB for comparison")
 
     # Select the most diverse candidates
     selected_indices = select_most_diverse(candidates, candidate_embeddings, existing_embeddings, quantity)
@@ -228,13 +228,13 @@ async def generate_positive_impacts(
     # Log all candidates with their max similarity against existing embeddings
     if existing_embeddings:
         from app.services.embedding_service import _cosine_similarity
-        print(f"[Positive Impact] All candidates and their max similarity to existing embeddings:")
+        print(f"[Business Need] All candidates and their max similarity to existing embeddings:")
         for i, (text, c_emb) in enumerate(zip(candidates, candidate_embeddings)):
             max_sim = max(_cosine_similarity(c_emb, e_emb) for e_emb in existing_embeddings)
             marker = " <-- SELECTED" if i in selected_indices else ""
             print(f"  [{i}] (max_sim={max_sim:.4f}) {text}{marker}")
     else:
-        print(f"[Positive Impact] All candidates (no existing embeddings for comparison):")
+        print(f"[Business Need] All candidates (no existing embeddings for comparison):")
         for i, text in enumerate(candidates):
             marker = " <-- SELECTED" if i in selected_indices else ""
             print(f"  [{i}] {text}{marker}")
@@ -354,7 +354,7 @@ async def _answer_contextual_questions(
     data_context: DataContext,
     model_provider: str,
 ) -> List[List[str]]:
-    """Call the LLM to answer contextual questions for each positive impact. Returns list of lists of answer strings (index-aligned)."""
+    """Call the LLM to answer contextual questions for each business need. Returns list of lists of answer strings (index-aligned)."""
     all_answers: List[List[str]] = []
 
     for cd in data_context.conjectural_data:
@@ -366,7 +366,7 @@ async def _answer_contextual_questions(
         questions_text = "\n".join(f"{i + 1}. {q}" for i, q in enumerate(questions))
 
         prompt = get_prompt(ELICITATION_ANSWER_CONTEXTUAL_QUESTIONS_PROMPT, data_context.language).format(
-            positive_impact=cd.raw_positive_impact,
+            business_need=cd.raw_business_need,
             questions=questions_text,
             project_summary=data_context.project_summary,
             domain=data_context.domain,
@@ -396,14 +396,14 @@ async def _task_answer_questions(
     model_provider: str,
 ) -> dict:
     """Task: Answer contextual questions generated by Analysis."""
-    print(f"[Elicitation] Answering contextual questions for {len(data_context.conjectural_data)} impact(s)")
+    print(f"[Elicitation] Answering contextual questions for {len(data_context.conjectural_data)} business need(s)")
 
     answers_list = await _answer_contextual_questions(data_context, model_provider)
     for idx, (cd, answers) in enumerate(zip(data_context.conjectural_data, answers_list), start=1):
         for qa, answer in zip(cd.raw_desired_behavior_questions_answers, answers):
             qa.answer = answer
-            print(f"  [Answer] Impact [{idx}]: Q: {qa.question}")
-            print(f"  [Answer] Impact [{idx}]: A: {answer}")
+            print(f"  [Answer] Business Need [{idx}]: Q: {qa.question}")
+            print(f"  [Answer] Business Need [{idx}]: A: {answer}")
 
     print("[Elicitation] Questions answered — routing back to Analysis")
     return {
@@ -459,14 +459,14 @@ async def _task_answer_whatif_questions(
     model_provider: str,
 ) -> dict:
     """Task: Answer What-If questions generated by Analysis for uncertainty identification."""
-    print(f"[Elicitation] Answering What-If questions for {len(data_context.conjectural_data)} impact(s)")
+    print(f"[Elicitation] Answering What-If questions for {len(data_context.conjectural_data)} business need(s)")
 
     answers_list = await _answer_whatif_questions(data_context, model_provider)
     for idx, (cd, answers) in enumerate(zip(data_context.conjectural_data, answers_list), start=1):
         for qa, answer in zip(cd.raw_uncertainty_questions_answers, answers):
             qa.answer = answer
-            print(f"  [What-If Answer] Impact [{idx}]: Q: {qa.question}")
-            print(f"  [What-If Answer] Impact [{idx}]: A: {answer}")
+            print(f"  [What-If Answer] Business Need [{idx}]: Q: {qa.question}")
+            print(f"  [What-If Answer] Business Need [{idx}]: A: {answer}")
 
     print("[Elicitation] What-If questions answered — routing back to Analysis")
     return {
@@ -476,13 +476,13 @@ async def _task_answer_whatif_questions(
     }
 
 
-async def _task_generate_positive_impacts(
+async def _task_generate_business_needs(
     state: WorkflowState,
     config: RunnableConfig,
     data_context: DataContext,
     model_provider: str,
 ) -> dict:
-    """Task: Generate or refine positive business impact statements (default full flow)."""
+    """Task: Generate or refine business need statements (default full flow)."""
     context = extract_copilotkit_context(state)
     require_brief_description = context['require_brief_description']
     current_project_id = context['current_project_id']
@@ -520,10 +520,10 @@ async def _task_generate_positive_impacts(
 
     messages = state.get("messages", [])
 
-    # Obtain positive business impact statements
+    # Obtain business need statements
     # If user provides brief descriptions → refine via LLM + compute similarity
     # Otherwise → generate from scratch via LLM using project context
-    positive_impacts: List[str] = []
+    business_needs: List[str] = []
     similarity: List[int] = []
     if require_brief_description == True:
         payload = interrupt(
@@ -536,24 +536,24 @@ async def _task_generate_positive_impacts(
         await copilotkit_emit_message(config, interrupt_message)
 
         brief_descriptions: List[str] = payload.get("brief_descriptions", [])
-        print(f"[Positive Impact] Received {len(brief_descriptions)} brief description(s) from user.")
+        print(f"[Business Need] Received {len(brief_descriptions)} brief description(s) from user.")
 
         if brief_descriptions:
-            positive_impacts, similarity = await refine_positive_impacts(brief_descriptions, data_context, model_provider, project_id=current_project_id)
-            for pi in positive_impacts:
-                print(f"  [Positive Impact Refined] {pi}")
+            business_needs, similarity = await refine_business_needs(brief_descriptions, data_context, model_provider, project_id=current_project_id)
+            for bn in business_needs:
+                print(f"  [Business Need Refined] {bn}")
     else:
-        print("[Positive Impact] Generating impacts from project context...")
-        positive_impacts = await generate_positive_impacts(quantity_req_batch, data_context, model_provider, project_id=current_project_id)
-        similarity = [0] * len(positive_impacts)
-        for pi in positive_impacts:
-            print(f"  [Positive Impact Generated] {pi}")
+        print("[Business Need] Generating business needs from project context...")
+        business_needs = await generate_business_needs(quantity_req_batch, data_context, model_provider, project_id=current_project_id)
+        similarity = [0] * len(business_needs)
+        for bn in business_needs:
+            print(f"  [Business Need Generated] {bn}")
 
     data_context.conjectural_data = [
-        ConjecturalData(raw_positive_impact=pi, raw_positive_impact_similarity=sim)
-        for pi, sim in zip(positive_impacts, similarity)
+        ConjecturalData(raw_business_need=bn, raw_business_need_similarity=sim)
+        for bn, sim in zip(business_needs, similarity)
     ]
-    print(f"[Positive Impact] Total: {len(positive_impacts)} statement(s)")
+    print(f"[Business Need] Total: {len(business_needs)} statement(s)")
 
     return {
         "messages": messages,
@@ -564,7 +564,7 @@ async def _task_generate_positive_impacts(
 
 # Task registry: maps task names to handler functions
 ELICITATION_TASKS = {
-    "generate_positive_impacts": _task_generate_positive_impacts,
+    "generate_business_needs": _task_generate_business_needs,
     "answer_questions": _task_answer_questions,
     "answer_whatif_questions": _task_answer_whatif_questions,
 }
@@ -591,8 +591,8 @@ async def elicitation_node(state: WorkflowState, config: Optional[RunnableConfig
         handler = ELICITATION_TASKS[task_name]
         print(f"[Elicitation] Dispatching task: {task_name}")
     else:
-        handler = ELICITATION_TASKS["generate_positive_impacts"]
-        print("[Elicitation] Running default task: generate_positive_impacts")
+        handler = ELICITATION_TASKS["generate_business_needs"]
+        print("[Elicitation] Running default task: generate_business_needs")
 
     update = await handler(state, config, data_context, model_provider)
     if "messages" not in update:

@@ -20,7 +20,7 @@ interface HistorySnapshotEntry {
   ranking: number | null;
   ferc: {
     desired_behavior: string;
-    positive_impact: string;
+    business_need: string;
     uncertainty: string;
   };
   qess: {
@@ -193,7 +193,7 @@ function HistoryPanel({ entries }: { entries: HistorySnapshotEntry[] }) {
               </div>
               <div className="rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-gray-800 p-4">
                 <span className="text-base font-semibold text-orange-600 dark:text-orange-400">So that&nbsp;</span>
-                <span className="text-base text-gray-700 dark:text-gray-300">{entry.ferc.positive_impact}</span>
+                <span className="text-base text-gray-700 dark:text-gray-300">{entry.ferc.business_need}</span>
               </div>
               <div className="rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-gray-800 p-4">
                 <span className="text-base font-semibold text-orange-600 dark:text-orange-400">However, we do not know:&nbsp;</span>
@@ -260,7 +260,7 @@ export default function ConjecturalDetailView({
 
   // Editable fields
   const [desiredBehavior, setDesiredBehavior] = useState("");
-  const [positiveImpact, setPositiveImpact] = useState("");
+  const [businessNeed, setBusinessNeed] = useState("");
   const [uncertainty, setUncertainty] = useState("");
   const [solutionAssumption, setSolutionAssumption] = useState("");
   const [uncertaintyEvaluated, setUncertaintyEvaluated] = useState("");
@@ -270,7 +270,7 @@ export default function ConjecturalDetailView({
   useEffect(() => {
     if (requirement) {
       setDesiredBehavior(requirement.desired_behavior);
-      setPositiveImpact(requirement.positive_impact);
+      setBusinessNeed(requirement.business_need);
       setUncertainty(requirement.uncertainty);
       setSolutionAssumption(requirement.solution_assumption);
       setUncertaintyEvaluated(requirement.uncertainty_evaluated);
@@ -300,7 +300,7 @@ export default function ConjecturalDetailView({
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${userId}` },
         body: JSON.stringify({
           desired_behavior: desiredBehavior,
-          positive_impact: positiveImpact,
+          business_need: businessNeed,
           uncertainty,
           solution_assumption: solutionAssumption,
           uncertainty_evaluated: uncertaintyEvaluated,
@@ -315,7 +315,7 @@ export default function ConjecturalDetailView({
     } finally {
       setSaving(false);
     }
-  }, [requirement, userId, desiredBehavior, positiveImpact, uncertainty, solutionAssumption, uncertaintyEvaluated, observationAnalysis, onSaved]);
+  }, [requirement, userId, desiredBehavior, businessNeed, uncertainty, solutionAssumption, uncertaintyEvaluated, observationAnalysis, onSaved]);
 
   if (!open || !requirement) return null;
 
@@ -371,9 +371,9 @@ export default function ConjecturalDetailView({
               />
               <EditableField
                 prefix="So that"
-                value={positiveImpact}
-                onChange={setPositiveImpact}
-                label="Positive Impact"
+                value={businessNeed}
+                onChange={setBusinessNeed}
+                label="Business Need"
               />
               <div>
                 <div className="rounded-xl border border-border-light dark:border-border-dark bg-gray-50 dark:bg-gray-900/40 p-5">
