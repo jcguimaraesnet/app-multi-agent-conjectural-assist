@@ -34,9 +34,13 @@ Toda leitura/escrita de dados deve passar pelo backend FastAPI via `fetch()` com
 
 Se precisar de um dado do Supabase, crie um endpoint no FastAPI (`backend/app/routers/`) e chame via `fetch()` do frontend.
 
-### Rota CopilotKit
+### API routes do Next.js
 
-A única API route do Next.js que intermedia com serviço externo é `/api/copilotkit` — ela faz proxy para o agente LangGraph. Isso é esperado e correto.
+- `/api/copilotkit` — proxy para o agente LangGraph (requer autenticação)
+- `/api/health/backend` — health check do FastAPI (pública, sem autenticação)
+- `/api/health/agent` — health check do LangGraph (pública, sem autenticação)
+
+Essas rotas são excluídas do middleware de autenticação em `src/lib/supabase/middleware.ts`.
 
 ### Padrão de routers no backend
 
@@ -57,6 +61,14 @@ CopilotKit > ThemeProvider > AuthProvider > ProjectProvider > RequirementsProvid
 - Agente: Python, LangGraph, CopilotKit
 - Database: Supabase (PostgreSQL)
 - Auth: Supabase Auth (SSR com `@supabase/ssr`)
+
+## Convenções do Frontend
+
+- **Idioma da UI**: todos os textos, labels e mensagens da interface devem ser em **inglês americano (en-US)** — nunca em português
+- **TypeScript**: nunca usar `any` como tipo
+- **Ícones**: usar apenas `lucide-react`
+- **Novas páginas**: usar `AppLayout` como wrapper e `PageTitle` para o título
+- **Dark mode**: novos componentes devem incluir classes `dark:` para suporte a tema escuro
 
 ## Comandos úteis
 
