@@ -9,20 +9,12 @@ import os
 from typing import List, Dict, Any, Optional
 
 import numpy as np
-from openai import AsyncAzureOpenAI, AzureOpenAI
+from openai import AsyncAzureOpenAI
 
-from app.services.supabase_client import get_async_supabase_client, get_supabase_client
+from app.services.supabase_client import get_async_supabase_client
 
 EMBEDDING_DEPLOYMENT = "text-embedding-3-small"
 EMBEDDING_DIMENSIONS = 1536
-
-
-def _get_azure_client() -> AzureOpenAI:
-    return AzureOpenAI(
-        api_key=os.environ.get("AZURE_OPENAI_API_KEY"),
-        azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
-        api_version=os.environ.get("AZURE_OPENAI_API_VERSION", "2025-03-01-preview"),
-    )
 
 
 def _get_async_azure_client() -> AsyncAzureOpenAI:
@@ -40,19 +32,6 @@ async def generate_embeddings(texts: List[str]) -> List[List[float]]:
 
     client = _get_async_azure_client()
     response = await client.embeddings.create(
-        model=EMBEDDING_DEPLOYMENT,
-        input=texts,
-    )
-    return [item.embedding for item in response.data]
-
-
-def generate_embeddings_sync(texts: List[str]) -> List[List[float]]:
-    """Generate embeddings synchronously (for use in sync persistence code)."""
-    if not texts:
-        return []
-
-    client = _get_azure_client()
-    response = client.embeddings.create(
         model=EMBEDDING_DEPLOYMENT,
         input=texts,
     )

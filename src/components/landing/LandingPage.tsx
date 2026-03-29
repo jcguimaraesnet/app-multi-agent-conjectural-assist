@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { useState, useEffect } from "react";
 import {
   Activity,
   BarChart3,
@@ -29,7 +30,7 @@ export default function LandingPage() {
   const { session } = useAuth();
 
   const demoHref = session ? "/home" : "/auth/login";
-  const demoLabel = session ? "Go to App" : "App";
+  const demoLabel = session ? "Go to App" : "Go to Login";
 
   return (
     <div className="min-h-screen bg-white transition-colors duration-200">
@@ -275,6 +276,7 @@ export default function LandingPage() {
           <p className="text-gray-400 text-xs mt-1">
             COPPE / Universidade Federal do Rio de Janeiro (UFRJ)
           </p>
+          <HealthDots />
         </div>
       </footer>
     </div>
@@ -305,6 +307,103 @@ function ComponentCard({
           </p>
         </div>
       </div>
+    </div>
+  );
+}
+
+function useServiceHealth(url: string) {
+  const [up, setUp] = useState<boolean | null>(null);
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    const start = Date.now();
+    let stopped = false;
+    let keepAliveId: ReturnType<typeof setInterval> | undefined;
+
+    const intervalId = setInterval(() => {
+      if (stopped) {
+        clearInterval(intervalId);
+        return;
+      }
+      setElapsed(Math.floor((Date.now() - start) / 1000));
+    }, 1000);
+
+    function check() {
+      if (stopped) return;
+      fetch(url, { cache: "no-store" })
+        .then((res) => {
+          if (res.ok) {
+            setUp(true);
+            clearInterval(intervalId);
+            // Keep-alive polling every 2 minutes
+            if (!keepAliveId) {
+              keepAliveId = setInterval(() => {
+                fetch(url, { cache: "no-store" })
+                  .then((r) => setUp(r.ok))
+                  .catch(() => setUp(false));
+              }, 120_000);
+            }
+          } else if (!stopped) {
+            setTimeout(check, 3000);
+          }
+        })
+        .catch(() => {
+          if (!stopped) setTimeout(check, 3000);
+        });
+    }
+
+    check();
+
+    return () => {
+      stopped = true;
+      clearInterval(intervalId);
+      if (keepAliveId) clearInterval(keepAliveId);
+    };
+  }, [url]);
+
+  return { up, elapsed };
+}
+
+function HealthDot({
+  label,
+  up,
+  elapsed,
+}: {
+  label: string;
+  up: boolean | null;
+  elapsed: number;
+}) {
+  const color = up ? "bg-green-400/60" : "bg-gray-300";
+  const tooltip = up
+    ? `${label} is running`
+    : `${label} loading for ${elapsed}s`;
+
+  return (
+    <span className="relative group inline-flex items-center">
+      <span
+        className={`block w-2 h-2 rounded-full transition-colors duration-500 ${color}`}
+      />
+      <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[10px] text-gray-500 bg-white border border-gray-200 rounded shadow-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+        {tooltip}
+      </span>
+    </span>
+  );
+}
+
+function HealthDots() {
+  const backend = useServiceHealth("/api/health/backend");
+  const agent = useServiceHealth("/api/health/agent");
+
+  return (
+    <div className="flex items-center justify-center gap-2 mt-3">
+      <span className="relative group inline-flex items-center">
+        <span className="block w-2 h-2 rounded-full bg-green-400/60" />
+        <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[10px] text-gray-500 bg-white border border-gray-200 rounded shadow-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+          Frontend is running
+        </span>
+      </span>
+      <HealthDot label="Backend" up={backend.up} elapsed={backend.elapsed} />
+      <HealthDot label="Agent" up={agent.up} elapsed={agent.elapsed} />
     </div>
   );
 }

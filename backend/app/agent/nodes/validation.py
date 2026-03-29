@@ -152,7 +152,7 @@ async def _task_evaluate(
     if state.get("spec_attempt", 0) >= spec_attempts:
         data_context.rank_conjectural_requirements()
 
-        saved_ids = persist_conjectural_data(context["current_project_id"], data_context, context.get("current_user_id"))
+        saved_ids = await persist_conjectural_data(context["current_project_id"], data_context, context.get("current_user_id"))
 
         msg_created_text = "📑 The following **conjectural requirements** were successfully created: " + ", ".join(saved_ids) + "."
         response = AIMessage(content=msg_created_text)

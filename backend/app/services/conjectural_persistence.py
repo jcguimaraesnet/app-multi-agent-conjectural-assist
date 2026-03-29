@@ -8,13 +8,13 @@ the generated UUIDs into the in-memory models.
 import re
 
 from app.agent.models.data_context import DataContext, ConjecturalData, ConjecturalRequirement, Evaluation
-from app.services.supabase_client import get_supabase_client
-from app.services.embedding_service import generate_embeddings_sync
+from app.services.supabase_client import get_async_supabase_client
+from app.services.embedding_service import generate_embeddings
 
 
-def _get_next_requirement_number(supabase, project_id: str) -> int:
+async def _get_next_requirement_number(supabase, project_id: str) -> int:
     """Query the highest REQ-C number for a project and return the next one."""
-    result = supabase.table("conjectural_requirements") \
+    result = await supabase.table("conjectural_requirements") \
         .select("cod_requirement") \
         .eq("project_id", project_id) \
         .not_.is_("cod_requirement", "null") \
@@ -126,16 +126,16 @@ def _build_evaluation_row(
     }
 
 
-def persist_conjectural_data(project_id: str, data_context: DataContext, user_id: str | None = None) -> list[str]:
+async def persist_conjectural_data(project_id: str, data_context: DataContext, user_id: str | None = None) -> list[str]:
     """Persist conjectural requirements and evaluations to the database.
 
     Only ranking=1 requirements are inserted into conjectural_requirements.
     All evaluations (from all attempts) are linked to the winning requirement's ID.
     """
-    supabase = get_supabase_client()
+    supabase = await get_async_supabase_client()
 
     # Get the next available REQ-C number for this project
-    next_number = _get_next_requirement_number(supabase, project_id)
+    next_number = await _get_next_requirement_number(supabase, project_id)
     requirement_ids: list[str] = []
 
     for cd in data_context.conjectural_data:
@@ -159,14 +159,14 @@ def persist_conjectural_data(project_id: str, data_context: DataContext, user_id
 
         # Generate and store embedding for the business_need
         try:
-            embeddings = generate_embeddings_sync([winner.ferc.business_need])
+            embeddings = await generate_embeddings([winner.ferc.business_need])
             if embeddings:
                 row["business_need_embedding"] = embeddings[0]
                 print(f"[Persistence] Generated embedding for {req_id} business_need")
         except Exception as e:
             print(f"[Persistence] Error generating embedding for {req_id}: {e}")
 
-        result = supabase.table("conjectural_requirements").insert(row).execute()
+        result = await supabase.table("conjectural_requirements").insert(row).execute()
 
         if not result.data:
             print(f"[Persistence] Failed to insert requirement {req_id}")
@@ -190,7 +190,7 @@ def persist_conjectural_data(project_id: str, data_context: DataContext, user_id
                 ))
 
         if eval_rows:
-            supabase.table("evaluations").insert(eval_rows).execute()
+            await supabase.table("evaluations").insert(eval_rows).execute()
             print(f"[Persistence] Saved {len(eval_rows)} evaluation(s) for requirement {db_id}")
 
     return requirement_ids

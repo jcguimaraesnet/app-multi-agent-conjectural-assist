@@ -5,7 +5,7 @@
       "Bash(grep:*)",
       "Bash(ls:*)",
       "Bash(xargs grep:*)",
-      "Bash(npx tsc:*)",
+      "Bash(npx:*)",
       "Bash(pnpm add:*)",
       "Bash(python:*)",
       "Read(//c/Users/jcgui/**)",
@@ -13,9 +13,7 @@
       "WebFetch(domain:selfrefine.info)",
       "Skill(update-config:*)",
       "WebSearch",
-      "WebFetch(domain:www.npmjs.com)",
-      "Bash(npx --version)",
-      "Bash(find c:/repos/ufrj/requirement-conjectural-multiagent/app-multi-agent-conjectural-assist -type f \\\\\\(-name *impact* -o -name *migration* -o -name *schema* \\\\\\))"
+      "WebFetch(domain:www.npmjs.com)"
     ],
     "additionalDirectories": [
       "C:\\repos\\ufrj\\requirement-conjectural-multiagent\\app-multi-agent-conjectural-assist\\.claude\\skills"
