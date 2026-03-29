@@ -4,6 +4,8 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { Session } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+
 // Module-level cache to persist session between navigations
 let cachedSession: Session | null = null
 let cachedProfile: UserProfile | null = null
@@ -22,13 +24,19 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-async function fetchProfile(supabase: ReturnType<typeof createClient>, userId: string): Promise<UserProfile | null> {
-  const { data } = await supabase
-    .from('profiles')
-    .select('role, is_approved')
-    .eq('id', userId)
-    .single()
-  return data
+async function fetchProfile(userId: string): Promise<UserProfile | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/profiles/me`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${userId}`,
+      },
+    })
+    if (!response.ok) return null
+    return await response.json()
+  } catch {
+    return null
+  }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -45,12 +53,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session)
 
         if (session?.user) {
-          const profileData = await fetchProfile(supabase, session.user.id)
+          const profileData = await fetchProfile(session.user.id)
           cachedProfile = profileData
           setProfile(profileData)
         }
       } else if (!cachedProfile && cachedSession?.user) {
-        const profileData = await fetchProfile(supabase, cachedSession.user.id)
+        const profileData = await fetchProfile(cachedSession.user.id)
         cachedProfile = profileData
         setProfile(profileData)
       }
@@ -65,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session)
 
         if (session?.user) {
-          const profileData = await fetchProfile(supabase, session.user.id)
+          const profileData = await fetchProfile(session.user.id)
           cachedProfile = profileData
           setProfile(profileData)
         } else {

@@ -14,7 +14,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.routers import projects, requirements, conjectural_requirements, agent, dashboard
+from app.routers import projects, requirements, conjectural_requirements, agent, dashboard, profiles, admin
+from app.routers import settings as settings_router
 
 
 # Initialize settings
@@ -44,6 +45,9 @@ app.include_router(requirements.router, prefix="/api")
 app.include_router(conjectural_requirements.router, prefix="/api")
 app.include_router(agent.router, prefix="/api")
 app.include_router(dashboard.router, prefix="/api")
+app.include_router(profiles.router, prefix="/api")
+app.include_router(settings_router.router, prefix="/api")
+app.include_router(admin.router, prefix="/api")
 
 
 @app.get("/")

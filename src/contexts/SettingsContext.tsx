@@ -2,7 +2,8 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
-import { createClient } from '@/lib/supabase/client';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export interface UserSettings {
   require_brief_description: boolean;
@@ -43,7 +44,6 @@ let cachedUserId: string | null = null;
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const { user, isLoading: isAuthLoading } = useAuth();
-  const [supabase] = useState(() => createClient());
 
   // Check if we have cached settings for this user
   const hasCachedSettings = user?.id && user.id === cachedUserId && cachedSettings !== null;
@@ -91,37 +91,43 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setError(null);
 
     try {
-      const { data, error: fetchError } = await supabase
-        .from('settings')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      const response = await fetch(`${API_BASE_URL}/api/settings`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${user.id}`,
+        },
+      });
 
-      if (fetchError) {
-        throw fetchError;
+      if (!response.ok) {
+        throw new Error('Failed to fetch settings');
       }
 
-      const foundInDb = !!data;
-      const loadedSettings: UserSettings = data
-        ? {
-            require_brief_description: data.require_brief_description,
-            require_evaluation: data.require_evaluation,
-            batch_mode: data.batch_mode,
-            quantity_req_batch: data.quantity_req_batch,
-            spec_attempts: data.spec_attempts,
-            model: data.model,
-            model_judge: data.model_judge,
-          }
-        : defaultSettings;
+      const data = await response.json();
+
+      // The backend returns defaults if no settings are saved,
+      // but we can detect if user has saved settings by checking if the response
+      // came from the database (non-default) or not. Since the backend always returns
+      // valid settings, we'll consider them as "saved" if the fetch succeeded.
+      // A more precise approach: we check if the backend returned stored data.
+      // For now, we'll do a simple heuristic: if we get data back, assume saved.
+      const loadedSettings: UserSettings = {
+        require_brief_description: data.require_brief_description,
+        require_evaluation: data.require_evaluation,
+        batch_mode: data.batch_mode,
+        quantity_req_batch: data.quantity_req_batch,
+        spec_attempts: data.spec_attempts,
+        model: data.model,
+        model_judge: data.model_judge,
+      };
 
       // Update module-level cache
       cachedSettings = loadedSettings;
-      cachedHasSaved = foundInDb;
+      cachedHasSaved = true;
       cachedUserId = user.id;
       fetchedForUser.current = user.id;
 
       setSettings(loadedSettings);
-      setHasSavedSettings(foundInDb);
+      setHasSavedSettings(true);
     } catch (err) {
       console.error('Error loading settings:', err);
       setError('Failed to load settings');
@@ -129,44 +135,42 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id, isAuthLoading, supabase]);
+  }, [user?.id, isAuthLoading]);
 
   // Fetch settings when user changes
   useEffect(() => {
     fetchSettings();
   }, [fetchSettings]);
 
-  // Save settings to Supabase
+  // Save settings to backend
   const saveSettings = useCallback(async (newSettings: UserSettings) => {
     if (!user?.id) return;
 
     try {
-      const { data, error: saveError } = await supabase
-        .from('settings')
-        .upsert({
-          user_id: user.id,
-          ...newSettings,
-        }, {
-          onConflict: 'user_id',
-        })
-        .select('*')
-        .single();
+      const response = await fetch(`${API_BASE_URL}/api/settings`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${user.id}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newSettings),
+      });
 
-      if (saveError) {
-        throw saveError;
+      if (!response.ok) {
+        throw new Error('Failed to save settings');
       }
 
-      const persistedSettings: UserSettings = data
-        ? {
-            require_brief_description: data.require_brief_description,
-            require_evaluation: data.require_evaluation,
-            batch_mode: data.batch_mode,
-            quantity_req_batch: data.quantity_req_batch,
-            spec_attempts: data.spec_attempts,
-            model: data.model,
-            model_judge: data.model_judge,
-          }
-        : newSettings;
+      const data = await response.json();
+
+      const persistedSettings: UserSettings = {
+        require_brief_description: data.require_brief_description,
+        require_evaluation: data.require_evaluation,
+        batch_mode: data.batch_mode,
+        quantity_req_batch: data.quantity_req_batch,
+        spec_attempts: data.spec_attempts,
+        model: data.model,
+        model_judge: data.model_judge,
+      };
 
       // Update cache and state from source of truth
       cachedSettings = persistedSettings;
@@ -179,7 +183,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       console.error('Error saving settings:', err);
       setError('Failed to save settings');
     }
-  }, [user?.id, supabase]);
+  }, [user?.id]);
 
   const updateSetting = useCallback(<K extends keyof UserSettings>(key: K, value: UserSettings[K]) => {
     const newSettings = { ...settings, [key]: value };

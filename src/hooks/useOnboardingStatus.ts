@@ -2,15 +2,10 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { createClient } from '@/lib/supabase/client';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export type OnboardingStage = 'stage1' | 'stage2' | 'stage3';
-
-const STAGE_COLUMNS: Record<OnboardingStage, string> = {
-  stage1: 'has_completed_onboarding_stage1',
-  stage2: 'has_completed_onboarding_stage2',
-  stage3: 'has_completed_onboarding_stage3',
-};
 
 type StageStatuses = Record<OnboardingStage, boolean>;
 
@@ -22,11 +17,8 @@ let cachedUserId: string | null = null;
 // Notify all hook instances when any instance updates statuses
 const listeners = new Set<(statuses: StageStatuses) => void>();
 
-const ALL_COLUMNS = Object.values(STAGE_COLUMNS).join(',');
-
 export function useOnboardingStatus() {
   const { user, isLoading: isAuthLoading } = useAuth();
-  const [supabase] = useState(() => createClient());
 
   const hasCached =
     !!user?.id && user.id === cachedUserId && cachedStatuses !== null;
@@ -61,20 +53,23 @@ export function useOnboardingStatus() {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(ALL_COLUMNS)
-        .eq('id', user.id)
-        .maybeSingle();
+      const response = await fetch(`${API_BASE_URL}/api/profiles/me/onboarding`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${user.id}`,
+        },
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to fetch onboarding status');
+      }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- columns not yet in generated Supabase types
-      const row = data as Record<string, unknown> | null;
+      const data = await response.json();
+
       const fetched: StageStatuses = {
-        stage1: (row?.has_completed_onboarding_stage1 as boolean) ?? false,
-        stage2: (row?.has_completed_onboarding_stage2 as boolean) ?? false,
-        stage3: (row?.has_completed_onboarding_stage3 as boolean) ?? false,
+        stage1: data.stage1 ?? false,
+        stage2: data.stage2 ?? false,
+        stage3: data.stage3 ?? false,
       };
 
       cachedStatuses = fetched;
@@ -88,7 +83,7 @@ export function useOnboardingStatus() {
       setStatuses(DEFAULT_STATUSES);
       setIsLoading(false);
     }
-  }, [user?.id, isAuthLoading, supabase]);
+  }, [user?.id, isAuthLoading]);
 
   useEffect(() => {
     fetchStatus();
@@ -104,15 +99,17 @@ export function useOnboardingStatus() {
     async (stage: OnboardingStage) => {
       if (!user?.id) return;
 
-      const column = STAGE_COLUMNS[stage];
-
       try {
-        const { error } = await supabase
-          .from('profiles')
-          .update({ [column]: true })
-          .eq('id', user.id);
+        const response = await fetch(`${API_BASE_URL}/api/profiles/me/onboarding/${stage}`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${user.id}`,
+          },
+        });
 
-        if (error) throw error;
+        if (!response.ok) {
+          throw new Error(`Failed to complete onboarding ${stage}`);
+        }
 
         const updated: StageStatuses = {
           ...(cachedStatuses ?? DEFAULT_STATUSES),
@@ -124,7 +121,7 @@ export function useOnboardingStatus() {
         console.error(`Error completing onboarding ${stage}:`, err);
       }
     },
-    [user?.id, supabase],
+    [user?.id],
   );
 
   return {

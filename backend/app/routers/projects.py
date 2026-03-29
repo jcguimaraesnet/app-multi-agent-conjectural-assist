@@ -27,6 +27,7 @@ from app.services.language_detector import detect_language
 from app.services.vision_analyzer import analyze_vision_text
 from app.services.supabase_client import get_supabase_client
 from app.services.user_settings import get_user_model_preference
+from app.routers.auth_utils import get_user_id_from_header
 
 
 PROJECT_SELECT_COLUMNS = (
@@ -117,24 +118,6 @@ def _decode_document_blob(data: Optional[str | bytes | bytearray]) -> bytes:
         pass
 
     return raw_bytes
-
-
-def get_user_id_from_header(authorization: Optional[str]) -> str:
-    """
-    Extract user ID from authorization header.
-    In production, this should validate the JWT and extract the user ID.
-    For now, we expect the user_id to be passed directly for simplicity.
-    """
-    if not authorization:
-        raise HTTPException(status_code=401, detail="Authorization header required")
-    
-    # For development: expect "Bearer <user_id>"
-    # In production: decode JWT and extract user_id
-    parts = authorization.split(" ")
-    if len(parts) != 2 or parts[0].lower() != "bearer":
-        raise HTTPException(status_code=401, detail="Invalid authorization format")
-    
-    return parts[1]
 
 
 @router.post("/vision/extract", response_model=VisionExtractionResponse)

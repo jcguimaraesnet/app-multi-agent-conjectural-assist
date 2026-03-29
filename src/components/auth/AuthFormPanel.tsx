@@ -47,21 +47,26 @@ export default function AuthFormPanel() {
     // Check if user is approved before allowing access
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('is_approved')
-        .eq('id', user.id)
-        .single()
+      try {
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+        const response = await fetch(`${API_BASE_URL}/api/profiles/me`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${user.id}`,
+          },
+        })
 
-      if (profileError) {
-        console.error('Failed to fetch profile for approval check:', profileError.message)
-      }
-
-      if (profile && profile.is_approved === false) {
-        await supabase.auth.signOut()
-        setError('Your account is pending admin approval. Please wait for an administrator to approve your access.')
-        setIsLoading(false)
-        return
+        if (response.ok) {
+          const profile = await response.json()
+          if (profile.is_approved === false) {
+            await supabase.auth.signOut()
+            setError('Your account is pending admin approval. Please wait for an administrator to approve your access.')
+            setIsLoading(false)
+            return
+          }
+        }
+      } catch (profileError) {
+        console.error('Failed to fetch profile for approval check:', profileError)
       }
     }
 
