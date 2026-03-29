@@ -48,7 +48,8 @@ export async function updateSession(request: NextRequest) {
 
   // Protected routes - redirect to login if not authenticated
   const isAuthRoute = request.nextUrl.pathname.startsWith('/auth')
-  const isPublicApiRoute = request.nextUrl.pathname.startsWith('/api/copilotkit')
+  const isPublicApiRoute = request.nextUrl.pathname.startsWith('/api/copilotkit') ||
+    request.nextUrl.pathname.startsWith('/api/health')
   const isLandingPage = request.nextUrl.pathname === '/'
   const isProtectedRoute = !isAuthRoute && !isPublicApiRoute && !isLandingPage
 

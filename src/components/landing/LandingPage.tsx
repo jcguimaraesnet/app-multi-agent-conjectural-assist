@@ -318,13 +318,9 @@ function useServiceHealth(url: string) {
   useEffect(() => {
     const start = Date.now();
     let stopped = false;
-    let keepAliveId: ReturnType<typeof setInterval> | undefined;
 
-    const intervalId = setInterval(() => {
-      if (stopped) {
-        clearInterval(intervalId);
-        return;
-      }
+    const elapsedId = setInterval(() => {
+      if (stopped) return;
       setElapsed(Math.floor((Date.now() - start) / 1000));
     }, 1000);
 
@@ -332,23 +328,13 @@ function useServiceHealth(url: string) {
       if (stopped) return;
       fetch(url, { cache: "no-store" })
         .then((res) => {
-          if (res.ok) {
-            setUp(true);
-            clearInterval(intervalId);
-            // Keep-alive polling every 2 minutes
-            if (!keepAliveId) {
-              keepAliveId = setInterval(() => {
-                fetch(url, { cache: "no-store" })
-                  .then((r) => setUp(r.ok))
-                  .catch(() => setUp(false));
-              }, 120_000);
-            }
-          } else if (!stopped) {
-            setTimeout(check, 3000);
-          }
+          if (!stopped) setUp(res.ok);
         })
         .catch(() => {
-          if (!stopped) setTimeout(check, 3000);
+          if (!stopped) setUp(false);
+        })
+        .finally(() => {
+          if (!stopped) setTimeout(check, 5000);
         });
     }
 
@@ -356,8 +342,7 @@ function useServiceHealth(url: string) {
 
     return () => {
       stopped = true;
-      clearInterval(intervalId);
-      if (keepAliveId) clearInterval(keepAliveId);
+      clearInterval(elapsedId);
     };
   }, [url]);
 
