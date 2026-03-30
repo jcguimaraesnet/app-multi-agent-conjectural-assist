@@ -7,10 +7,12 @@ Com base nas diretrizes e no contexto do projeto abaixo,
 gere {quantity} declarações de necessidade de negócio que poderiam ser desejadas pelos stakeholders do projeto.
 
 ## Diretrizes sobre como elaborar declarações de necessidade de negócio
-- Deve ser curta, concisa e única, evitando conjunções como "e" ou "ou" ou "," que indiquem múltiplas necessidades em uma única declaração
-- Deve adicionar especificidade e clareza usando o contexto do projeto
-- Deve representar uma necessidade de negócio a ser atendida, sem indicar a solução para alcançá-la (ou seja, deve focar no "o quê" e não no "como").
-- Não deve conter termos como "através de", "por meio de", "com o uso de", "utilizando", "usando", "ao implementar", "ao adotar", "ao melhorar" ou outros termos que indiquem uma solução ou meio para atender à necessidade. O foco deve ser exclusivamente na necessidade de negócio desejada, sem mencionar como ela será atendida.
+- Deve ser curta, concisa e de propósito único
+- Deve ser específico dentro do contexto do projeto
+- Deve representar um impacto positivo ou benefício de negócio a ser alcançado, sem indicar a solução para alcançá-lo (ou seja, deve focar no "o quê" e não no "como").
+- Não deve conter termos explicativos como "para que", "a fim de", "com o objetivo de", "com a finalidade de", "para alcançar", "para atender a", "para satisfazer" ou outros termos com finalidade de explicação ou justificação da sentença anterior. O foco deve ser exclusivamente na necessidade de negócio em si, sem explicações ou justificativas, de maneira neutra, sem antecipar ou sugerir o resultado desejado.
+- Não deve conter termos que indique a solução para atender a necessidade de negócio, como por exemplo "através de", "por meio de", "com o uso de", "utilizando", "usando", "ao implementar", "ao adotar", "ao melhorar" ou outros termos similares. O foco deve ser exclusivamente no benefício de negócio desejado, sem mencionar como ele será atendido.
+- Não deve conter múltiplas necessidades em uma única declaração, evitando conjunções como "e" ou "ou" ou "," ou termos similares. Cada declaração deve expressar uma única necessidade de negócio.
 
 ## Contexto do projeto:
 - Domínio: {domain}
