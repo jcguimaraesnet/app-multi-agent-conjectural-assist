@@ -13,12 +13,12 @@ from typing import Optional, List, Dict, Any
 
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-from app.agent.llm_config import get_model, extract_text
+from app.agent.llm_config import get_model, extract_text, LLMProvider
 from langgraph.types import Command
 from copilotkit.langgraph import copilotkit_emit_state, copilotkit_customize_config
 
 from app.agent.state import WorkflowState
-from app.agent.models.data_context import DataContext, QuestionAnswer
+from app.agent.models.data_context import DataContext, ConjecturalData, QuestionAnswer
 from app.agent.utils.context_utils import extract_copilotkit_context
 from app.agent.prompts.factory import get_prompt
 from app.agent.prompts.c01_analysis_contextual_questions_prompt import ANALYSIS_CONTEXTUAL_QUESTIONS_PROMPT
@@ -44,9 +44,9 @@ def _strip_markdown_fences(raw: str) -> str:
 
 
 async def _generate_contextual_questions(
-    cd: "ConjecturalData",
+    cd: ConjecturalData,
     data_context: DataContext,
-    model_provider: str,
+    model_provider: LLMProvider,
 ) -> List[str]:
     """Call the LLM to generate 3 contextual questions for a single business need."""
     prompt = get_prompt(ANALYSIS_CONTEXTUAL_QUESTIONS_PROMPT, data_context.language).format(
@@ -72,28 +72,18 @@ async def _generate_contextual_questions(
         return ["Unable to generate question."] * 3
 
 
-async def _generate_conjectural_hypotheses(
+async def _generate_conjectural_hypothesis(
+    cd: ConjecturalData,
     data_context: DataContext,
-    model_provider: str,
-) -> List[str]:
-    """Call the LLM to generate a verifiable experiment hypothesis per business need+uncertainty pair. Returns list of hypothesis strings (index-aligned)."""
-    impacts = [cd.raw_business_need for cd in data_context.conjectural_data]
-    uncertainties = [cd.raw_uncertainty for cd in data_context.conjectural_data]
-    if not impacts or not uncertainties:
-        return []
-
-    pairs_text = "\n".join(
-        f"- Impact: {impact}\n  Uncertainty: {uncertainty}"
-        for impact, uncertainty in zip(impacts, uncertainties)
-    )
-
+    model_provider: LLMProvider,
+) -> str:
+    """Call the LLM to generate a verifiable experiment hypothesis for a single business need + uncertainty pair."""
     prompt = get_prompt(ANALYSIS_CONJECTURAL_HYPOTHESIS_PROMPT, data_context.language).format(
-        impacts_and_uncertainties=pairs_text,
-        project_summary=data_context.project_summary,
         domain=data_context.domain,
-        stakeholder=data_context.stakeholder,
         business_objective=data_context.business_objective,
-        quantity=len(impacts),
+        business_need=cd.raw_business_need,
+        desired_behavior=cd.raw_desired_behavior,
+        uncertainty=cd.raw_uncertainty,
         language=data_context.language,
     )
 
@@ -101,18 +91,16 @@ async def _generate_conjectural_hypotheses(
 
     try:
         response = await model.ainvoke([HumanMessage(content=prompt)])
-        raw_content = _strip_markdown_fences(extract_text(response.content).strip())
-        return json.loads(raw_content)
-
-    except (json.JSONDecodeError, Exception) as e:
-        print(f"[Analysis] Error generating conjectural hypotheses: {e}")
-        return ["Unable to generate hypothesis."] * len(impacts)
+        return extract_text(response.content).strip()
+    except Exception as e:
+        print(f"[Analysis] Error generating conjectural hypothesis: {e}")
+        return "Unable to generate hypothesis."
 
 
 async def _synthesize_desired_behavior(
-    cd: "ConjecturalData",
+    cd: ConjecturalData,
     data_context: DataContext,
-    model_provider: str,
+    model_provider: LLMProvider,
 ) -> str:
     """Call the LLM to synthesize a desired behavior statement from Q&A pairs for a single ConjecturalData entry."""
     qa_text = "\n".join(
@@ -140,9 +128,9 @@ async def _synthesize_desired_behavior(
 
 
 async def _generate_whatif_questions(
-    cd: "ConjecturalData",
+    cd: ConjecturalData,
     data_context: DataContext,
-    model_provider: str,
+    model_provider: LLMProvider,
 ) -> List[str]:
     """Call the LLM to generate 3 What-If questions exploring edge cases for a desired behavior."""
     prompt = get_prompt(ANALYSIS_WHATIF_QUESTIONS_PROMPT, data_context.language).format(
@@ -169,9 +157,9 @@ async def _generate_whatif_questions(
 
 
 async def _identify_uncertainty_from_qa(
-    cd: "ConjecturalData",
+    cd: ConjecturalData,
     data_context: DataContext,
-    model_provider: str,
+    model_provider: LLMProvider,
 ) -> str:
     """Call the LLM to identify the key uncertainty from What-If Q&A pairs."""
     qa_text = "\n".join(
@@ -203,7 +191,7 @@ async def _task_generate_questions(
     state: WorkflowState,
     config: RunnableConfig,
     data_context: DataContext,
-    model_provider: str,
+    model_provider: LLMProvider,
 ) -> dict:
     """Task: Generate contextual questions per business need, then pause for Elicitation to answer."""
     print(f"[Analysis] Elicitation context loaded — {len(data_context.conjectural_data)} business need(s)")
@@ -228,7 +216,7 @@ async def _task_synthesize_and_generate_whatif(
     state: WorkflowState,
     config: RunnableConfig,
     data_context: DataContext,
-    model_provider: str,
+    model_provider: LLMProvider,
 ) -> dict:
     """Task: Synthesize desired behavior from Q&A, then generate What-If questions and route to Elicitation."""
     # Synthesize raw_desired_behavior from Q&A pairs
@@ -257,7 +245,7 @@ async def _task_identify_uncertainty_and_continue(
     state: WorkflowState,
     config: RunnableConfig,
     data_context: DataContext,
-    model_provider: str,
+    model_provider: LLMProvider,
 ) -> dict:
     """Task: Identify uncertainty from What-If Q&A, then generate hypotheses."""
     # Identify uncertainty from What-If Q&A pairs
@@ -266,10 +254,9 @@ async def _task_identify_uncertainty_and_continue(
         print(f"  [Uncertainty] Impact [{idx}]: {cd.raw_uncertainty}")
 
     # Generate a verifiable experiment hypothesis per impact+uncertainty pair
-    hypotheses_list = await _generate_conjectural_hypotheses(data_context, model_provider)
-    for cd, hypothesis in zip(data_context.conjectural_data, hypotheses_list):
-        cd.raw_supposition_solution = hypothesis
-        print(f"  [Hypothesis] {cd.raw_business_need!r} → {hypothesis!r}")
+    for idx, cd in enumerate(data_context.conjectural_data, start=1):
+        cd.raw_supposition_solution = await _generate_conjectural_hypothesis(cd, data_context, model_provider)
+        print(f"  [Hypothesis] Impact [{idx}]: {cd.raw_supposition_solution!r}")
 
     print(f"[Analysis] Completed — {len(data_context.conjectural_data)} conjectural data entries")
     return {

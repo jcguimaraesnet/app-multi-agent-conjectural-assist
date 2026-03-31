@@ -1,25 +1,37 @@
 ANALYSIS_CONJECTURAL_HYPOTHESIS_PROMPT = {
     "pt-br": """Você é um especialista em engenharia de requisitos de software, com foco em experimentação lean e desenvolvimento orientado a hipóteses.
 
-Você recebeu uma lista de impactos positivos de negócio desejados e suas incertezas associadas. Para cada par, proponha UMA hipótese de experimento — uma suposição de solução verificável e testável que, se validada, eliminaria (ou reduziria significativamente) a incerteza e ajudaria a alcançar o impacto positivo desejado.
+# Instrução
+Com base nas informações de contexto abaixo, proponha uma suposição de solução.
 
-Cada hipótese DEVE ser:
-- Verificável: pode ser testada com um experimento concreto
-- Mensurável: possui critérios claros de sucesso/falha
-- Focada: aborda diretamente a incerteza
-- Acionável: descreve o que construir, testar ou medir
+# Contexto
+Uma [suposição de solução] é uma hipótese formulada para ser testada por meio de um experimento, com o objetivo de validar ou invalidar uma [incerteza] crítica relacionada a um [comportamento desejado] que, por sua vez, está diretamente relacionada como condição necessária para alcançar uma [necessidade de negócio].
 
-Contexto:
-- Resumo do projeto: {project_summary}
-- Domínio: {domain}
-- Objetivo de negócio: {business_objective}
-- Stakeholder principal: {stakeholder}
+## Domínio
+{domain}
 
-Impactos positivos e incertezas:
-{impacts_and_uncertainties}
+## Objetivo de negócio
+{business_objective}
 
-Você DEVE retornar APENAS um array JSON válido de strings (sem markdown, sem explicação) onde cada string é uma hipótese de experimento concisa (até 300 caracteres). Retorne exatamente {quantity} strings, uma por par impacto-incerteza, na mesma ordem.
+## Necessidade de negócio
+{business_need}
 
-IMPORTANTE: Sua resposta DEVE estar no idioma: {language}.
+## Comportamento desejado
+{desired_behavior}
+
+## Incerteza
+{uncertainty}
+
+## Diretrizes para elaborar a suposição de solução baseada em experimento
+- A suposição deve ser verificável: pode ser testada com um experimento concreto
+- A suposição deve ser mensurável: possui critérios claros de sucesso/falha
+- A suposição deve ser focada: aborda diretamente a incerteza
+- A suposição deve ser acionável: descreve o que construir, testar ou medir
+
+## Restrições textuais e formato da resposta
+- Retorne APENAS o texto da suposição de solução
+- Não use markdown. Não dê explicações adicionais além da suposição de solução
+- NÃO use aspas duplas dentro do texto das perguntas. Se precisar citar algo, use aspas simples.
+- IMPORTANTE: Sua resposta DEVE estar no idioma: {language}
 """,
 }
