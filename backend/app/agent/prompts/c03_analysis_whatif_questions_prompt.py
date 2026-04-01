@@ -33,7 +33,7 @@ Com base nas informações de contexto abaixo e no comportamento desejado, reali
 - Deve retornar APENAS um array JSON válido de 3 strings, onde cada string é uma pergunta What-If (E se)
 - Deve ter no máximo 250 caracteres
 - Não use markdown. Não dê explicações adicionais além da declaração
-- NÃO use aspas duplas dentro do texto das perguntas. Se precisar citar algo, use aspas simples.
+- Não use aspas duplas no meio do texto da resposta para fazer citações ou destacar palavras. Se precisar citar algo, use aspas simples.
 - IMPORTANTE: Sua resposta DEVE estar no idioma: {language}
 """,
 }

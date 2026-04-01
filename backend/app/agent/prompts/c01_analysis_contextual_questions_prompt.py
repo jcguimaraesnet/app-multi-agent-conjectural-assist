@@ -29,7 +29,7 @@ Com base nas informações de contexto abaixo, elabore 3 perguntas contextuais r
 - Exemlo de formato de resposta: ["Pergunta 1?", "Pergunta 2?", "Pergunta 3?"]
 - Cada resposta deve ter até 300 caracteres
 - Não use markdown. Não dê explicações adicionais além do JSON
-- Sem aspas ao longo do texto da resposta. Se precisar citar algo, use aspas simples
+- Não use aspas duplas no meio do texto da resposta para fazer citações ou destacar palavras. Se precisar citar algo, use aspas simples.
 - IMPORTANTE: Sua resposta DEVE estar no idioma: {language}
 """,
 }

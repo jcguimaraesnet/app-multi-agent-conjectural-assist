@@ -33,7 +33,7 @@ Com base nas informações de contexto abaixo e nas perguntas e respostas contex
 - Deve ser retornado APENAS uma string com a declaração do comportamento desejado 
 - Deve ter no máximo 500 caracteres
 - Não use markdown. Não dê explicações adicionais além da declaração
-- Sem aspas ao longo do texto da resposta
+- Não use aspas duplas no meio do texto da resposta para fazer citações ou destacar palavras. Se precisar citar algo, use aspas simples.
 - IMPORTANTE: Sua resposta DEVE estar no idioma: {language}
 """,
 }

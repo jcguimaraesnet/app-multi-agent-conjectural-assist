@@ -35,7 +35,7 @@ Com base nas informações de contexto abaixo, elabore uma declaração refinada
 ## Restrições textuais e formato da resposta
 - Deve retornar APENAS um array JSON válido com exatamente {quantity} strings, cada uma sendo uma declaração refinada da descrição inicial, na mesma ordem.
 - Não use markdown. Não dê explicações adicionais além do JSON
-- Sem aspas ao longo do texto da resposta
+- Não use aspas duplas no meio do texto da resposta para fazer citações ou destacar palavras. Se precisar citar algo, use aspas simples.
 - IMPORTANTE: Sua resposta DEVE estar no idioma: {language}
 """,
 }

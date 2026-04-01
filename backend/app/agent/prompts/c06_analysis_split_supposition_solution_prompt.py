@@ -40,7 +40,7 @@ Com base nas informações de contexto abaixo, reescreva a [suposição de solu�
 ## Restrições textuais e formato da resposta
 - Retorne APENAS um JSON válido com exatamente dois campos: "supposition_solution" e "observation_data_analysis"
 - Exemplo de formato: {{"supposition_solution": "texto...", "observation_data_analysis": "texto..."}}
-- NÃO use aspas duplas dentro do texto dos campos. Se precisar citar algo, use aspas simples.
+- Não use aspas duplas no meio do texto da resposta para fazer citações ou destacar palavras. Se precisar citar algo, use aspas simples.
 - Não use markdown. Não dê explicações adicionais além do JSON
 - IMPORTANTE: Sua resposta DEVE estar no idioma: {language}
 """,

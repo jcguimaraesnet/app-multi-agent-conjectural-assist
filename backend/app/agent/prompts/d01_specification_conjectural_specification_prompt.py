@@ -91,7 +91,7 @@ QESS:
 
 ## Restrições textuais
 - Não use markdown. Não dê explicações adicionais além do JSON especificado no formato da resposta
-- Sem aspas ao longo do texto da resposta
+- Não use aspas duplas no meio do texto da resposta para fazer citações ou destacar palavras. Se precisar citar algo, use aspas simples.
 - IMPORTANTE: Sua resposta DEVE estar no idioma: {language}.
 """,
 }

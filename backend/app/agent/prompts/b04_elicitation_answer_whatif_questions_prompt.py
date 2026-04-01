@@ -35,7 +35,7 @@ Com base nas informações de contexto abaixo, responda cada uma das perguntas d
 - Deve retornar APENAS um array JSON válido de strings, onde cada string é a resposta correspondente à pergunta na mesma ordem
 - Cada resposta deve ter até 300 caracteres
 - Não use markdown. Não dê explicações adicionais além do JSON
-- Sem aspas ao longo do texto da resposta. Se precisar citar algo, use aspas simples
+- Não use aspas duplas no meio do texto da resposta para fazer citações ou destacar palavras. Se precisar citar algo, use aspas simples.
 - IMPORTANTE: Sua resposta DEVE estar no idioma: {language}
 """,
 }

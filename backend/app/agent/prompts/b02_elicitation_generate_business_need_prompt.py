@@ -34,7 +34,7 @@ As seguintes declarações de necessidade de negócio já foram definidas para e
 ## Restrições textuais
 - Você DEVE retornar APENAS um array JSON válido com exatamente {quantity} strings, cada uma sendo uma declaração de necessidade de negócio
 - Não use markdown. Não dê explicações adicionais além das declarações
-- Sem aspas ao longo do texto da resposta
+- Não use aspas duplas no meio do texto da resposta para fazer citações ou destacar palavras. Se precisar citar algo, use aspas simples.
 - IMPORTANTE: Sua resposta DEVE estar no idioma: {language}
 """,
 }

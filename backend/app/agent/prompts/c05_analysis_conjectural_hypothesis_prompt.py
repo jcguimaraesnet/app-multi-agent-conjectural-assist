@@ -33,7 +33,7 @@ Uma [suposição de solução] é uma hipótese formulada para ser testada por m
 ## Restrições textuais e formato da resposta
 - Retorne APENAS o texto da suposição de solução
 - Não use markdown. Não dê explicações adicionais além da suposição de solução
-- NÃO use aspas duplas dentro do texto das perguntas. Se precisar citar algo, use aspas simples.
+- Não use aspas duplas no meio do texto da resposta para fazer citações ou destacar palavras. Se precisar citar algo, use aspas simples.
 - IMPORTANTE: Sua resposta DEVE estar no idioma: {language}
 """,
 }
