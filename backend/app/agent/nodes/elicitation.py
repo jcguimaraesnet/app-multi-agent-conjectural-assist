@@ -189,6 +189,7 @@ async def generate_business_needs(
 
     try:
         response = await model.ainvoke([HumanMessage(content=prompt)])
+        print(f"[Business Need] Raw LLM response: \n\n{response.content}\n\n")
         raw = _strip_markdown_fences(extract_text(response.content).strip())
         candidates: List[str] = json.loads(raw)
     except (json.JSONDecodeError, Exception) as e:
