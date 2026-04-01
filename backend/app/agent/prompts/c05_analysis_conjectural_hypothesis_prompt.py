@@ -23,6 +23,8 @@ Uma [suposição de solução] é uma hipótese formulada para ser testada por m
 {uncertainty}
 
 ## Diretrizes para elaborar a suposição de solução baseada em experimento
+- A suposição deve ser clara, objetiva e específica dentro do contexto do projeto
+- A suposição deve descrever um experimento simples, sem perda de profundidade ao testar a incerteza relacionada ao comportamento desejado e à necessidade de negócio
 - A suposição deve ser verificável: pode ser testada com um experimento concreto
 - A suposição deve ser mensurável: possui critérios claros de sucesso/falha
 - A suposição deve ser focada: aborda diretamente a incerteza

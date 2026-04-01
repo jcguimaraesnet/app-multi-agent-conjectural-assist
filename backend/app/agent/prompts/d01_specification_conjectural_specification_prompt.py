@@ -17,7 +17,7 @@ Um requisito de software com incerteza é chamado de requisito conjectural.
 - Informação bruta de **necessidade de negócio:** {business_need}
 - Informação bruta de **incerteza:** {uncertainty}
 - Informação bruta de **hipótese de solução:** {supposition_solution}
-- informação bruta de **descrição da observação:** {supposition_solution}
+- informação bruta de **descrição da observação:** {observation_data_analysis}
 
 ## Modelo de Especificação de Requisito Conjectural
 

@@ -8,6 +8,7 @@ from the knowledge graph built by the Elicitation node.
 
 import asyncio
 import json
+import re
 from typing import Optional, List, Dict, Any
 
 from langchain_core.runnables.config import RunnableConfig
@@ -68,9 +69,6 @@ async def _task_generate(
     model_provider: LLMProvider,
 ) -> dict:
     """Task: Generate or refine conjectural requirement specifications."""
-    context = extract_copilotkit_context(state)
-    quantity_req_batch = context['quantity_req_batch']
-
     stakeholder = data_context.stakeholder
     domain = data_context.domain
     project_summary = data_context.project_summary
@@ -79,19 +77,22 @@ async def _task_generate(
     print(f"[Specification] Project summary ({len(project_summary)} chars): {project_summary[:120]}...")
     print(f"[Specification] Business objective: {business_objective}")
     print(f"[Specification] Conjectural descriptions ({len(data_context.conjectural_data)}):")
-    for cd in data_context.conjectural_data:
-        print(f"  [Business Need] {cd.raw_business_need[:60]} → [Uncertainty] {cd.raw_uncertainty[:60]} → [Hypothesis] {cd.raw_supposition_solution[:80]}")
 
     model = get_model(provider=model_provider, temperature=1)
 
-    print(f"[Specification] Generating {quantity_req_batch} conjectural requirement(s)...")
+    print(f"[Specification] Generating {len(data_context.conjectural_data)} conjectural requirement(s)...")
 
     spec_attempt = state.get("spec_attempt", 0)
     print(f"[Specification] Current spec_attempt: {spec_attempt}")
 
-    for i, cd in enumerate(data_context.conjectural_data[:quantity_req_batch]):
+    for i, cd in enumerate(data_context.conjectural_data):
         req_num = i + 1
         print(f"[Specification] Generating requirement #{req_num}...")
+        print(f"[Specification] -> [Business Need] {cd.raw_business_need}")
+        print(f"[Specification] -> [Desired Behavior] {cd.raw_desired_behavior}")
+        print(f"[Specification] -> [Uncertainty] {cd.raw_uncertainty}")
+        print(f"[Specification] -> [Supposition Solution] {cd.raw_supposition_solution}")
+        print(f"[Specification] -> [Observation Analysis] {cd.raw_observation_data_analysis}")
 
         if spec_attempt == 0:
             prompt = get_prompt(SPECIFICATION_CONJECTURAL_SPECIFICATION_PROMPT, data_context.language).format(
@@ -101,6 +102,7 @@ async def _task_generate(
                 business_need=cd.raw_business_need,
                 uncertainty=cd.raw_uncertainty,
                 supposition_solution=cd.raw_supposition_solution,
+                observation_data_analysis=cd.raw_observation_data_analysis,
                 language=data_context.language,
             )
         else:
@@ -125,7 +127,12 @@ async def _task_generate(
             response = await model.ainvoke([HumanMessage(content=prompt)])
             print(f"[Specification] Raw LLM response for requirement #{req_num}:\n\n{response.content}\n\n")
             raw_content = _strip_markdown_fences(extract_text(response.content).strip())
-            raw_dict: Dict[str, Any] = json.loads(raw_content)
+            try:
+                raw_dict: Dict[str, Any] = json.loads(raw_content)
+            except json.JSONDecodeError:
+                # Repair: LLM occasionally omits the opening quote for string values
+                fixed = re.sub(r'(":\s+)([a-zA-ZáàâãéèêíïóôõöúüçñÁÀÂÃÉÈÊÍÏÓÔÕÖÚÜÇÑ])', r'\1"\2', raw_content)
+                raw_dict = json.loads(fixed)
             cr = ConjecturalRequirement.model_validate(raw_dict)
             cr.attempt = len(cd.conjectural_requirements) + 1
             cd.conjectural_requirements.append(cr)

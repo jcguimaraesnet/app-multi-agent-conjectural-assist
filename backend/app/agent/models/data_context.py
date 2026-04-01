@@ -114,6 +114,10 @@ class ConjecturalData(BaseModel):
         default="",
         description="Solution assumption experiment for this business need+uncertainty pair",
     )
+    raw_observation_data_analysis: str = Field(
+        default="",
+        description="Analysis of the data observed in the proposed experiment under the solution assumption",
+    )
     conjectural_requirements: List[ConjecturalRequirement] = Field(
         default_factory=list,
         description="List of conjectural requirement attempts (FERC + QESS) — currently one, but supports multiple attempts",

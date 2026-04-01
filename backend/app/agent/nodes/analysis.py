@@ -8,7 +8,7 @@ metric, and stores the results back in the knowledge graph and state.
 
 import json
 import re
-from typing import Optional, List
+from typing import Optional, List, Tuple
 
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.messages import HumanMessage
@@ -25,6 +25,7 @@ from app.agent.prompts.c05_analysis_conjectural_hypothesis_prompt import ANALYSI
 from app.agent.prompts.c02_analysis_synthesize_desired_behavior_prompt import ANALYSIS_SYNTHESIZE_DESIRED_BEHAVIOR_PROMPT
 from app.agent.prompts.c03_analysis_whatif_questions_prompt import ANALYSIS_WHATIF_QUESTIONS_PROMPT
 from app.agent.prompts.c04_analysis_identify_uncertainty_prompt import ANALYSIS_IDENTIFY_UNCERTAINTY_PROMPT
+from app.agent.prompts.c06_analysis_split_supposition_solution_prompt import ANALYSIS_SPLIT_SUPPOSITION_SOLUTION_PROMPT
 
 
 def _strip_markdown_fences(raw: str) -> str:
@@ -88,6 +89,38 @@ async def _generate_conjectural_hypothesis(
     except Exception as e:
         print(f"[Analysis] Error generating conjectural hypothesis: {e}")
         return "Unable to generate hypothesis."
+
+
+async def _split_supposition_solution(
+    raw_hypothesis: str,
+    cd: ConjecturalData,
+    data_context: DataContext,
+    model_provider: LLMProvider,
+) -> Tuple[str, str]:
+    """Call the LLM to split a raw hypothesis into supposition_solution and observation_data_analysis."""
+    prompt = get_prompt(ANALYSIS_SPLIT_SUPPOSITION_SOLUTION_PROMPT, data_context.language).format(
+        domain=data_context.domain,
+        business_objective=data_context.business_objective,
+        business_need=cd.raw_business_need,
+        desired_behavior=cd.raw_desired_behavior,
+        uncertainty=cd.raw_uncertainty,
+        raw_hypothesis=raw_hypothesis,
+        language=data_context.language,
+    )
+
+    model = get_model(provider=model_provider, temperature=0)
+
+    try:
+        response = await model.ainvoke([HumanMessage(content=prompt)])
+        raw_content = _strip_markdown_fences(extract_text(response.content).strip())
+        parsed = json.loads(raw_content)
+        return (
+            parsed.get("supposition_solution", ""),
+            parsed.get("observation_data_analysis", ""),
+        )
+    except (json.JSONDecodeError, Exception) as e:
+        print(f"[Analysis] Error splitting supposition solution: {e}")
+        return (raw_hypothesis, "")
 
 
 async def _synthesize_desired_behavior(
@@ -246,10 +279,16 @@ async def _task_generate_uncertainty_and_supposition_solution(
         cd.raw_uncertainty = await _identify_uncertainty_from_qa(cd, data_context, model_provider)
         print(f"  [Uncertainty] Impact [{idx}]: {cd.raw_uncertainty}")
 
-    # Generate a verifiable experiment hypothesis per impact+uncertainty pair
+    # Generate a raw hypothesis, then split into supposition_solution + observation_data_analysis
     for idx, cd in enumerate(data_context.conjectural_data, start=1):
-        cd.raw_supposition_solution = await _generate_conjectural_hypothesis(cd, data_context, model_provider)
-        print(f"  [Hypothesis] Impact [{idx}]: {cd.raw_supposition_solution!r}")
+        raw_hypothesis = await _generate_conjectural_hypothesis(cd, data_context, model_provider)
+        print(f"  [Raw Hypothesis] Impact [{idx}]: {raw_hypothesis!r}")
+
+        cd.raw_supposition_solution, cd.raw_observation_data_analysis = await _split_supposition_solution(
+            raw_hypothesis, cd, data_context, model_provider
+        )
+        print(f"  [Supposition] Impact [{idx}]: {cd.raw_supposition_solution!r}")
+        print(f"  [Observation]  Impact [{idx}]: {cd.raw_observation_data_analysis!r}")
 
     print(f"[Analysis] Completed — {len(data_context.conjectural_data)} conjectural data entries")
     return {
