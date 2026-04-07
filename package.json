@@ -9,6 +9,8 @@
     "dev:original": "next dev --webpack",
     "dev:turbo": "next dev --turbopack",
     "dev:agent": "cd backend && npx @langchain/langgraph-cli dev --port 8123 --no-browser",
+    "dev:wsl": "bash scripts/dev.sh",
+    "dev:wsl:stop": "bash scripts/dev-stop.sh",
     "build": "next build --webpack",
     "build:turbopack": "next build --turbopack",
     "start": "next start",

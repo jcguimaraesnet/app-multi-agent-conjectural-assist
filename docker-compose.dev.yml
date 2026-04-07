@@ -1,0 +1,84 @@
+# Docker Compose para desenvolvimento local (WSL2)
+# Levanta frontend, backend e agent em containers.
+# Supabase roda separado via `npx supabase start`.
+# Uso: bash scripts/dev.sh (levanta Supabase + este compose)
+
+services:
+  # Servi\u00e7o de inicializa\u00e7\u00e3o \u2014 instala depend\u00eancias e termina
+  init:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile.python
+    volumes:
+      - .:/workspace:cached
+      - pnpm-store:/home/vscode/.local/share/pnpm/store
+      - uv-cache:/home/vscode/.cache/uv
+    network_mode: host
+    user: "1000:1000"
+    command: >
+      bash -c "
+        cd /workspace &&
+        pnpm config set store-dir /home/vscode/.local/share/pnpm/store &&
+        pnpm install &&
+        cd backend && uv sync
+      "
+
+  backend:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile.python
+    volumes:
+      - .:/workspace:cached
+      - uv-cache:/home/vscode/.cache/uv
+    network_mode: host
+    env_file:
+      - backend/.env
+    user: "1000:1000"
+    working_dir: /workspace
+    command: pnpm dev:backend
+    depends_on:
+      init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile.frontend
+    volumes:
+      - .:/workspace:cached
+      - pnpm-store:/home/node/.local/share/pnpm/store
+    network_mode: host
+    env_file:
+      - .env.local
+    user: "1000:1000"
+    working_dir: /workspace
+    command: pnpm dev:frontend
+    depends_on:
+      init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  agent:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile.python
+    volumes:
+      - .:/workspace:cached
+      - uv-cache:/home/vscode/.cache/uv
+    network_mode: host
+    env_file:
+      - backend/.env
+    user: "1000:1000"
+    working_dir: /workspace/backend
+    command: >
+      uv run langgraph dev --port 8123 --host 0.0.0.0
+      --no-browser --n-jobs-per-worker 10
+    depends_on:
+      init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  pnpm-store:
+  uv-cache:

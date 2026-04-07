@@ -87,20 +87,21 @@ O app suporta dois modos de banco de dados, controlados pelas variáveis de ambi
 ### Setup inicial (uma vez)
 
 ```bash
-# 1. Logar no Supabase CLI
-npx supabase login
-
-# 2. Linkar ao projeto cloud (pede senha do banco)
-npx supabase link --project-ref wmysvvoiiesvttpynpfy
-
-# 3. Subir instância local
+# 1. Subir instância local
 npx supabase start
 
-# 4. Capturar schema completo do cloud como migration
-npx supabase db pull
-
-# 5. Aplicar migration + seed no banco local
+# 2. na raiz do projeto - aplicar migration + seed no banco local
+# vai no diretório /supabase/migrations e /supabase/seed.sql e aplica sqls
 npx supabase db reset
+
+# 0.1 (opcional) se quiser sincronizar com supabase cloud
+npx supabase login
+
+# 1.1 (opcional) se quiser fazer diff do banco na nuvem
+npx supabase link --project-ref wmysvvoiiesvttpynpfy
+
+# 1.2 (opcional) Se quiser obter schema completo do banco da nuvem como migration
+npx supabase db pull
 ```
 
 ### Comandos do Supabase Local
@@ -129,6 +130,87 @@ pnpm dev              # roda frontend + backend + agent juntos
 pnpm dev:frontend     # só frontend (porta 3000)
 pnpm dev:backend      # só backend (porta 8000, via uv)
 pnpm dev:agent        # só agente LangGraph (porta 8123)
+pnpm dev:wsl          # WSL2: levanta Supabase + app (tudo em Docker)
+pnpm dev:wsl:stop     # WSL2: para tudo (app + Supabase)
 pnpm build            # build de produção
 pnpm tsc --noEmit     # type check sem emitir
 ```
+
+## Desenvolvimento com WSL2 (Docker)
+
+Ambiente 100% Docker no WSL2 que levanta as 4 partes com um comando.
+
+### Arquitetura
+
+```
+WSL2 (Ubuntu 24.04)
+  ├── docker-compose.dev.yml (app)
+  │     ├── init      → instala deps (pnpm install + uv sync)
+  │     ├── frontend   → next dev              :3000
+  │     ├── backend    → uvicorn --reload       :8000
+  │     └── agent      → langgraph dev          :8123
+  └── supabase start (banco)
+        ├── supabase-api     :54321
+        ├── supabase-db      :54322
+        ├── supabase-studio  :54323
+        └── supabase-inbucket:54324
+```
+
+Todas as portas ficam acessíveis no Windows via `localhost`.
+
+### Pré-requisitos
+
+- WSL2 com Ubuntu 24.04
+- Docker Engine (nativo no WSL, **não** Docker Desktop)
+- Node.js 20 + pnpm + Supabase CLI
+
+### Setup inicial (uma vez)
+
+```bash
+# 1. Rodar script de setup (instala Docker, Node, pnpm, Supabase CLI, uv)
+bash scripts/wsl-setup.sh
+
+# 2. Clonar repo no filesystem nativo do WSL (NUNCA em /mnt/c/)
+mkdir -p ~/projects
+git clone <repo-url> ~/projects/app-multi-agent-conjectural-assist
+cd ~/projects/app-multi-agent-conjectural-assist
+
+# 3. Configurar env files
+cp .env.local.example .env.local
+cp backend/.env.example backend/.env
+# Editar com suas API keys
+
+# 4. Iniciar Supabase e pegar keys
+npx supabase start
+npx supabase status -o env   # copiar ANON_KEY e SERVICE_ROLE_KEY para os .env
+npx supabase db reset         # aplicar migrations + seed
+```
+
+### Uso diário
+
+```bash
+bash scripts/dev.sh       # levanta Supabase + frontend + backend + agent
+# ou: pnpm dev:wsl
+
+bash scripts/dev-stop.sh  # para tudo
+# ou: pnpm dev:wsl:stop
+```
+
+### Configuração de recursos do WSL2
+
+Criar `C:\Users\<usuario>\.wslconfig`:
+
+```ini
+[wsl2]
+memory=8GB
+swap=2GB
+```
+
+### Arquivos do ambiente WSL2
+
+| Arquivo | Propósito |
+|---------|-----------|
+| `docker-compose.dev.yml` | Orquestra frontend, backend e agent em Docker |
+| `scripts/wsl-setup.sh` | Setup único do WSL2 |
+| `scripts/dev.sh` | Levanta Supabase + app services |
+| `scripts/dev-stop.sh` | Para tudo |
