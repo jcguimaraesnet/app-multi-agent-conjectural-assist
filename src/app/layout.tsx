@@ -5,6 +5,8 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProjectProvider } from "@/contexts/ProjectContext";
 import { RequirementsProvider } from "@/contexts/RequirementsContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
+import { CopilotKit } from "@copilotkit/react-core";
+import "@copilotkit/react-ui/styles.css";
 import AuthHashErrorHandler from "@/components/auth/AuthHashErrorHandler";
 import OnboardingWrapper from "@/components/onboarding/OnboardingWrapper";
 
@@ -33,6 +35,13 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="antialiased">
+        <CopilotKit runtimeUrl="/api/copilotkit" 
+                    agent="conreq-multiagent" 
+                    showDevConsole={false}
+                    properties={{
+                      user_id_test: "123",
+                    }}
+                    >
           <AuthHashErrorHandler />
           <ThemeProvider>
             <AuthProvider>
@@ -47,6 +56,7 @@ export default function RootLayout({
               </ProjectProvider>
             </AuthProvider>
           </ThemeProvider>
+        </CopilotKit>
       </body>
     </html>
   );
