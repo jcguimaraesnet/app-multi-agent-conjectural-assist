@@ -47,6 +47,22 @@ export function getOnboardingTours(hasProjects: boolean): OnbordaProps['steps'] 
     tour: 'settings-detail-tour',
     steps: [
       {
+        icon: <Cpu className="w-5 h-5" />,
+        title: 'Model Configuration',
+        content: (
+          <>
+            Choose the <strong>AI model family</strong> used for generating
+            conjectural requirements. Different model families may produce
+            varying results in quality and style.
+          </>
+        ),
+        selector: '#setting-model',
+        side: 'bottom',
+        showControls: true,
+        pointerPadding: 10,
+        pointerRadius: 10,
+      },
+      {
         icon: <UserCheck className="w-5 h-5" />,
         title: 'Human-in-the-Loop',
         content: (
@@ -137,22 +153,6 @@ export function getOnboardingTours(hasProjects: boolean): OnbordaProps['steps'] 
           </>
         ),
         selector: '#setting-spec-attempts',
-        side: 'top',
-        showControls: true,
-        pointerPadding: 10,
-        pointerRadius: 10,
-      },
-      {
-        icon: <Cpu className="w-5 h-5" />,
-        title: 'Model Configuration',
-        content: (
-          <>
-            Choose the <strong>AI model family</strong> used for generating
-            conjectural requirements. Different model families may produce
-            varying results in quality and style.
-          </>
-        ),
-        selector: '#setting-model',
         side: 'top',
         showControls: true,
         pointerPadding: 10,
