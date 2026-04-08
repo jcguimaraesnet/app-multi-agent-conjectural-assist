@@ -26,6 +26,9 @@ from app.agent.prompts.c02_analysis_synthesize_desired_behavior_prompt import AN
 from app.agent.prompts.c03_analysis_whatif_questions_prompt import ANALYSIS_WHATIF_QUESTIONS_PROMPT
 from app.agent.prompts.c04_analysis_identify_uncertainty_prompt import ANALYSIS_IDENTIFY_UNCERTAINTY_PROMPT
 from app.agent.prompts.c06_analysis_split_supposition_solution_prompt import ANALYSIS_SPLIT_SUPPOSITION_SOLUTION_PROMPT
+from app.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 def _strip_markdown_fences(raw: str) -> str:
@@ -62,7 +65,7 @@ async def _generate_contextual_questions(
             fixed = re.sub(r'(?<=\w)"(?=\w)', "'", raw_content)
             return json.loads(fixed)
     except (json.JSONDecodeError, Exception) as e:
-        print(f"[Analysis] Error generating contextual questions: {e}")
+        logger.error("Error generating contextual questions", extra={"node": "analysis"}, exc_info=True)
         return ["Unable to generate question."] * 3
 
 
@@ -87,7 +90,7 @@ async def _generate_conjectural_hypothesis(
         response = await model.ainvoke([HumanMessage(content=prompt)])
         return extract_text(response.content).strip()
     except Exception as e:
-        print(f"[Analysis] Error generating conjectural hypothesis: {e}")
+        logger.error("Error generating conjectural hypothesis", extra={"node": "analysis"}, exc_info=True)
         return "Unable to generate hypothesis."
 
 
@@ -119,7 +122,7 @@ async def _split_supposition_solution(
             parsed.get("observation_data_analysis", ""),
         )
     except (json.JSONDecodeError, Exception) as e:
-        print(f"[Analysis] Error splitting supposition solution: {e}")
+        logger.error("Error splitting supposition solution", extra={"node": "analysis"}, exc_info=True)
         return (raw_hypothesis, "")
 
 
@@ -149,7 +152,7 @@ async def _synthesize_desired_behavior(
         response = await model.ainvoke([HumanMessage(content=prompt)])
         return extract_text(response.content).strip()
     except Exception as e:
-        print(f"[Analysis] Error synthesizing desired behavior: {e}")
+        logger.error("Error synthesizing desired behavior", extra={"node": "analysis"}, exc_info=True)
         return ""
 
 
@@ -178,7 +181,7 @@ async def _generate_whatif_questions(
             fixed = re.sub(r'(?<=\w)"(?=\w)', "'", raw_content)
             return json.loads(fixed)
     except (json.JSONDecodeError, Exception) as e:
-        print(f"[Analysis] Error generating What-If questions: {e}")
+        logger.error("Error generating What-If questions", extra={"node": "analysis"}, exc_info=True)
         return ["Unable to generate question."] * 3
 
 
@@ -209,7 +212,7 @@ async def _identify_uncertainty_from_qa(
         response = await model.ainvoke([HumanMessage(content=prompt)])
         return extract_text(response.content).strip()
     except Exception as e:
-        print(f"[Analysis] Error identifying uncertainty: {e}")
+        logger.error("Error identifying uncertainty", extra={"node": "analysis"}, exc_info=True)
         return "Unable to determine uncertainty."
 
 
@@ -220,7 +223,7 @@ async def _task_generate_contextual_questions_from_business_need(
     model_provider: LLMProvider,
 ) -> dict:
     """Task: Generate contextual questions per business need, then pause for Elicitation to answer."""
-    print(f"[Analysis] Elicitation context loaded — {len(data_context.conjectural_data)} business need(s)")
+    logger.info("Elicitation context loaded — %s business need(s)", len(data_context.conjectural_data), extra={"node": "analysis"})
 
     for idx, cd in enumerate(data_context.conjectural_data, start=1):
         questions = await _generate_contextual_questions(cd, data_context, model_provider)
@@ -228,9 +231,9 @@ async def _task_generate_contextual_questions_from_business_need(
             QuestionAnswer(question=q) for q in questions
         ]
         for q in questions:
-            print(f"  [Questions] Business Need [{idx}]: {q}")
+            logger.debug("Business Need [%s]: %s", idx, q, extra={"node": "analysis"})
 
-    print("[Analysis] Questions generated — routing to Elicitation for answers")
+    logger.info("Questions generated — routing to Elicitation for answers", extra={"node": "analysis"})
     return {
         "data_context": data_context.model_dump(),
         "coordinator_phase": "elicitation",
@@ -248,7 +251,7 @@ async def _task_generate_desired_behavior_and_whatif_questions(
     # Synthesize raw_desired_behavior from Q&A pairs
     for idx, cd in enumerate(data_context.conjectural_data, start=1):
         cd.raw_desired_behavior = await _synthesize_desired_behavior(cd, data_context, model_provider)
-        print(f"  [Desired Behavior] Impact [{idx}]: {cd.raw_desired_behavior}")
+        logger.debug("Desired Behavior Impact [%s]: %s", idx, cd.raw_desired_behavior, extra={"node": "analysis"})
 
     # Generate What-If questions per desired behavior
     for idx, cd in enumerate(data_context.conjectural_data, start=1):
@@ -257,9 +260,9 @@ async def _task_generate_desired_behavior_and_whatif_questions(
             QuestionAnswer(question=q) for q in questions
         ]
         for q in questions:
-            print(f"  [What-If] Impact [{idx}]: {q}")
+            logger.debug("What-If Impact [%s]: %s", idx, q, extra={"node": "analysis"})
 
-    print("[Analysis] What-If questions generated — routing to Elicitation for answers")
+    logger.info("What-If questions generated — routing to Elicitation for answers", extra={"node": "analysis"})
     return {
         "data_context": data_context.model_dump(),
         "coordinator_phase": "elicitation",
@@ -277,20 +280,20 @@ async def _task_generate_uncertainty_and_supposition_solution(
     # Identify uncertainty from What-If Q&A pairs
     for idx, cd in enumerate(data_context.conjectural_data, start=1):
         cd.raw_uncertainty = await _identify_uncertainty_from_qa(cd, data_context, model_provider)
-        print(f"  [Uncertainty] Impact [{idx}]: {cd.raw_uncertainty}")
+        logger.debug("Uncertainty Impact [%s]: %s", idx, cd.raw_uncertainty, extra={"node": "analysis"})
 
     # Generate a raw hypothesis, then split into supposition_solution + observation_data_analysis
     for idx, cd in enumerate(data_context.conjectural_data, start=1):
         raw_hypothesis = await _generate_conjectural_hypothesis(cd, data_context, model_provider)
-        print(f"  [Raw Hypothesis] Impact [{idx}]: {raw_hypothesis!r}")
+        logger.debug("Raw Hypothesis Impact [%s]: %r", idx, raw_hypothesis, extra={"node": "analysis"})
 
         cd.raw_supposition_solution, cd.raw_observation_data_analysis = await _split_supposition_solution(
             raw_hypothesis, cd, data_context, model_provider
         )
-        print(f"  [Supposition] Impact [{idx}]: {cd.raw_supposition_solution!r}")
-        print(f"  [Observation]  Impact [{idx}]: {cd.raw_observation_data_analysis!r}")
+        logger.debug("Supposition Impact [%s]: %r", idx, cd.raw_supposition_solution, extra={"node": "analysis"})
+        logger.debug("Observation Impact [%s]: %r", idx, cd.raw_observation_data_analysis, extra={"node": "analysis"})
 
-    print(f"[Analysis] Completed — {len(data_context.conjectural_data)} conjectural data entries")
+    logger.info("Completed — %s conjectural data entries", len(data_context.conjectural_data), extra={"node": "analysis"})
     return {
         "data_context": data_context.model_dump(),
         "coordinator_phase": "specification",
@@ -314,7 +317,7 @@ async def analysis_node(state: WorkflowState, config: Optional[RunnableConfig] =
     Default task (first entry): generate contextual questions and route to Elicitation.
     Dispatched tasks: synthesize desired behavior and continue with uncertainty/hypothesis.
     """
-    print("Analysis node started.")
+    logger.info("Analysis node started", extra={"node": "analysis"})
     config = copilotkit_customize_config(config, emit_messages=False)
 
     context = extract_copilotkit_context(state)
@@ -326,10 +329,10 @@ async def analysis_node(state: WorkflowState, config: Optional[RunnableConfig] =
 
     if task_name and task_name in ANALYSIS_TASKS:
         handler = ANALYSIS_TASKS[task_name]
-        print(f"[Analysis] Dispatching task: {task_name}")
+        logger.info("Dispatching task: %s", task_name, extra={"node": "analysis"})
     else:
         handler = ANALYSIS_TASKS["generate_contextual_questions_from_business_need"]
-        print("[Analysis] Running default task: generate_questions")
+        logger.info("Running default task: generate_questions", extra={"node": "analysis"})
 
     update = await handler(state, config, data_context, model_provider)
     update["messages"] = state.get("messages", [])

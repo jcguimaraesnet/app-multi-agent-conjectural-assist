@@ -1,4 +1,5 @@
 import { Resend } from 'resend'
+import logger from '@/lib/logger'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -33,6 +34,6 @@ export async function notifyAdminNewUser(user: {
       `,
     })
   } catch (error) {
-    console.error('Failed to send admin notification email:', error)
+    logger.error({ err: error }, 'Failed to send admin notification email')
   }
 }

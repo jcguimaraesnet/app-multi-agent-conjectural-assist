@@ -10,12 +10,17 @@ from datetime import datetime
 
 load_dotenv()
 
+from app.logging_config import setup_logging
+
+setup_logging(service="backend")
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.routers import projects, requirements, conjectural_requirements, agent, dashboard, profiles, admin
 from app.routers import settings as settings_router
+from app.middleware.request_logging import RequestLoggingMiddleware
 
 
 # Initialize settings
@@ -38,6 +43,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Request logging middleware
+app.add_middleware(RequestLoggingMiddleware)
 
 # Include routers
 app.include_router(projects.router, prefix="/api")

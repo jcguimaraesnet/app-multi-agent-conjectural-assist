@@ -6,6 +6,7 @@ import {
 } from "@copilotkit/runtime";
 import { LangGraphAgent } from "@copilotkit/runtime/langgraph";
 import { NextRequest } from "next/server";
+import logger from "@/lib/logger";
 
 // Allow long-running agent operations (up to 5 minutes)
 export const maxDuration = 300;
@@ -38,13 +39,20 @@ export const GET = async (req: NextRequest) => {
 
 // 3. Build a Next.js API route that handles the CopilotKit runtime requests.
 export const POST = async (req: NextRequest) => {
+  logger.info({ method: "POST", path: "/api/copilotkit" }, "CopilotKit request received");
+
   const { handleRequest } = copilotRuntimeNextJSAppRouterEndpoint({
     runtime,
     serviceAdapter,
     endpoint: "/api/copilotkit",
   });
 
-  return handleRequest(req);
+  try {
+    return await handleRequest(req);
+  } catch (error) {
+    logger.error({ err: error, path: "/api/copilotkit" }, "CopilotKit request failed");
+    throw error;
+  }
 };
 
 export const OPTIONS = async () => {

@@ -18,6 +18,10 @@ Flow:
 
 import os
 
+from app.logging_config import setup_logging
+
+setup_logging(service="agent")
+
 from langgraph.graph import START, END, StateGraph
 
 from app.agent.state import WorkflowState

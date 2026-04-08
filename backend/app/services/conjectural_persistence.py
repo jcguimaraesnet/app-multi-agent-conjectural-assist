@@ -10,6 +10,9 @@ import re
 from app.agent.models.data_context import DataContext, ConjecturalData, ConjecturalRequirement, Evaluation
 from app.services.supabase_client import get_async_supabase_client
 from app.services.embedding_service import generate_embeddings
+from app.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 async def _get_next_requirement_number(supabase, project_id: str) -> int:
@@ -145,7 +148,7 @@ async def persist_conjectural_data(project_id: str, data_context: DataContext, u
         # Find the winner (ranking=1)
         winner = next((cr for cr in cd.conjectural_requirements if cr.ranking == 1), None)
         if not winner:
-            print(f"[Persistence] No ranking=1 found, skipping")
+            logger.warning("No ranking=1 found, skipping")
             continue
 
         # Generate business identifier
@@ -162,19 +165,19 @@ async def persist_conjectural_data(project_id: str, data_context: DataContext, u
             embeddings = await generate_embeddings([winner.ferc.business_need])
             if embeddings:
                 row["business_need_embedding"] = embeddings[0]
-                print(f"[Persistence] Generated embedding for {req_id} business_need")
+                logger.info("Generated embedding for %s business_need", req_id)
         except Exception as e:
-            print(f"[Persistence] Error generating embedding for {req_id}: {e}")
+            logger.error("Error generating embedding for %s", req_id, exc_info=True)
 
         result = await supabase.table("conjectural_requirements").insert(row).execute()
 
         if not result.data:
-            print(f"[Persistence] Failed to insert requirement {req_id}")
+            logger.error("Failed to insert requirement %s", req_id)
             continue
 
         db_id = result.data[0]["id"]
         winner.db_id = db_id
-        print(f"[Persistence] Saved requirement {req_id} → {db_id}")
+        logger.info("Saved requirement %s → %s", req_id, db_id)
 
         # Insert evaluations from ALL attempts, linked to the winner's db_id
         eval_rows = []
@@ -191,6 +194,6 @@ async def persist_conjectural_data(project_id: str, data_context: DataContext, u
 
         if eval_rows:
             await supabase.table("evaluations").insert(eval_rows).execute()
-            print(f"[Persistence] Saved {len(eval_rows)} evaluation(s) for requirement {db_id}")
+            logger.info("Saved %s evaluation(s) for requirement %s", len(eval_rows), db_id)
 
     return requirement_ids

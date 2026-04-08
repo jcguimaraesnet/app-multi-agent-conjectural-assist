@@ -21,6 +21,9 @@ from app.agent.utils.context_utils import extract_copilotkit_context
 from app.agent.prompts.factory import get_prompt
 from app.agent.prompts.e01_validation_system_prompt import VALIDATION_SYSTEM_PROMPT
 from app.services.conjectural_persistence import persist_conjectural_data
+from app.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 @tool
@@ -59,7 +62,7 @@ async def _task_evaluate(
                 "observation_analysis": cr.qess.observation_analysis,
             })
 
-        print(f"[Validation] Sending {len(requirements_list)} requirements for human evaluation via interrupt")
+        logger.info("Sending %s requirements for human evaluation via interrupt", len(requirements_list), extra={"node": "validation"})
         human_evaluation_response = interrupt({
             "type": "hitl_req_approve",
             "requirements": requirements_list,
@@ -72,7 +75,7 @@ async def _task_evaluate(
         try:
             eval_data = json.loads(human_evaluation_response) if isinstance(human_evaluation_response, str) else human_evaluation_response
             evaluations = eval_data.get("evaluations", {})
-            print(f"[Validation] Human evaluation received for {len(evaluations)} requirements:")
+            logger.info("Human evaluation received for %s requirements", len(evaluations), extra={"node": "validation"})
 
             for req_number_str, evaluation in evaluations.items():
                 cd_index = int(req_number_str) - 1
@@ -86,34 +89,34 @@ async def _task_evaluate(
 
             for req_number_str, evaluation in evaluations.items():
                 human_eval = Evaluation.model_validate(evaluation)
-                print(f"  Requirement #{req_number_str}:")
+                logger.debug("Requirement #%s:", req_number_str, extra={"node": "validation"})
                 for criterion, score in human_eval.scores.items():
                     justification = human_eval.justifications.get(criterion, "")
                     justification_info = f' — "{justification}"' if justification else ""
-                    print(f"    {criterion}: {score}/5{justification_info}")
+                    logger.debug("  %s: %s/5%s", criterion, score, justification_info, extra={"node": "validation"})
         except Exception as e:
-            print(f"[Validation] Error parsing human evaluation response: {e}")
-            print(f"[Validation] Raw response: {human_evaluation_response}")
+            logger.error("Error parsing human evaluation response", extra={"node": "validation"}, exc_info=True)
+            logger.debug("Raw response: %s", human_evaluation_response, extra={"node": "validation"})
 
     elif not require_evaluation:
-        print("[Validation] Human evaluation not required — skipping interrupt.")
+        logger.info("Human evaluation not required — skipping interrupt", extra={"node": "validation"})
     else:
-        print("[Validation] Resuming after interrupt — human evaluation already completed.")
+        logger.info("Resuming after interrupt — human evaluation already completed", extra={"node": "validation"})
 
     # --- Step 2: LLM-as-Judge evaluation ---
     model_judge_provider = context.get("model_judge", "gemini")
-    print(f"[Validation] Starting LLM-as-Judge evaluation (provider: {model_judge_provider}) for {len(data_context.conjectural_data)} requirements...")
+    logger.info("Starting LLM-as-Judge evaluation (provider: %s) for %s requirements", model_judge_provider, len(data_context.conjectural_data), extra={"node": "validation"})
     judge_model_name = DEFAULT_GEMINI_MODEL if model_judge_provider == "gemini" else DEFAULT_AZURE_OPENAI_JUDGE_MODEL
     model = get_model(provider=model_judge_provider, model=judge_model_name)
     for i, cd in enumerate(data_context.conjectural_data):
         req_num = i + 1
 
         if not cd.conjectural_requirements:
-            print(f"[Validation] Skipping #{req_num} — no conjectural requirements.")
+            logger.info("Skipping #%s — no conjectural requirements", req_num, extra={"node": "validation"})
             continue
 
         cr = cd.conjectural_requirements[-1]
-        print(f"[Validation] LLM evaluating requirement #{req_num} (attempt {cr.attempt})...")
+        logger.info("LLM evaluating requirement #%s (attempt %s)", req_num, cr.attempt, extra={"node": "validation"})
 
         prompt = get_prompt(VALIDATION_SYSTEM_PROMPT, data_context.language).format(
             project_summary=data_context.project_summary,
@@ -136,13 +139,13 @@ async def _task_evaluate(
             llm_eval = Evaluation.model_validate(eval_result)
             llm_eval.compute_overall_score()
             cr.llm_evaluation = llm_eval
-            print(f"[Validation] Requirement #{req_num} evaluated (overall: {llm_eval.overall_score}/5):")
+            logger.info("Requirement #%s evaluated (overall: %s/5)", req_num, llm_eval.overall_score, extra={"node": "validation"})
             for criterion, score in llm_eval.scores.items():
                 justification = llm_eval.justifications.get(criterion, "")
                 justification_info = f' — "{justification}"' if justification else ""
-                print(f"    {criterion}: {score}/5{justification_info}")
+                logger.debug("  %s: %s/5%s", criterion, score, justification_info, extra={"node": "validation"})
         except Exception as e:
-            print(f"[Validation] Error evaluating requirement #{req_num}: {e}")
+            logger.error("Error evaluating requirement #%s", req_num, extra={"node": "validation"}, exc_info=True)
             cr.llm_evaluation = Evaluation()
 
         state["data_context"] = data_context.model_dump()
@@ -211,7 +214,7 @@ async def validation_node(state: WorkflowState, config: Optional[RunnableConfig]
 
     Default task (first entry): evaluate conjectural requirements.
     """
-    print("Validation node started.")
+    logger.info("Validation node started", extra={"node": "validation"})
     config = copilotkit_customize_config(config, emit_messages=False)
 
     context = extract_copilotkit_context(state)
@@ -223,10 +226,10 @@ async def validation_node(state: WorkflowState, config: Optional[RunnableConfig]
 
     if task_name and task_name in VALIDATION_TASKS:
         handler = VALIDATION_TASKS[task_name]
-        print(f"[Validation] Dispatching task: {task_name}")
+        logger.info("Dispatching task: %s", task_name, extra={"node": "validation"})
     else:
         handler = VALIDATION_TASKS["evaluate"]
-        print("[Validation] Running default task: evaluate")
+        logger.info("Running default task: evaluate", extra={"node": "validation"})
 
     update = await handler(state, config, data_context, model_provider)
     if "messages" not in update:

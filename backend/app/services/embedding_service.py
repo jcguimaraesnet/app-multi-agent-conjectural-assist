@@ -12,6 +12,9 @@ import numpy as np
 from openai import AsyncAzureOpenAI
 
 from app.services.supabase_client import get_async_supabase_client
+from app.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 EMBEDDING_DEPLOYMENT = "text-embedding-3-small"
 EMBEDDING_DIMENSIONS = 1536
@@ -70,7 +73,7 @@ async def fetch_existing_embeddings(project_id: str) -> List[Dict[str, Any]]:
             row["embedding"] = _parse_embedding(row.get("embedding"))
         return [r for r in rows if r.get("embedding") is not None]
     except Exception as e:
-        print(f"[Embedding] Error fetching existing embeddings: {e}")
+        logger.error("Error fetching existing embeddings", exc_info=True)
         return []
 
 
@@ -114,7 +117,7 @@ def select_most_diverse(
     selected = ranked_indices[:count]
 
     for idx in selected:
-        print(f"  [Embedding] Selected candidate {idx}: max_similarity={max_similarities[idx]:.4f} — {candidate_texts[idx][:80]}")
+        logger.debug("Selected candidate %s: max_similarity=%.4f — %s", idx, max_similarities[idx], candidate_texts[idx][:80])
 
     return selected
 
@@ -170,7 +173,7 @@ def select_most_diverse_among(
         selected.append(best_idx)
 
     for idx in selected:
-        print(f"  [Embedding] Diverse selection [{idx}]: {texts[idx][:80]}")
+        logger.debug("Diverse selection [%s]: %s", idx, texts[idx][:80])
 
     return selected
 
@@ -185,5 +188,5 @@ def is_similar_to_existing(
         return False
 
     max_sim = max(_cosine_similarity(candidate_embedding, e_emb) for e_emb in existing_embeddings)
-    print(f"  [Embedding] Similarity check: max_similarity={max_sim:.4f}, threshold={threshold}")
+    logger.debug("Similarity check: max_similarity=%.4f, threshold=%s", max_sim, threshold)
     return max_sim >= threshold

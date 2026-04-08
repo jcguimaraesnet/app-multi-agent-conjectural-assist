@@ -27,18 +27,21 @@ from langgraph.types import Command
 from app.agent.state import WorkflowState, IntentClassification
 from app.agent.utils.context_utils import extract_copilotkit_context
 from app.agent.prompts.a01_orchestrator_intent_classification_prompt import ORCHESTRATOR_INTENT_CLASSIFICATION_PROMPT
+from app.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 async def orchestrator_node(state: WorkflowState, config: Optional[RunnableConfig] = None):
 
     context = extract_copilotkit_context(state)
 
-    print(f"[Orchestrator] CurrentUser Id = {context['current_user_id']}")
-    print(f"[Orchestrator] CurrentUser FirstName = {context['current_user_first_name']}")
-    print(f"[Orchestrator] CurrentProjectId = {context['current_project_id']}")
+    logger.info("CurrentUser Id = %s", context['current_user_id'], extra={"node": "orchestrator"})
+    logger.info("CurrentUser FirstName = %s", context['current_user_first_name'], extra={"node": "orchestrator"})
+    logger.info("CurrentProjectId = %s", context['current_project_id'], extra={"node": "orchestrator"})
     if not context.get("current_project_id"):
         raise ValueError("current_project_id is required but was not provided. Please select a project before proceeding.")
-    print(f"[Orchestrator] model = {context['model']}")
+    logger.info("model = %s", context['model'], extra={"node": "orchestrator"})
 
     if config is None:
         config = RunnableConfig(recursion_limit=25)
@@ -50,7 +53,7 @@ async def orchestrator_node(state: WorkflowState, config: Optional[RunnableConfi
     # Extract the last user message for classification
     messages = state.get('messages', [])
     last_message = str(messages[-1].content) if messages else ""
-    print(f"[Orchestrator] Last message from chat: {last_message}")
+    logger.info("Last message from chat: %s", last_message, extra={"node": "orchestrator"})
     
     config_internal = copilotkit_customize_config(config, emit_messages=False)
 
@@ -60,7 +63,7 @@ async def orchestrator_node(state: WorkflowState, config: Optional[RunnableConfi
 
     # Classify the intent
     classification = await classify_intent(last_message, config_internal, context['model'])
-    print(f"[Orchestrator] Intent classification result: {classification}")
+    logger.info("Intent classification result: %s", classification, extra={"node": "orchestrator"})
 
     # Route based on intent
     if classification.intent == "conjectural_requirement_generate_response":
@@ -125,7 +128,7 @@ async def classify_intent(user_input: str, config: Optional[RunnableConfig] = No
     
     except Exception as e:
         # On error, default to generic response
-        print(f"Intent classification error: {e}")
+        logger.error("Intent classification error", extra={"node": "orchestrator"}, exc_info=True)
         return IntentClassification(
             intent="generic_response",
             confidence=0.5,

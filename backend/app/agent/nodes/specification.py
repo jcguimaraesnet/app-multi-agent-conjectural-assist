@@ -23,6 +23,9 @@ from app.agent.prompts.factory import get_prompt
 from app.agent.models.data_context import DataContext, ConjecturalRequirement
 from app.agent.prompts.d01_specification_conjectural_specification_prompt import SPECIFICATION_CONJECTURAL_SPECIFICATION_PROMPT
 from app.agent.prompts.d02_specification_conjectural_refinement_prompt import SPECIFICATION_CONJECTURAL_REFINEMENT_PROMPT
+from app.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 def _format_evaluation(evaluation) -> str:
@@ -69,26 +72,26 @@ async def _task_generate(
     domain = data_context.domain
     project_summary = data_context.project_summary
     business_objective = data_context.business_objective
-    print(f"[Specification] Stakeholder: {stakeholder} | Domain: {domain}")
-    print(f"[Specification] Project summary ({len(project_summary)} chars): {project_summary[:120]}...")
-    print(f"[Specification] Business objective: {business_objective}")
-    print(f"[Specification] Conjectural descriptions ({len(data_context.conjectural_data)}):")
+    logger.info("Stakeholder: %s | Domain: %s", stakeholder, domain, extra={"node": "specification"})
+    logger.info("Project summary (%s chars): %s...", len(project_summary), project_summary[:120], extra={"node": "specification"})
+    logger.info("Business objective: %s", business_objective, extra={"node": "specification"})
+    logger.info("Conjectural descriptions (%s):", len(data_context.conjectural_data), extra={"node": "specification"})
 
     model = get_model(provider=model_provider, temperature=1)
 
-    print(f"[Specification] Generating {len(data_context.conjectural_data)} conjectural requirement(s)...")
+    logger.info("Generating %s conjectural requirement(s)...", len(data_context.conjectural_data), extra={"node": "specification"})
 
     spec_attempt = state.get("spec_attempt", 0)
-    print(f"[Specification] Current spec_attempt: {spec_attempt}")
+    logger.info("Current spec_attempt: %s", spec_attempt, extra={"node": "specification"})
 
     for i, cd in enumerate(data_context.conjectural_data):
         req_num = i + 1
-        print(f"[Specification] Generating requirement #{req_num}...")
-        print(f"[Specification] -> [Business Need] {cd.raw_business_need}")
-        print(f"[Specification] -> [Desired Behavior] {cd.raw_desired_behavior}")
-        print(f"[Specification] -> [Uncertainty] {cd.raw_uncertainty}")
-        print(f"[Specification] -> [Supposition Solution] {cd.raw_supposition_solution}")
-        print(f"[Specification] -> [Observation Analysis] {cd.raw_observation_data_analysis}")
+        logger.info("Generating requirement #%s...", req_num, extra={"node": "specification"})
+        logger.debug("[Business Need] %s", cd.raw_business_need, extra={"node": "specification"})
+        logger.debug("[Desired Behavior] %s", cd.raw_desired_behavior, extra={"node": "specification"})
+        logger.debug("[Uncertainty] %s", cd.raw_uncertainty, extra={"node": "specification"})
+        logger.debug("[Supposition Solution] %s", cd.raw_supposition_solution, extra={"node": "specification"})
+        logger.debug("[Observation Analysis] %s", cd.raw_observation_data_analysis, extra={"node": "specification"})
 
         if spec_attempt == 0:
             prompt = get_prompt(SPECIFICATION_CONJECTURAL_SPECIFICATION_PROMPT, data_context.language).format(
@@ -117,11 +120,11 @@ async def _task_generate(
                 evaluation_summary=_format_evaluation(last_cr.llm_evaluation),
                 language=data_context.language,
             )
-            print(f"[Specification] Using refinement prompt for requirement #{req_num} (attempt {spec_attempt + 1})")
+            logger.info("Using refinement prompt for requirement #%s (attempt %s)", req_num, spec_attempt + 1, extra={"node": "specification"})
 
         try:
             response = await model.ainvoke([HumanMessage(content=prompt)])
-            print(f"[Specification] Raw LLM response for requirement #{req_num}:\n\n{response.content}\n\n")
+            logger.debug("Raw LLM response for requirement #%s: %s", req_num, response.content, extra={"node": "specification"})
             raw_content = _strip_markdown_fences(extract_text(response.content).strip())
             try:
                 raw_dict: Dict[str, Any] = json.loads(raw_content)
@@ -133,18 +136,18 @@ async def _task_generate(
             cr.attempt = len(cd.conjectural_requirements) + 1
             cd.conjectural_requirements.append(cr)
 
-            print(f"  --- Conjectural Requirement #{req_num} (attempt {cr.attempt}) ---")
-            print(f"  [FERC] Desired behavior: {cr.ferc.desired_behavior}")
-            print(f"  [FERC] Business need: {cr.ferc.business_need}")
-            print(f"  [FERC] Uncertainty: {cr.ferc.uncertainty}")
-            print(f"  [QESS] Solution assumption: {cr.qess.solution_assumption}")
-            print(f"  [QESS] Uncertainty evaluated: {cr.qess.uncertainty_evaluated}")
-            print(f"  [QESS] Observation & analysis: {cr.qess.observation_analysis}")
+            logger.debug("Conjectural Requirement #%s (attempt %s)", req_num, cr.attempt, extra={"node": "specification"})
+            logger.debug("[FERC] Desired behavior: %s", cr.ferc.desired_behavior, extra={"node": "specification"})
+            logger.debug("[FERC] Business need: %s", cr.ferc.business_need, extra={"node": "specification"})
+            logger.debug("[FERC] Uncertainty: %s", cr.ferc.uncertainty, extra={"node": "specification"})
+            logger.debug("[QESS] Solution assumption: %s", cr.qess.solution_assumption, extra={"node": "specification"})
+            logger.debug("[QESS] Uncertainty evaluated: %s", cr.qess.uncertainty_evaluated, extra={"node": "specification"})
+            logger.debug("[QESS] Observation & analysis: %s", cr.qess.observation_analysis, extra={"node": "specification"})
 
         except (json.JSONDecodeError, Exception) as e:
-            print(f"[Specification] Error generating requirement #{req_num}: {e}")
+            logger.error("Error generating requirement #%s", req_num, extra={"node": "specification"}, exc_info=True)
 
-    print(f"[Specification] Finished generating conjectural requirements.")
+    logger.info("Finished generating conjectural requirements.", extra={"node": "specification"})
 
     return {
         "data_context": data_context.model_dump(),
@@ -164,7 +167,7 @@ async def specification_node(state: WorkflowState, config: Optional[RunnableConf
 
     Default task (first entry): generate conjectural requirement specifications.
     """
-    print("Specification node started.")
+    logger.info("Specification node started", extra={"node": "specification"})
     config = copilotkit_customize_config(config, emit_messages=False)
 
     context = extract_copilotkit_context(state)
@@ -176,10 +179,10 @@ async def specification_node(state: WorkflowState, config: Optional[RunnableConf
 
     if task_name and task_name in SPECIFICATION_TASKS:
         handler = SPECIFICATION_TASKS[task_name]
-        print(f"[Specification] Dispatching task: {task_name}")
+        logger.info("Dispatching task: %s", task_name, extra={"node": "specification"})
     else:
         handler = SPECIFICATION_TASKS["generate"]
-        print("[Specification] Running default task: generate")
+        logger.info("Running default task: generate", extra={"node": "specification"})
 
     update = await handler(state, config, data_context, model_provider)
     if "messages" not in update:

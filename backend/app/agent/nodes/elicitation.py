@@ -37,6 +37,9 @@ from app.services.embedding_service import (
     is_similar_to_existing,
 )
 
+from app.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 # Processing mode: "quick" (default) or "extended"
 # Quick  → Steps 1-2 only (1 LLM call + NLP), simple KnowledgeGraph
@@ -104,7 +107,7 @@ async def refine_business_needs(
         for i, brief in enumerate(brief_descriptions):
             refined = refined_list[i] if i < len(refined_list) else brief
             sim_pct = round(_compute_similarity(brief, refined) * 100)
-            print(f"  [Similarity] {sim_pct}% — {brief!r} → {refined!r}")
+            logger.debug("Similarity %d%% — %r → %r", sim_pct, brief, refined, extra={"node": "elicitation"})
             results.append(refined)
             similarities.append(sim_pct)
 
@@ -114,16 +117,16 @@ async def refine_business_needs(
             existing_embs = [row["embedding"] for row in existing_rows if row.get("embedding")]
 
             if existing_embs:
-                print(f"[Business Need] Checking {len(results)} refined business need(s) against {len(existing_embs)} existing embedding(s)...")
+                logger.info("Checking %d refined business need(s) against %d existing embedding(s)", len(results), len(existing_embs), extra={"node": "elicitation"})
                 try:
                     refined_embeddings = await generate_embeddings(results)
                 except Exception as e:
-                    print(f"[Business Need] Error generating embeddings for similarity check: {e}")
+                    logger.error("Error generating embeddings for similarity check: %s", e, extra={"node": "elicitation"}, exc_info=True)
                     return results, similarities
 
                 for i, (refined_emb, refined_text) in enumerate(zip(refined_embeddings, list(results))):
                     if is_similar_to_existing(refined_emb, existing_embs):
-                        print(f"  [Business Need] Refined business need #{i+1} is too similar to existing. Falling back to generation...")
+                        logger.debug("Refined business need #%d is too similar to existing. Falling back to generation...", i+1, extra={"node": "elicitation"})
                         fallback = await generate_business_needs(1, data_context, model_provider, project_id)
                         if fallback:
                             results[i] = fallback[0]
@@ -132,7 +135,7 @@ async def refine_business_needs(
         return results, similarities
 
     except (json.JSONDecodeError, Exception) as e:
-        print(f"[Business Need] Error refining brief descriptions: {e}")
+        logger.error("Error refining brief descriptions: %s", e, extra={"node": "elicitation"}, exc_info=True)
         return list(brief_descriptions), [100] * len(brief_descriptions)
 
 
@@ -149,7 +152,7 @@ async def generate_business_needs(
     requirements in the database. Returns a list of business need strings.
     """
     candidate_count = quantity * 3
-    print(f"[Business Need] Generating {candidate_count} candidates (quantity={quantity} x 3)...")
+    logger.info("Generating %d candidates (quantity=%d x 3)", candidate_count, quantity, extra={"node": "elicitation"})
 
     # Build exclusion list from existing business needs (top 10 most diverse among themselves)
     exclusion_list_text = ""
@@ -162,9 +165,9 @@ async def generate_business_needs(
             max_exclusion = min(10, len(texts))
             diverse_indices = select_most_diverse_among(texts, embs, max_exclusion)
             exclusion_items = [texts[i] for i in diverse_indices]
-            print(f"[Business Need] Exclusion list ({len(exclusion_items)} items):")
+            logger.info("Exclusion list (%d items)", len(exclusion_items), extra={"node": "elicitation"})
             for item in exclusion_items:
-                print(f"  - {item}")
+                logger.debug("  - %s", item, extra={"node": "elicitation"})
             exclusion_list_text = "\n".join(f"- {item}" for item in exclusion_items)
 
     prompt = get_prompt(ELICITATION_GENERATE_BUSINESS_NEED_PROMPT, data_context.language).format(
@@ -181,29 +184,29 @@ async def generate_business_needs(
 
     try:
         response = await model.ainvoke([HumanMessage(content=prompt)])
-        print(f"[Business Need] Raw LLM response: \n\n{response.content}\n\n")
+        logger.debug("Raw LLM response: %s", response.content, extra={"node": "elicitation"})
         raw = _strip_markdown_fences(extract_text(response.content).strip())
         candidates: List[str] = json.loads(raw)
     except (json.JSONDecodeError, Exception) as e:
-        print(f"[Business Need] Error generating business needs: {e}")
+        logger.error("Error generating business needs: %s", e, extra={"node": "elicitation"}, exc_info=True)
         return []
 
     if not candidates:
         return []
 
-    print(f"[Business Need] Got {len(candidates)} candidates. Selecting {quantity} most diverse...")
+    logger.info("Got %d candidates. Selecting %d most diverse...", len(candidates), quantity, extra={"node": "elicitation"})
 
     # Generate embeddings for all candidates
     try:
         candidate_embeddings = await generate_embeddings(candidates)
     except Exception as e:
-        print(f"[Business Need] Error generating embeddings, falling back to first {quantity}: {e}")
+        logger.error("Error generating embeddings, falling back to first %d: %s", quantity, e, extra={"node": "elicitation"}, exc_info=True)
         return candidates[:quantity]
 
     # Fetch existing embeddings from the database
     existing_rows = await fetch_existing_embeddings(project_id) if project_id else []
     existing_embeddings = [row["embedding"] for row in existing_rows if row.get("embedding")]
-    print(f"[Business Need] Found {len(existing_embeddings)} existing embedding(s) in DB for comparison")
+    logger.info("Found %d existing embedding(s) in DB for comparison", len(existing_embeddings), extra={"node": "elicitation"})
 
     # Select the most diverse candidates
     selected_indices = select_most_diverse(candidates, candidate_embeddings, existing_embeddings, quantity)
@@ -211,16 +214,16 @@ async def generate_business_needs(
     # Log all candidates with their max similarity against existing embeddings
     if existing_embeddings:
         from app.services.embedding_service import _cosine_similarity
-        print(f"[Business Need] All candidates and their max similarity to existing embeddings:")
+        logger.info("All candidates and their max similarity to existing embeddings:", extra={"node": "elicitation"})
         for i, (text, c_emb) in enumerate(zip(candidates, candidate_embeddings)):
             max_sim = max(_cosine_similarity(c_emb, e_emb) for e_emb in existing_embeddings)
             marker = " <-- SELECTED" if i in selected_indices else ""
-            print(f"  [{i}] (max_sim={max_sim:.4f}) {text}{marker}")
+            logger.debug("[%d] (max_sim=%.4f) %s%s", i, max_sim, text, marker, extra={"node": "elicitation"})
     else:
-        print(f"[Business Need] All candidates (no existing embeddings for comparison):")
+        logger.info("All candidates (no existing embeddings for comparison):", extra={"node": "elicitation"})
         for i, text in enumerate(candidates):
             marker = " <-- SELECTED" if i in selected_indices else ""
-            print(f"  [{i}] {text}{marker}")
+            logger.debug("[%d] %s%s", i, text, marker, extra={"node": "elicitation"})
 
     return [candidates[i] for i in selected_indices]
 
@@ -259,7 +262,7 @@ async def _answer_contextual_questions(
             answers: List[str] = json.loads(raw)
             all_answers.append(answers)
         except (json.JSONDecodeError, Exception) as e:
-            print(f"[Elicitation] Error answering contextual questions: {e}")
+            logger.error("Error answering contextual questions: %s", e, extra={"node": "elicitation"}, exc_info=True)
             all_answers.append(["Unable to generate answer."] * len(questions))
 
     return all_answers
@@ -272,16 +275,16 @@ async def _task_answer_contextual_questions_from_business_need(
     model_provider: LLMProvider,
 ) -> dict:
     """Task: Answer contextual questions generated by Analysis."""
-    print(f"[Elicitation] Answering contextual questions for {len(data_context.conjectural_data)} business need(s)")
+    logger.info("Answering contextual questions for %d business need(s)", len(data_context.conjectural_data), extra={"node": "elicitation"})
 
     answers_list = await _answer_contextual_questions(data_context, model_provider)
     for idx, (cd, answers) in enumerate(zip(data_context.conjectural_data, answers_list), start=1):
         for qa, answer in zip(cd.raw_desired_behavior_questions_answers, answers):
             qa.answer = answer
-            print(f"  [Answer] Business Need [{idx}]: Q: {qa.question}")
-            print(f"  [Answer] Business Need [{idx}]: A: {answer}")
+            logger.debug("Answer Business Need [%d]: Q: %s", idx, qa.question, extra={"node": "elicitation"})
+            logger.debug("Answer Business Need [%d]: A: %s", idx, answer, extra={"node": "elicitation"})
 
-    print("[Elicitation] Questions answered — routing back to Analysis")
+    logger.info("Questions answered — routing back to Analysis", extra={"node": "elicitation"})
     return {
         "data_context": data_context.model_dump(),
         "coordinator_phase": "analysis",
@@ -326,7 +329,7 @@ async def _answer_whatif_questions(
                 answers, _ = json.JSONDecoder().raw_decode(raw)
             all_answers.append(answers)
         except (json.JSONDecodeError, Exception) as e:
-            print(f"[Elicitation] Error answering What-If questions: {e}")
+            logger.error("Error answering What-If questions: %s", e, extra={"node": "elicitation"}, exc_info=True)
             all_answers.append(["Unable to generate answer."] * len(questions))
 
     return all_answers
@@ -339,16 +342,16 @@ async def _task_answer_whatif_questions_from_desired_behavior(
     model_provider: LLMProvider,
 ) -> dict:
     """Task: Answer What-If questions generated by Analysis for uncertainty identification."""
-    print(f"[Elicitation] Answering What-If questions for {len(data_context.conjectural_data)} business need(s)")
+    logger.info("Answering What-If questions for %d business need(s)", len(data_context.conjectural_data), extra={"node": "elicitation"})
 
     answers_list = await _answer_whatif_questions(data_context, model_provider)
     for idx, (cd, answers) in enumerate(zip(data_context.conjectural_data, answers_list), start=1):
         for qa, answer in zip(cd.raw_uncertainty_questions_answers, answers):
             qa.answer = answer
-            print(f"  [What-If Answer] Business Need [{idx}]: Q: {qa.question}")
-            print(f"  [What-If Answer] Business Need [{idx}]: A: {answer}")
+            logger.debug("What-If Answer Business Need [%d]: Q: %s", idx, qa.question, extra={"node": "elicitation"})
+            logger.debug("What-If Answer Business Need [%d]: A: %s", idx, answer, extra={"node": "elicitation"})
 
-    print("[Elicitation] What-If questions answered — routing back to Analysis")
+    logger.info("What-If questions answered — routing back to Analysis", extra={"node": "elicitation"})
     return {
         "data_context": data_context.model_dump(),
         "coordinator_phase": "analysis",
@@ -368,11 +371,11 @@ async def _task_generate_business_needs(
     current_project_id = context['current_project_id']
     quantity_req_batch = context['quantity_req_batch']
     spec_attempts = context["spec_attempts"]
-    print(f"[Elicitation] require_brief_description = {context['require_brief_description']}")
-    print(f"[Elicitation] require_evaluation = {context['require_evaluation']}")
-    print(f"[Elicitation] quantity_req_batch = {context['quantity_req_batch']}")
-    print(f"[Elicitation] spec_attempts = {spec_attempts}")
-    print(f"[Elicitation] model = {model_provider}")
+    logger.info("require_brief_description = %s", context['require_brief_description'], extra={"node": "elicitation"})
+    logger.info("require_evaluation = %s", context['require_evaluation'], extra={"node": "elicitation"})
+    logger.info("quantity_req_batch = %s", context['quantity_req_batch'], extra={"node": "elicitation"})
+    logger.info("spec_attempts = %s", spec_attempts, extra={"node": "elicitation"})
+    logger.info("model = %s", model_provider, extra={"node": "elicitation"})
 
     # Fetch project context fields directly from the projects table
     project_ctx = await fetch_project_context_fields(current_project_id)
@@ -382,11 +385,11 @@ async def _task_generate_business_needs(
     stakeholder = project_ctx.stakeholder
     business_objective = project_ctx.business_objective
     language = project_ctx.language
-    print(f"[Context] Project summary ({len(project_summary)} chars): {project_summary[:120]}...")
-    print(f"[Context] Domain: {domain}")
-    print(f"[Context] Stakeholder: {stakeholder}")
-    print(f"[Context] Business objective: {business_objective}")
-    print(f"[Context] Language: {language}")
+    logger.info("Project summary (%d chars): %s...", len(project_summary), project_summary[:120], extra={"node": "elicitation"})
+    logger.info("Domain: %s", domain, extra={"node": "elicitation"})
+    logger.info("Stakeholder: %s", stakeholder, extra={"node": "elicitation"})
+    logger.info("Business objective: %s", business_objective, extra={"node": "elicitation"})
+    logger.info("Language: %s", language, extra={"node": "elicitation"})
 
     # Build fresh DataContext from database (ignores parameter — first entry has no data_context)
     data_context = DataContext(
@@ -409,31 +412,31 @@ async def _task_generate_business_needs(
         payload = interrupt(
             {"type": "hitl_brief_description", "quantity_req_batch": quantity_req_batch},
         )
-        print(f"[Elicitation] payload: {payload}")
+        logger.info("payload: %s", payload, extra={"node": "elicitation"})
 
         interrupt_message = "📝 **User input** received successfully. Please wait while it is processed."
         messages = messages + [AIMessage(content=interrupt_message)]
         await copilotkit_emit_message(config, interrupt_message)
 
         brief_descriptions: List[str] = payload.get("brief_descriptions", [])
-        print(f"[Business Need] Received {len(brief_descriptions)} brief description(s) from user.")
+        logger.info("Received %d brief description(s) from user", len(brief_descriptions), extra={"node": "elicitation"})
 
         if brief_descriptions:
             business_needs, similarity = await refine_business_needs(brief_descriptions, data_context, model_provider, project_id=current_project_id)
             for bn in business_needs:
-                print(f"  [Business Need Refined] {bn}")
+                logger.debug("Business Need Refined: %s", bn, extra={"node": "elicitation"})
     else:
-        print("[Business Need] Generating business needs from project context...")
+        logger.info("Generating business needs from project context...", extra={"node": "elicitation"})
         business_needs = await generate_business_needs(quantity_req_batch, data_context, model_provider, project_id=current_project_id)
         similarity = [0] * len(business_needs)
         for bn in business_needs:
-            print(f"  [Business Need Generated] {bn}")
+            logger.debug("Business Need Generated: %s", bn, extra={"node": "elicitation"})
 
     data_context.conjectural_data = [
         ConjecturalData(raw_business_need=bn, raw_business_need_similarity=sim)
         for bn, sim in zip(business_needs, similarity)
     ]
-    print(f"[Business Need] Total: {len(business_needs)} statement(s)")
+    logger.info("Total: %s business need statement(s)", len(business_needs), extra={"node": "elicitation"})
 
     return {
         "messages": messages,
@@ -457,7 +460,7 @@ async def elicitation_node(state: WorkflowState, config: Optional[RunnableConfig
     Default task (first entry): generate positive business impacts.
     Dispatched tasks: answer contextual questions, answer What-If questions.
     """
-    print("Elicitation node started.")
+    logger.info("Elicitation node started", extra={"node": "elicitation"})
     config = copilotkit_customize_config(config, emit_messages=False)
 
     context = extract_copilotkit_context(state)
@@ -469,10 +472,10 @@ async def elicitation_node(state: WorkflowState, config: Optional[RunnableConfig
 
     if task_name and task_name in ELICITATION_TASKS:
         handler = ELICITATION_TASKS[task_name]
-        print(f"[Elicitation] Dispatching task: {task_name}")
+        logger.info("Dispatching task: %s", task_name, extra={"node": "elicitation"})
     else:
         handler = ELICITATION_TASKS["generate_business_needs"]
-        print("[Elicitation] Running default task: generate_business_needs")
+        logger.info("Running default task: generate_business_needs", extra={"node": "elicitation"})
 
     update = await handler(state, config, data_context, model_provider)
     if "messages" not in update:

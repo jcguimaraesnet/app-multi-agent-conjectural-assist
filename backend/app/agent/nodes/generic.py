@@ -19,6 +19,9 @@ from app.agent.utils.context_utils import extract_copilotkit_context
 from app.agent.utils.project_data import fetch_project_summary
 from app.agent.prompts.f01_generic_tool_followup_prompt import GENERIC_TOOL_FOLLOWUP_PROMPT
 from app.agent.prompts.f02_generic_response_prompt import GENERIC_RESPONSE_PROMPT
+from app.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 async def generic_node(state: WorkflowState, config: Optional[RunnableConfig] = None):
     """
@@ -42,7 +45,7 @@ async def generic_node(state: WorkflowState, config: Optional[RunnableConfig] = 
     # Get the conversation context
     messages = state.get('messages', [])
     last_message = str(messages[-1].content) if messages else ""
-    print(f"Last message from chat: {last_message}")
+    logger.info("Last message from chat: %s", last_message, extra={"node": "generic"})
 
     # Initialize the model with frontend tools
     model = get_model(provider=provider_param, temperature=1.0)
@@ -68,7 +71,7 @@ async def generic_node(state: WorkflowState, config: Optional[RunnableConfig] = 
 
     try:
         response = await model.ainvoke(conversation, config_internal)
-        print(f"Generic response: {extract_text(response.content)[:100]}...")
+        logger.info("Generic response: %s...", extract_text(response.content)[:100], extra={"node": "generic"})
 
         # If the LLM returned only a tool call with no text, generate a friendly follow-up message
         if hasattr(response, 'tool_calls') and response.tool_calls and not extract_text(response.content).strip():
@@ -94,7 +97,7 @@ async def generic_node(state: WorkflowState, config: Optional[RunnableConfig] = 
             )
 
     except Exception as e:
-        print(f"Generic node error: {e}")
+        logger.error("Generic node error", extra={"node": "generic"}, exc_info=True)
         msg_exception = "I'm sorry, I encountered an error processing your request. How can I help you with requirements engineering today?"
         response = AIMessage(content=msg_exception)
 

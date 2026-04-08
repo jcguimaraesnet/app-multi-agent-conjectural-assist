@@ -20,6 +20,9 @@ from langgraph.types import Command
 from copilotkit.langgraph import copilotkit_emit_state, copilotkit_customize_config
 
 from app.agent.state import WorkflowState
+from app.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 # Progress messages for each phase (normal flow)
 PHASE_MESSAGES = {
@@ -52,12 +55,12 @@ async def coordinator_node(state: WorkflowState, config: Optional[RunnableConfig
 
     phase = state.get("coordinator_phase", "elicitation")
     node_task = state.get("node_task")
-    print(f"[Coordinator] Current phase: {phase}")
+    logger.info("Current phase: %s", phase, extra={"node": "coordinator"})
 
     # Multi-turn dialogue routing: when node_task is set, a dialogue is in progress.
     # Emit state for frontend awareness but keep step flags consistent (analysis still in progress).
     if node_task:
-        print(f"[Coordinator] Dialogue routing: phase={phase}, node_task={node_task}")
+        logger.info("Dialogue routing: phase=%s, node_task=%s", phase, node_task, extra={"node": "coordinator"})
         msg = TASK_MESSAGES.get(node_task, PHASE_MESSAGES.get(phase, ""))
         state["pending_progress"] = True
         state["progress_message"] = msg
@@ -170,7 +173,7 @@ async def coordinator_node(state: WorkflowState, config: Optional[RunnableConfig
         )
 
     else:
-        print(f"[Coordinator] Unknown phase: {phase}, defaulting to done")
+        logger.warning("Unknown phase: %s, defaulting to done", phase, extra={"node": "coordinator"})
         return Command(
             update={
                 "coordinator_phase": "done",

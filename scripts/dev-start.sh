@@ -48,6 +48,8 @@ echo "  Backend (docs):   http://localhost:8000/docs"
 echo "  Agent Studio:     http://localhost:8123"
 echo "  Supabase Studio:  http://localhost:54323"
 echo "  Inbucket (email): http://localhost:54324"
+echo "  Elasticsearch:    http://localhost:9200"
+echo "  Kibana:           http://localhost:5601"
 echo ""
 
 docker compose -f docker-compose.dev.yml up --build
