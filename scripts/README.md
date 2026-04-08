@@ -2,7 +2,7 @@
 - docker engine (linux)
 - uv
 - pnpm
-- node22+
+- node22^
 
 # Step 1 - Comandos abaixos para ambiente WSL
 

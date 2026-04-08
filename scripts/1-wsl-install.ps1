@@ -208,7 +208,13 @@ function Set-WslConfSystemdAndDefaultUser {
 }
 
 try {
-	Invoke-WslCommand -Arguments @('--install', 'Ubuntu-24.04', '--name', $DistroName) -Description "Baixando distro Ubuntu 24.04 (nome: $DistroName)"
+	Write-Step -Message "Baixando distro Ubuntu 24.04 (nome: $DistroName)"
+	Write-Host ""
+	Write-Host "    ATENCAO: Apos o download, o WSL vai abrir uma sessao interativa." -ForegroundColor Yellow
+	Write-Host "    1) Crie seu usuario e senha Linux quando solicitado." -ForegroundColor Yellow
+	Write-Host "    2) Depois digite 'exit' para voltar a este script." -ForegroundColor Yellow
+	Write-Host ""
+	Invoke-WslCommand -Arguments @('--install', 'Ubuntu-24.04', '--name', $DistroName) -Description "Instalando distro (aguardando criacao de usuario...)"
 	Invoke-WslCommand -Arguments @('--set-default', $DistroName) -Description "Definindo $DistroName como distro padrao"
 
 	$wslConfigPath = Join-Path $env:USERPROFILE '.wslconfig'
