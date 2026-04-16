@@ -1,4 +1,4 @@
-name: Build and Push
+name: conreq-multiagent-azure-workflow
 
 on:
   push:
